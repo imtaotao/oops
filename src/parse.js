@@ -101,10 +101,14 @@ function build (statics) {
           // 如果发生是纯的单标签，代表进入一个新的子模块
           // <div/>
           if (is(MODE_TAGNAME)) {
-            current = current[0] // tagName
+            // 第一个为 parent
+            // 类似于: current = current.parent
+            current = current[0]
           }
-          mode = current
-          
+
+          const parent = current[0]
+          parent.push(current, CHILD_RECURSE)
+          current = parent
           set(MODE_SLASH)
         }
       } else if (equal(' ') || equal('\t') || equal('\n') || equal('\r')) {
