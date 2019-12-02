@@ -1,0 +1,10 @@
+{
+  "name": "orator",
+  "version": "0.0.1",
+  "description": "use es6 template string to make jsx",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "Imtaotao",
+  "license": "MIT"
+}
