@@ -1,5 +1,5 @@
 <h1 align="center">
-  Orator(jsx ibrary)
+  Orator(jsx library)
 </h1>
 
 <p align="center">
