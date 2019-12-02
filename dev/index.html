@@ -8,25 +8,27 @@
 <body>
 <script type="module">
   import { jsx } from '../src/index.js'
+  // import jsx from '../src/parse.js'
 
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
-  const Footer = props => jsx`<footer ...${props} />`
+  // const Footer = props => jsx`<footer ...${props} />`
 
   // <ul>
   //   ${todos.map(todo => build`
   //     <li>${todo}</li>
   //   `)}
   // </ul>
+  // <${Footer}>footer content here</>
+  // <${Header} name="ToDo's (${page})" />
   const ast = jsx`
-    <div class="app a" id="121">
-      <!-- df -->
-      <${Header} name="ToDo's (${page})" />
-      
+    <div prop=value>
+      <${Header}/>
+      <div/>
       <button onClick=${() => this.addTodo()}>Add Todo</button>
-      <${Footer}>footer content here</>
     </div>
+    <div a=va/l/>
   `
   
   console.log(ast)

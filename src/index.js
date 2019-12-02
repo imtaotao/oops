@@ -12,20 +12,8 @@ const CHILD_RECURSE = 2;
 const PROPS_ASSIGN = 3;
 const PROP_SET = MODE_PROP_SET;
 const PROP_APPEND = MODE_PROP_APPEND;
+const MINI = false
 
-// Turn a result of a build(...) call into a tree that is more
-// convenient to analyze and transform (e.g. Babel plugins).
-// For example:
-// 	treeify(
-//		build'<div href="1${a}" ...${b}><${x} /></div>`,
-//		[X, Y, Z]
-//	)
-// returns:
-// 	{
-// 		tag: 'div',
-//		props: [ { href: ["1", X] },	Y ],
-// 		children: [ { tag: Z, props: [], children: [] } ]
-// 	}
 export const treeify = (built, fields) => {
 	const _treeify = built => {
 		let tag = '';
@@ -64,11 +52,14 @@ export const treeify = (built, fields) => {
 
 		return { tag, props, children };
 	};
-  const { children } = _treeify(built);
+	const { children } = _treeify(built);
 	return children.length > 1 ? children : children[0];
 };
 
 export const build = function(statics) {
+	const fields = arguments;
+	const h = this;
+
 	let mode = MODE_TEXT;
 	let buffer = '';
 	let quote = '';
@@ -80,17 +71,17 @@ export const build = function(statics) {
       current.push(field || buffer, CHILD_APPEND);
 		}
 		else if (mode === MODE_TAGNAME && (field || buffer)) {
-      current.push(field || buffer, TAG_SET);
+			current.push(field || buffer, TAG_SET);
 			mode = MODE_WHITESPACE;
 		}
 		else if (mode === MODE_WHITESPACE && buffer === '...' && field) {
-			current.push(field, PROPS_ASSIGN);
+      current.push(field, PROPS_ASSIGN);
 		}
 		else if (mode === MODE_WHITESPACE && buffer && !field) {
-      current.push(true, PROP_SET, buffer);
+			current.push(true, PROP_SET, buffer);
 		}
 		else if (mode >= MODE_PROP_SET) {
-			if (buffer || (!field && mode === MODE_PROP_SET)) {
+      if (buffer || (!field && mode === MODE_PROP_SET)) {
         current.push(buffer, mode, propName);
         mode = MODE_PROP_APPEND;
       }
@@ -105,9 +96,10 @@ export const build = function(statics) {
 
 	for (let i=0; i<statics.length; i++) {
 		if (i) {
-      mode === MODE_TEXT
-        ? commit()
-        : commit(i)
+			if (mode === MODE_TEXT) {
+				commit();
+			}
+			commit(i);
 		}
 
 		for (let j=0; j<statics[i].length;j++) {
@@ -118,25 +110,29 @@ export const build = function(statics) {
 					// commit buffer
 					commit();
           current = [current];
-					mode = MODE_TAGNAME;
-				} else {
+          mode = MODE_TAGNAME;
+				}
+				else {
 					buffer += char;
 				}
-      }
-      // 过滤注释节点
+			}
 			else if (mode === MODE_COMMENT) {
-				// 忽略所有内容，直到最后三个字符为“-”，“-”和“>”
+				// Ignore everything until the last three characters are '-', '-' and '>'
 				if (buffer === '--' && char === '>') {
 					mode = MODE_TEXT;
 					buffer = '';
-				}	else {
-          buffer = char + buffer[0];
+				}
+				else {
+					buffer = char + buffer[0];
 				}
 			}
 			else if (quote) {
-        char === quote
-          ? quote = ''
-          : buffer += char
+				if (char === quote) {
+					quote = '';
+				}
+				else {
+					buffer += char;
+				}
 			}
 			else if (char === '"' || char === "'") {
 				quote = char;
@@ -150,17 +146,20 @@ export const build = function(statics) {
 			}
 			else if (char === '=') {
 				mode = MODE_PROP_SET;
-				propName = buffer;
+        propName = buffer;
 				buffer = '';
       }
-      // 单标签的时候，而且没有在属性里面的时候
 			else if (char === '/' && (mode < MODE_PROP_SET || statics[i][j+1] === '>')) {
-				commit();
+        console.log(buffer, mode)
+        if (mode === MODE_TAGNAME) {
+          console.log('tag', buffer, current)
+        }
+        commit();
 				if (mode === MODE_TAGNAME) {
 					current = current[0];
 				}
 				mode = current;
-				(current = current[0]).push(mode, CHILD_RECURSE);
+        (current = current[0]).push(mode, CHILD_RECURSE);
 				mode = MODE_SLASH;
 			}
 			else if (char === ' ' || char === '\t' || char === '\n' || char === '\r') {
@@ -184,6 +183,7 @@ export const build = function(statics) {
 };
 
 export function jsx (statics, ...fileds) {
-  const built = build(statics)
-  return treeify(built, fileds)
+  const b = build(statics)
+  console.log(b)
+  return treeify(b, fileds)
 }
