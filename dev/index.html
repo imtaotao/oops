@@ -6,8 +6,30 @@
   <title>orator</title>
 </head>
 <body>
-<script>
-  console.log(1212)
+<script type="module">
+  import { jsx } from '../src/index.js'
+
+  const page = 'demo page'
+  const todos = [1, 2, 3]
+  const Header = ({ name }) => jsx`<h1>${name} List</h1>`
+  const Footer = props => jsx`<footer ...${props} />`
+
+  // <ul>
+  //   ${todos.map(todo => build`
+  //     <li>${todo}</li>
+  //   `)}
+  // </ul>
+  const ast = jsx`
+    <div class="app a" id="121">
+      <!-- df -->
+      <${Header} name="ToDo's (${page})" />
+      
+      <button onClick=${() => this.addTodo()}>Add Todo</button>
+      <${Footer}>footer content here</>
+    </div>
+  `
+  
+  console.log(ast)
 </script>
 </body>
 </html>

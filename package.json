@@ -4,6 +4,7 @@
   "description": "use es6 template string to make jsx",
   "main": "index.js",
   "scripts": {
+    "dev": "open-cli http://127.0.0.1:8080/dev/index.html && http-server ./"
   },
   "author": "Imtaotao",
   "license": "MIT"
