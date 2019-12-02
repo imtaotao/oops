@@ -154,6 +154,7 @@ export const build = function(statics) {
         // console.log(buffer, mode, current)
         commit();
 				if (mode === MODE_TAGNAME) {
+					console.log(buffer, mode);
 					current = current[0];
 				}
 				mode = current;

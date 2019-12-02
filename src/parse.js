@@ -52,6 +52,7 @@ function build (statics) {
         // 代表进入到一个标签里面
         if (equal('<')) {
           commit()
+          // current[0] 就是 parent
           current = [current]
           set(MODE_TAGNAME)
         }
