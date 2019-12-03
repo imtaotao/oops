@@ -8,7 +8,6 @@
 <body>
 <script type="module">
   import { jsx } from '../src/index.js'
-  // import jsx from '../src/parse.js'
   // import jsx from '../src/a.js'
 
   const page = 'demo page'
@@ -32,7 +31,7 @@
   //   <span></span>
   //   <div a=va/l/>
   const ast = jsx`
-    <a ...${{a: 1, b: 2}} />
+    <a/><b>1</b><c><//>
   `
   
   console.log(ast)

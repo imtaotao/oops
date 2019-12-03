@@ -60,6 +60,7 @@ export const build = function(statics) {
 	const fields = arguments;
 	const h = this;
 
+	let str = ''
 	let mode = MODE_TEXT;
 	let buffer = '';
 	let quote = '';
@@ -103,7 +104,8 @@ export const build = function(statics) {
 		}
 
 		for (let j=0; j<statics[i].length;j++) {
-      char = statics[i][j];
+			char = statics[i][j];
+			str += char
 
 			if (mode === MODE_TEXT) {
 				if (char === '<') {
@@ -150,11 +152,15 @@ export const build = function(statics) {
 				buffer = '';
       }
 			else if (char === '/' && (mode < MODE_PROP_SET || statics[i][j+1] === '>')) {
-        commit();
+				commit();
+				// 如果是标签
+				// 只有 </ 会进入到这里，<a/ 在 commit 中把 mode 设置为 whitespace 
 				if (mode === MODE_TAGNAME) {
+					console.log('-----', str, current[0])
 					current = current[0];
 				}
 				mode = current;
+				console.log(str, mode);
         (current = current[0]).push(mode, CHILD_RECURSE);
 				mode = MODE_SLASH;
 			}
