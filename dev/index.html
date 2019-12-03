@@ -9,6 +9,7 @@
 <script type="module">
   import { jsx } from '../src/index.js'
   // import jsx from '../src/parse.js'
+  // import jsx from '../src/a.js'
 
   const page = 'demo page'
   const todos = [1, 2, 3]
@@ -22,14 +23,16 @@
   // </ul>
   // <${Footer}>footer content here</>
   // <${Header} name="ToDo's (${page})" />
+
+  // <div prop=value>
+  //     <${Header}/>
+  //     <div/>
+  //     <button onClick=${() => this.addTodo()}>Add Todo</button>
+  //   </div>
+  //   <span></span>
+  //   <div a=va/l/>
   const ast = jsx`
-    <div prop=value>
-      <${Header}/>
-      <div/>
-      <button onClick=${() => this.addTodo()}>Add Todo</button>
-    </div>
-    <span></span>
-    <div a=va/l/>
+    <a ...${{a: 1, b: 2}} />
   `
   
   console.log(ast)

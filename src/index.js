@@ -23,7 +23,6 @@ export const treeify = (built, fields) => {
 
 		for (let i = 1; i < built.length; i++) {
 			const field = built[i++];
-			console.log(built[i], field);
 			const value = typeof field === 'number' ? fields[field - 1] : field;
 
 			if (built[i] === TAG_SET) {
@@ -151,10 +150,8 @@ export const build = function(statics) {
 				buffer = '';
       }
 			else if (char === '/' && (mode < MODE_PROP_SET || statics[i][j+1] === '>')) {
-        // console.log(buffer, mode, current)
         commit();
 				if (mode === MODE_TAGNAME) {
-					console.log(buffer, mode);
 					current = current[0];
 				}
 				mode = current;

@@ -33,7 +33,7 @@ function build (statics) {
   // commit buffer
   // field 代表当前是第几个 statics，用于插入得到的值
   const commit = field => {
-    console.log(char, mode)
+    console.log(buffer, mode)
   }
 
   for (let i = 0, len = statics.length; i < len; i++) {
@@ -100,7 +100,7 @@ function build (statics) {
         if (mode < MODE_PROP_SET || temp[i + 1] === '>') {
           commit()
           // 如果发生是纯的单标签，代表进入一个新的子模块
-          // <div/>
+          // </>
           if (is(MODE_TAGNAME)) {
             // 第一个为 parent
             // 类似于: current = current.parent
@@ -119,6 +119,11 @@ function build (statics) {
       } else {
         buffer += char
       }
+
+      if (is(MODE_TAGNAME) && buffer === '!--') {
+        set(MODE_COMMENT)
+				current = current[0]
+			}
     }
   }
 
