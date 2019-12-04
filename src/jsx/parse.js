@@ -9,12 +9,12 @@ const MODE_PROP_APPEND = 6
 const TAG_SET = 1
 const CHILD_APPEND = 0
 const CHILD_RECURSE = 2
-const PROP_ASSIGN = 3
+const PROPS_ASSIGN = 3
 const PROP_SET = MODE_PROP_SET
 const PROP_APPEND = MODE_PROP_APPEND
 const isProps = mode => mode >= MODE_PROP_SET
 
-function build (statics) {
+export function build (statics) {
   let propName
   let quote = ''
   let buffer = ''
@@ -25,20 +25,24 @@ function build (statics) {
   // field 判断是否是通过模板插入的值
   const commit = field => {
     // 生成一个字符节点
-    if (mode === MODE_TEXT && (field || buffer.trim())) {
-      scope.push([CHILD_APPEND, field || buffer])
-    } else if (mode === MODE_TAGNAME && (field || buffer)) {
+    if (mode === MODE_TEXT) {
+      if (field || (buffer = buffer.replace(/^\s*\n\s*|\s*\n\s*$/g, ''))) {
+        scope.push([CHILD_APPEND, field || buffer])
+      }
+    } else if (mode === MODE_TAGNAME) {
       // 过滤 <>
-      scope.push([TAG_SET, field || buffer])
-      // 处理 <a/>
-      mode = MODE_WHITESPACE
+      if (field || buffer) {
+        scope.push([TAG_SET, field || buffer])
+        // 处理 <a/>
+        mode = MODE_WHITESPACE
+      }
     } else if (mode === MODE_WHITESPACE) {
       if (buffer === '...' && field) {
         // <a ...${{a: 1}}/>
-        scope.push([PROP_ASSIGN, field])
+        scope.push([PROPS_ASSIGN, field])
       } else if (buffer && !field) {
         // <a p${x}=1 /> 过滤掉这种
-        scope.push([PROPS_SET, buffer, true])
+        scope.push([PROP_SET, buffer, true])
       }
     } else if (isProps(mode)) {
       // `<a href="" />` `<a href="a${1}" />` `<a href="a${1}b" />`
@@ -81,7 +85,7 @@ function build (statics) {
         }
       } else if (mode === MODE_COMMENT) {
         // 过滤注释
-        if (buffer === '--' || char === '>') {
+        if (buffer === '--' && char === '>') {
           mode = MODE_TEXT
           buffer = ''
         } else {
@@ -102,14 +106,15 @@ function build (statics) {
         // 标签的结束
         commit()
         mode = MODE_TEXT
+      } else if (mode === MODE_SLASH) {
+        // 如果为 MODE_SLASH，不需要做其他事情，过滤掉就好
+        // 而且要在 `char === '='` 之前判断，因为需要处理 `<ab/ba prop=value>`
       } else if (char === '=') {
         // 处理属性
         mode = MODE_PROP_SET
         propName = buffer
 				buffer = ''
-      } else if (mode === MODE_SLASH) {
-				// 如果为 MODE_SLASH，不需要做其他事情，过滤掉就好
-			} else if (char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
+      }  else if (char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
         // `/` 算作标签的结束字符而不算 propValue 里面
         // prop=va/l --> prop: 'va/l'
         // prop=va/l/> --> prop: 'va/l'
@@ -177,7 +182,7 @@ export function treeify (built, fields) {
 
       if (type === TAG_SET) {
         tag = value
-      } else if (type === PROP_ASSIGN) {
+      } else if (type === PROPS_ASSIGN) {
         props.push(value)
         // 中间隔一个 assign 就新建一个数组
 				currentProps = null
@@ -202,7 +207,32 @@ export function treeify (built, fields) {
   return children.length > 1 ? children : children[0]
 }
 
-export default function jsx (statics, ...fields) {
-  const built = build(statics)
-  return treeify(built, fields)
+export function evaluate (h, built, fields, args) {
+  for (let i = 0; i < built.length; i++) {
+    const [type, name, prop] = built[i]
+    const field = prop === undefined ? name :  prop
+    const value = typeof field === 'number' ? fields[field - 1] : field
+  
+    if (type === TAG_SET) {
+      args[0] = value
+    } else if (type === PROPS_ASSIGN) {
+      args[1] = Object.assign(args[1] || {}, value)
+    }	else if (type === PROP_SET) {
+      (args[1] = args[1] || {})[name] = value
+    } else if (type === PROP_APPEND) {
+      // 转为字符串拼接，`<a id=1${2}`
+      args[1][name] += (value + '')
+    }	else if (type === CHILD_RECURSE) {
+      args.push(
+        h.apply(
+          null,
+          // tag 默认为 '', props 默认为 null
+          evaluate(h, value, fields, ['', null]),
+        ),
+      )
+    } else if (type === CHILD_APPEND) {
+      args.push(value)
+    }
+  }
+  return args
 }
