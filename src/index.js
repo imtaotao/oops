@@ -152,15 +152,14 @@ export const build = function(statics) {
 				buffer = '';
       }
 			else if (char === '/' && (mode < MODE_PROP_SET || statics[i][j+1] === '>')) {
+				console.log(str, mode)
 				commit();
 				// 如果是标签
 				// 只有 </ 会进入到这里，<a/ 在 commit 中把 mode 设置为 whitespace 
 				if (mode === MODE_TAGNAME) {
-					console.log('-----', str, current[0])
 					current = current[0];
 				}
 				mode = current;
-				console.log(str, mode);
         (current = current[0]).push(mode, CHILD_RECURSE);
 				mode = MODE_SLASH;
 			}

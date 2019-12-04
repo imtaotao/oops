@@ -7,33 +7,29 @@
 </head>
 <body>
 <script type="module">
-  import { jsx } from '../src/index.js'
-  // import jsx from '../src/a.js'
+  // import { jsx } from '../src/index.js'
+  import jsx from '../src/parse.js'
 
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
-  // const Footer = props => jsx`<footer ...${props} />`
+  const Footer = props => jsx`<footer ...${props} />`
 
-  // <ul>
-  //   ${todos.map(todo => build`
-  //     <li>${todo}</li>
-  //   `)}
-  // </ul>
-  // <${Footer}>footer content here</>
-  // <${Header} name="ToDo's (${page})" />
-
-  // <div prop=value>
-  //     <${Header}/>
-  //     <div/>
-  //     <button onClick=${() => this.addTodo()}>Add Todo</button>
-  //   </div>
-  //   <span></span>
-  //   <div a=va/l/>
   const ast = jsx`
-    <a/><b>1</b><c><//>
+    <div prop=value>
+      <${Header}/>
+      <ul>
+        ${todos.map(todo => jsx`
+          <li>${todo}</li>
+        `)}
+      </ul>
+      <${Footer}>footer content here</>
+      <${Header} name="ToDo's (${page})" />
+      <button onClick=${() => this.addTodo()}>Add Todo</button>
+    <//>
   `
-  
+
+  // const ast = jsx`<div><//>`
   console.log(ast)
 </script>
 </body>
