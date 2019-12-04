@@ -1,10 +1,10 @@
 import jsx from './jsx/index.js'
 
-const orator = {
+const cliche = {
   jsx,
 }
 
 export {
   jsx,
-  orator as default,
+  cliche as default,
 }
