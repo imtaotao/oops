@@ -15,7 +15,6 @@ const PROP_APPEND = MODE_PROP_APPEND
 const isProps = mode => mode >= MODE_PROP_SET
 
 function build (statics) {
-  let str = ''
   let propName
   let quote = ''
   let buffer = ''
@@ -68,7 +67,7 @@ function build (statics) {
 
     for (let j = 0; j < statics[i].length; j++) {
       const char = statics[i][j]
-      str+=char
+
       if (mode === MODE_TEXT) {
         // 进入到子节点
         if (char === '<') {
@@ -171,28 +170,28 @@ export function treeify (built, fields) {
     const children = []
 
     for (let i = 0; i < built.length; i++) {
-      const [mode, name, prop] = built[i]
+      const [type, name, prop] = built[i]
       // 当是 number 时，就是 field 注入的
       const field = prop === undefined ? name :  prop
       const value = typeof field === 'number' ? fields[field - 1] : field
 
-      if (mode === TAG_SET) {
+      if (type === TAG_SET) {
         tag = value
-      } else if (mode === PROP_ASSIGN) {
+      } else if (type === PROP_ASSIGN) {
         props.push(value)
         // 中间隔一个 assign 就新建一个数组
 				currentProps = null
-      } else if (mode === PROP_SET) {
+      } else if (type === PROP_SET) {
         if (!currentProps) {
           currentProps = Object.create(null)
           props.push(currentProps)
         }
         currentProps[name] = [value]
-      } else if (mode === PROP_APPEND) {
+      } else if (type === PROP_APPEND) {
         currentProps[name].push(value)
-      } else if (mode === CHILD_RECURSE) {
+      } else if (type === CHILD_RECURSE) {
         children.push(_treeify(value))
-      } else if (mode === CHILD_APPEND) {
+      } else if (type === CHILD_APPEND) {
         children.push(value)
       }
     }
