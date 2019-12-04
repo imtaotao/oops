@@ -10,11 +10,11 @@ const getCache = statics => {
   return tpl
 }
 
-export function createVNode (h, statics, fields) {
+export function genVNodeTree (h, statics, fields) {
   const result = evaluate(h, getCache(statics), fields, [])
   return result.length > 1 ? result : result[0]
 }
 
 export default function jsx (statics, ...fields) {
-  return createVNode(h, statics, fields)
+  return genVNodeTree(h, statics, fields)
 }

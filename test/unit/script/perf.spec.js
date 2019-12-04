@@ -1,7 +1,7 @@
-import { createVNode } from '../../../src/jsx/index.js'
+import { genVNodeTree } from '../../../src/jsx/index.js'
 
 const h = (tag, props, ...children) => ({ tag, props, children })
-const html = (statics, ...fields) => createVNode(h, statics, fields)
+const html = (statics, ...fields) => genVNodeTree(h, statics, fields)
 
 describe('performance', () => {
 	it('creation', () => {
