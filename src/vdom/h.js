@@ -1,4 +1,5 @@
 import vnode from './vnode.js'
+import { componentInit } from './create-component.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 
 const HOOK = 'hook'
@@ -38,15 +39,19 @@ const parseStyleText = cached(cssText => {
   const listDelimiter = /;(?![^(]*\))/g
   const propertyDelimiter = /:(.+)/
   const items = cssText.split(listDelimiter)
+
   for (let i = 0; i < items.length; i++) {
     if (items[i]) {
       const tmp = items[i].split(propertyDelimiter)
       if (tmp.length > 1) {
         const name = tmp[0].trim()
         const value = tmp[1].trim()
-        res[name] = name === STYLE_DELAYED || name === STYLE_REMOVE
-          ? new Function('return ' + value)()
-          : value
+        if ((name === STYLE_DELAYED || name === STYLE_REMOVE) &&
+            typeof value === 'string') {
+          res[name] = new Function('return ' + value)()
+        } else {
+          res[name] = value
+        }
       }
     }
   }
@@ -105,9 +110,13 @@ export default function h(tag, props, ...children) {
       }
     }
   }
-
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
+  // 如果是组件需要注入组件的钩子
+  if (typeof tag === 'function') {
+    (data.hook || (data.hook = {})).init = componentInit
+  }
+
   return vnode(tag, data, children, undefined, undefined)
 }
