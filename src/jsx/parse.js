@@ -14,7 +14,7 @@ const PROP_SET = MODE_PROP_SET
 const PROP_APPEND = MODE_PROP_APPEND
 const isProps = mode => mode >= MODE_PROP_SET
 
-export function build (statics) {
+export function build(statics) {
   let propName
   let quote = ''
   let buffer = ''
@@ -167,7 +167,7 @@ export function build (statics) {
 //		props: [ { href: ["1", X] },	Y ],
 // 		children: [ { tag: Z, props: [], children: [] } ]
 // 	}
-export function treeify (built, fields) {
+export function treeify(built, fields) {
   const _treeify = built => {
     let tag = ''
 		let currentProps = null
@@ -207,7 +207,7 @@ export function treeify (built, fields) {
   return children.length > 1 ? children : children[0]
 }
 
-export function evaluate (h, built, fields, args) {
+export function evaluate(h, built, fields, args) {
   for (let i = 0; i < built.length; i++) {
     const [type, name, prop] = built[i]
     const field = prop === undefined ? name :  prop

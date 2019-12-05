@@ -6,33 +6,38 @@
   <title>oops</title>
 </head>
 <body>
+<p id='app'></p>
 <script type="module">
-  import jsx from '../src/jsx/index.js'
+  import { jsx, init } from '../src/index.js'
 
+  const patch = init([])
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
   const Footer = props => jsx`<footer ...${props} />`
 
-  const ast = jsx`
-    <div prop=value>
-      <${Header}/>
-      <ul>
-        ${todos.map(todo => jsx`
-          <li>${todo}</li>
-        `)}
-      </ul>
-      <${Footer}>footer content here</>
-      <${Header} name="ToDo's (${page})" />
-      <button onClick=${() => this.addTodo()}>Add Todo</button>
-    <//>
-    <svg xlink:aa=121></>
-  `
-
   // const ast = jsx`
-  //   <div>212<a/></div>
+  //   <div prop=value>
+  //     <${Header}/>
+  //     <ul>
+  //       ${todos.map(todo => jsx`
+  //         <li>${todo}</li>
+  //       `)}
+  //     </ul>
+  //     <${Footer}>footer content here</>
+  //     <${Header} name="ToDo's (${page})" />
+  //     <button onClick=${() => this.addTodo()}>Add Todo</button>
+  //   <//>
   // `
+
+  const ast = jsx`
+    <div>
+      212
+      <a href="www.baidu.com">点击</>
+    </div>
+  `
   console.log(ast)
+  patch(document.getElementById('app'), ast)
 </script>
 </body>
 </html>

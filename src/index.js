@@ -1,10 +1,13 @@
 import jsx from './jsx/index.js'
+import init from './vdom/patch.js'
 
-const cliche = {
+const oops = {
   jsx,
+  init,
 }
 
 export {
   jsx,
-  cliche as default,
+  init,
+  oops as default,
 }

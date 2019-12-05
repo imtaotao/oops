@@ -1,4 +1,4 @@
-export default function vnode (sel, data, children, text, elm) {
+export default function vnode(sel, data, children, text, elm) {
   const key = data === undefined ? undefined : data.key
   return { sel, data, children, text, elm, key }
 }
