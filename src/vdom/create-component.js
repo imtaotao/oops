@@ -3,11 +3,10 @@ export function createComponentInstanceForVnode(vnode, parent) {
 
 }
 
-const componentVNodeHooks = {
-  init(vnode) {
-    console.log(vnode)
-  },
+function componentInit(vnode) {
+  console.log(vnode)
 }
 
-export default componentVNodeHooks
-
+export default {
+  init: componentInit,
+}

@@ -8,32 +8,28 @@
 <body>
 <p id='app'></p>
 <script type="module">
-  // import { jsx } from '../src/index.js'
-  // import init from '../src/vdom/patch.js'
-  // import attr from '../src/vdom/modules/attributes.js'
+  import { jsx, patch } from '../src/index.js'
 
-  // const patch = init([attr])
-  // const page = 'demo page'
-  // const todos = [1, 2, 3]
-  // const Header = ({ name }) => jsx`<h1>${name} List</h1>`
-  // const Footer = props => jsx`<footer ...${props} />`
+  const page = 'demo page'
+  const todos = [1, 2, 3]
+  const Header = ({ name }) => jsx`<h1>${name} List</h1>`
+  const Footer = props => jsx`<footer ...${props} />`
 
-  // const ast = jsx`
-  //   <div prop=value>
-  //     <${Header}/>
-  //     <ul>
-  //       ${todos.map(todo => jsx`
-  //         <li>${todo}</li>
-  //       `)}
-  //     </ul>
-  //     <${Footer}>footer content here</>
-  //     <${Header} name="ToDo's (${page})" />
-  //     <button onClick=${() => this.addTodo()}>Add Todo</button>
-  //   <//>
-  // `
+  const ast = jsx`
+    <div prop=value>
+      <${Header}/>
+      <ul>
+        ${todos.map(todo => jsx`
+          <li>${todo}</li>
+        `)}
+      </ul>
+      <${Footer}>footer content here</>
+      <${Header} name="ToDo's (${page})" />
+      <button onClick=${() => this.addTodo()}>Add Todo</button>
+    <//>
+  `
 
-  // console.log(ast)
-  // patch(document.getElementById('app'), ast)
+  patch(document.getElementById('app'), ast)
 </script>
 </body>
 </html>
