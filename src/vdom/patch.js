@@ -26,6 +26,7 @@ export default function init(modules, domApi) {
     }
   }
 
+  console.log(cbs)
   function emptyNodeAt(elm) {
     return vnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
   }
@@ -55,6 +56,11 @@ export default function init(modules, domApi) {
       const elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? api.createElementNS(data.ns, sel)
         : api.createElement(sel)
+
+      // 调用模块 create 钩子
+      for (let i = 0; i < cbs.create.length; i++) {
+        cbs.create[i](emptyNode, vnode)
+      }
 
       if (isArray(children)) {
         for (let i = 0; i < children.length; i++) {

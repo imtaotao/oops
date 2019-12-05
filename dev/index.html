@@ -8,9 +8,11 @@
 <body>
 <p id='app'></p>
 <script type="module">
-  import { jsx, init } from '../src/index.js'
+  import { jsx } from '../src/index.js'
+  import init from '../src/vdom/patch.js'
+  import attr from '../src/vdom/modules/attributes.js'
 
-  const patch = init([])
+  const patch = init([attr])
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
@@ -31,9 +33,14 @@
   // `
 
   const ast = jsx`
-    <div>
-      212
-      <a href="www.baidu.com">点击</>
+    <div
+      class=1
+      href="www.baidu.com"
+      data-action='reset'
+      onclick="${e => console.log(e)}"
+      style=${{opacity: '0', transition: 'opacity 1s', delayed: {opacity: '1'}}}
+    >
+      test
     </div>
   `
   console.log(ast)
