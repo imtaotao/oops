@@ -18,31 +18,20 @@
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
   const Footer = props => jsx`<footer ...${props} />`
 
-  // const ast = jsx`
-  //   <div prop=value>
-  //     <${Header}/>
-  //     <ul>
-  //       ${todos.map(todo => jsx`
-  //         <li>${todo}</li>
-  //       `)}
-  //     </ul>
-  //     <${Footer}>footer content here</>
-  //     <${Header} name="ToDo's (${page})" />
-  //     <button onClick=${() => this.addTodo()}>Add Todo</button>
-  //   <//>
-  // `
-
   const ast = jsx`
-    <div
-      class=1
-      href="www.baidu.com"
-      data-action='reset'
-      onclick="${e => console.log(e)}"
-      style=${{opacity: '0', transition: 'opacity 1s', delayed: {opacity: '1'}}}
-    >
-      test
-    </div>
+    <div prop=value>
+      <${Header}/>
+      <ul>
+        ${todos.map(todo => jsx`
+          <li>${todo}</li>
+        `)}
+      </ul>
+      <${Footer}>footer content here</>
+      <${Header} name="ToDo's (${page})" />
+      <button onClick=${() => this.addTodo()}>Add Todo</button>
+    <//>
   `
+
   console.log(ast)
   patch(document.getElementById('app'), ast)
 </script>

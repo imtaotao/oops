@@ -113,6 +113,6 @@ export default function h(tag, props, ...children) {
 
   // 如果 tag 为 function，代表是组件
   return typeof tag === 'function'
-    ? vnode(tag, data, children, undefined, undefined, props)
+    ? vnode(tag, data, children, undefined, undefined, props || {})
     : vnode(tag, data, children, undefined, undefined, undefined)
 }
