@@ -24,7 +24,7 @@ export function isReactivated(vnode) {
 } 
 
 export function isComponent(vnode) {
-  return vnode.componentOptions !== undefined || vnode.componentInstance !== undefined
+  return typeof vnode.tag === 'function'
 }
 
 export function sameVnode(vnode1, vnode2) {

@@ -5,6 +5,7 @@ import {
   isArray,
   isVnode,
   isPrimitive,
+  isReactivated,
   sameVnode,
   emptyNode,
 } from './is.js'
@@ -39,17 +40,12 @@ export default function init(modules, domApi) {
   }
 
   function createElm(vnode, insertedVnodeQueue) {
-    const data = vnode.data
-    if (isDef(data)) {
-      let cb
-      if (isDef(cb = data.hook) && isDef(cb = cb.init)) {
-        cb(vnode)
-        // vnode.data 有可能更改了
-        data = vnode.data
-      }
+    // 如果是一个组件则没必要往下走
+    if (createComponent(vnode, insertedVnodeQueue)) {
+      return
     }
-
-    const { tag, children } = vnode
+    
+    const { tag, data, children } = vnode
     if (isDef(tag)) {
       const elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? api.createElementNS(data.ns, tag)
@@ -80,6 +76,17 @@ export default function init(modules, domApi) {
       vnode.elm = api.createTextNode(vnode.text)
     }
     return vnode.elm
+  }
+
+  function createComponent(vnode, insertedVnodeQueue) {
+    let i = vnode.data
+    if (isDef(i)) {
+      if (isDef(i = i.hook) && isDef(i = i.init)) {
+        i(vnode)
+      }
+      return isReactivated(vnode)
+    }
+    return false
   }
 
   function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
