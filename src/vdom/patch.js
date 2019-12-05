@@ -1,5 +1,5 @@
 import vnode from './vnode.js'
-import * as htmlDomApi from './domapi.js'
+import * as htmlDomApi from './dom-api.js'
 import {
   isDef,
   isArray,
@@ -19,20 +19,18 @@ export default function init(modules, domApi) {
   for (let i = 0; i < hooks.length; i++) {
     cbs[hooks[i]] = []
     for (let j = 0; j < modules.length; j++) {
-      const hook = modules[j][hooks[i]]
-      if (isDef(hook)) {
-        cbs[hooks[i]].push(hook)
+      if (isDef(modules[j][hooks[i]])) {
+        cbs[hooks[i]].push(modules[j][hooks[i]])
       }
     }
   }
 
-  console.log(cbs)
   function emptyNodeAt(elm) {
     return vnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
   }
 
   function createRmCb(childElm, listeners) {
-    return function rmCb() {
+    return function remove() {
       if (--listeners === 0) {
         const parent = api.parentNode(childElm)
         api.removeChild(parent, childElm)
@@ -51,11 +49,11 @@ export default function init(modules, domApi) {
       }
     }
 
-    const { sel, children } = vnode
-    if (isDef(sel)) {
+    const { tag, children } = vnode
+    if (isDef(tag)) {
       const elm = vnode.elm = isDef(data) && isDef(data.ns)
-        ? api.createElementNS(data.ns, sel)
-        : api.createElement(sel)
+        ? api.createElementNS(data.ns, tag)
+        : api.createElement(tag)
 
       // 调用模块 create 钩子
       for (let i = 0; i < cbs.create.length; i++) {

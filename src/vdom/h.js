@@ -1,67 +1,103 @@
 import vnode from './vnode.js'
-import { isDef, isPrimitive } from './is.js'
+import { isDef, isPrimitive, isUndef } from './is.js'
 
+const HOOK = 'hook'
 const CLASS = 'class'
 const STYLE = 'style'
 const EVENT_PRE = 'on'
 const DATASET_PRE = 'data-'
 
-function splitClass(klass) {
-  const list = klass.split(' ')
-  const ret = {}
-  for (let i = 0; i < list.length; ++i) {
-    if (list[i]) {
-      ret[list[i]] = true
+const STYLE_DELAYED = 'delayed'
+const STYLE_REMOVE = 'remove'
+
+function cached(fn) {
+  const cache = Object.create(null)
+  return function wraper(str) {
+    const hit = cache[str]
+    return hit || (cached[str] = fn(str))
+  }
+}
+
+const parseClassText = cached(klass => {
+  const res = {}
+  if (klass.indexOf(' ') > -1) {
+    const list = klass.split(' ')
+    for (let i = 0; i < list.length; ++i) {
+      if (list[i]) {
+        res[list[i]] = true
+      }
+    }
+  } else {
+    res[klass] = true
+  }
+  return res
+})
+
+const parseStyleText = cached(cssText => {
+  const res = {}
+  const listDelimiter = /;(?![^(]*\))/g
+  const propertyDelimiter = /:(.+)/
+  const items = cssText.split(listDelimiter)
+  for (let i = 0; i < items.length; i++) {
+    if (items[i]) {
+      const tmp = items[i].split(propertyDelimiter)
+      if (tmp.length > 1) {
+        const name = tmp[0].trim()
+        const value = tmp[1].trim()
+        res[name] = name === STYLE_DELAYED || name === STYLE_REMOVE
+          ? new Function('return ' + value)()
+          : value
+      }
     }
   }
-  return ret
-}
+  return res
+})
 
-function splitStyle(style) {
-  
-}
-
-function propsToData(props) {
+function separateProps(props) {
   const data = {}
   if (props) {
     for (const key in props) {
       const value = props[key]
       if (key === CLASS) {
         if (typeof value === 'string') {
-          data.class = splitClass(value)
+          data.class = parseClassText(value)
         }
       } else if (key === STYLE) {
-        if (typeof value === 'string') {
-          data.style = splitStyle(value)
-        } else {
-          data.style = value
-        }
+        data.style = value === 'string'
+          ? parseStyleText(value)
+          : value
+      } else if (key === HOOK) {
+        data.hook = value
       } else if (key.startsWith(EVENT_PRE)) {
-
+        if (isUndef(data.on)) data.on = {}
+        // 同一个事件只有一个回调
+        data.on[key.slice(2)] = value
       } else if (key.startsWith(DATASET_PRE)) {
-
+        if (isUndef(data.dataset)) data.dataset = {}
+        data.dataset[key.slice(5)] = value
       } else {
-
+        if (isUndef(data.attrs)) data.attrs = {}
+        data.attrs[key] = value
       }
     }
   }
   return data
 }
 
-function addNS(data, children, sel) {
+function addNS(data, children, tag) {
   data.ns ='http://www.w3.org/2000/svg'
-  if (sel !== 'foreignObject' && isDef(children)) {
+  if (tag !== 'foreignObject' && isDef(children)) {
     for (let i = 0; i < children.length; i++) {
       const childData = children[i].data
       if (isDef(childData)) {
-        addNS(childData, children[i].children, children[i].sel)
+        addNS(childData, children[i].children, children[i].tag)
       }
     }
   }
 }
 
-export default function h(sel, props, ...children) {
-  const data = propsToData(props)
+export default function h(tag, props, ...children) {
+  const data = separateProps(props)
 
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
@@ -71,10 +107,12 @@ export default function h(sel, props, ...children) {
     }
   }
 
-  if (typeof sel === 'string' && sel.startsWith('svg') &&
-      (sel.length === 3 || sel[3] === '.' || sel[3] === '#')) {
-    addNS(data, children, sel)
+  if (tag === 'svg') {
+    addNS(data, children, tag)
   }
 
-  return vnode(sel, data, children, undefined, undefined)
+  // 如果 tag 为 function，代表是组件
+  return typeof tag === 'function'
+    ? vnode(tag, data, children, undefined, undefined, props)
+    : vnode(tag, data, children, undefined, undefined, undefined)
 }
