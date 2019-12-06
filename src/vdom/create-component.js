@@ -1,24 +1,20 @@
-
 class Component {
-  constructor(ctor, props, vnode) {
-    this.ctor = ctor
+  constructor(vnode, patch) {
     this.vnode = vnode
-    this.props = props
+    this.patch = patch
   }
 
-  render() {
-    return this.ctor(this.props)
+  render(parent) {
+    
   }
 }
 
-export function createComponentInstanceForVnode(vnode) {
-  const Ctor = vnode.tag
-  const props = vnode.data.attrs || {}
-  return new Component(Ctor, props, vnode)
+const createComponentInstanceForVnode = patch => {
+  return function (vnode) {
+    vnode.componentInstance = new Component(vnode, patch)
+  }
 }
 
-export function componentInit(vnode) {
-  vnode.componentInstance = createComponentInstanceForVnode(vnode)
-}
-
-export default {}
+export default patch => ({
+  create: createComponentInstanceForVnode(patch),
+})

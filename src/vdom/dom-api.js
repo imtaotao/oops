@@ -14,6 +14,10 @@ export function createComment(text) {
   return document.createComment(text)
 }
 
+export function createDocumentFragment() {
+  return document.createDocumentFragment()
+}
+
 export function insertBefore(parentNode, newNode, referenceNode) {
   parentNode.insertBefore(newNode, referenceNode)
 }

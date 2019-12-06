@@ -1,10 +1,12 @@
 import vnode from './vnode.js'
-import { componentInit } from './create-component.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 
 const HOOK = 'hook'
 const CLASS = 'class'
 const STYLE = 'style'
+const ATTRS = 'attrs'
+const DATASET = 'dataset'
+const EVENT = 'on'
 const EVENT_PRE = 'on'
 const DATASET_PRE = 'data-'
 
@@ -64,15 +66,19 @@ function separateProps(props) {
     for (const key in props) {
       const value = props[key]
       if (key === CLASS) {
-        if (typeof value === 'string') {
-          data.class = parseClassText(value)
-        }
+        data.class = typeof value === 'string'
+          ? parseClassText(value)
+          :value
       } else if (key === STYLE) {
-        data.style = value === 'string'
+        data.style = typeof value === 'string'
           ? parseStyleText(value)
           : value
       } else if (key === HOOK) {
         data.hook = value
+      } else if (key === EVENT || key === DATASET || key === ATTRS) {
+        if (typeof value === 'object') {
+          data[key] = value
+        }
       } else if (key.startsWith(EVENT_PRE)) {
         if (isUndef(data.on)) data.on = {}
         // 同一个事件只有一个回调
@@ -102,7 +108,14 @@ function addNS(data, children, tag) {
 }
 
 export default function h(tag, props, ...children) {
-  const data = separateProps(props)
+  let data
+  // 如果组件
+  if (typeof tag === 'function') {
+    data = props || {}
+  } else {
+    data = separateProps(props)
+  }
+
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitive(children[i])) {
@@ -113,10 +126,5 @@ export default function h(tag, props, ...children) {
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
-  // 如果是组件需要注入组件的钩子
-  if (typeof tag === 'function') {
-    (data.hook || (data.hook = {})).init = componentInit
-  }
-
   return vnode(tag, data, children, undefined, undefined)
 }

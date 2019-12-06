@@ -1,4 +1,4 @@
-import vnode from './vnode.js'
+import createVnode from './vnode.js'
 import * as htmlDomApi from './dom-api.js'
 import {
   isDef,
@@ -20,14 +20,17 @@ export default function init(modules, domApi) {
   for (let i = 0; i < hooks.length; i++) {
     cbs[hooks[i]] = []
     for (let j = 0; j < modules.length; j++) {
-      if (isDef(modules[j][hooks[i]])) {
-        cbs[hooks[i]].push(modules[j][hooks[i]])
+      const m = typeof modules[j] === 'function'
+        ? modules[j](patch)
+        : modules
+      if (isDef(m[hooks[i]])) {
+        cbs[hooks[i]].push(m[hooks[i]])
       }
     }
   }
 
   function emptyNodeAt(elm) {
-    return vnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
+    return createVnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
   }
 
   function createRmCb(childElm, listeners) {
@@ -39,17 +42,23 @@ export default function init(modules, domApi) {
     }
   }
 
-  function createElm(vnode, insertedVnodeQueue) {
+  function createElm(vnode, insertedVnodeQueue, parentElm) {
     // 如果是一个组件则没必要往下走
-    if (createComponent(vnode, insertedVnodeQueue)) {
-      return
+    if (createComponent(vnode, insertedVnodeQueue, parentElm)) {
+      return vnode.elm
     }
     
     const { tag, data, children } = vnode
     if (isDef(tag)) {
       const elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? api.createElementNS(data.ns, tag)
-        : api.createElement(tag)
+        : tag === ''
+          // <>
+          //  <div></div>
+          //  <div></div>
+          // </>
+          ? api.createDocumentFragment()
+          : api.createElement(tag)
 
       // 调用模块 create 钩子
       for (let i = 0; i < cbs.create.length; i++) {
@@ -60,31 +69,39 @@ export default function init(modules, domApi) {
         for (let i = 0; i < children.length; i++) {
           const chVNode = children[i]
           if (chVNode != null) {
-            api.appendChild(elm, createElm(chVNode, insertedVnodeQueue))
+            api.appendChild(elm, createElm(chVNode, insertedVnodeQueue, elm))
           }
         }
       } else if (isPrimitive(vnode.text)) {
         api.appendChild(elm, api.createTextNode(vnode.text))
       }
-
-      const hook = vnode.data.hook
-      if (isDef(hook)) {
-        if (hook.create) hook.create(emptyNode, vnode)
-        if (hook.insert) insertedVnodeQueue.push(vnode)
-      }
+      invokeCreateHooks(vnode, insertedVnodeQueue)
     } else {
       vnode.elm = api.createTextNode(vnode.text)
     }
     return vnode.elm
   }
 
-  function createComponent(vnode, insertedVnodeQueue) {
+  function invokeCreateHooks(vnode, insertedVnodeQueue) {
+    for (let i = 0; i < cbs.create.length; i++) {
+      cbs.create[i](emptyNode, vnode)
+    }
+    i = vnode.data.hook
+    if (isDef(i)) {
+      if (isDef(i.create)) i.create(emptyNode, vnode)
+      if (isDef(i.insert)) insertedVnodeQueue.push(vnode)
+    }
+  }
+
+  function createComponent(vnode, insertedVnodeQueue, parentElm) {
     let i = vnode.data
     if (isDef(i)) {
       if (isDef(i = i.hook) && isDef(i = i.init)) {
-        i(vnode)
+        i(vnode, parentElm)
       }
-      return isReactivated(vnode)
+      if (isDef(vnode.componentInstance)) {
+        return true
+      }
     }
     return false
   }
@@ -98,7 +115,11 @@ export default function init(modules, domApi) {
 
   }
 
-  return function patch(oldVnode, vnode) {
+  function patch(oldVnode, vnode) {
+    if (isArray(vnode)) {
+      throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
+    }
+
     const insertedVnodeQueue = []
     for (let i = 0; i < cbs.pre.length; i++) {
       cbs.pre[i]()
@@ -109,13 +130,18 @@ export default function init(modules, domApi) {
       oldVnode = emptyNodeAt(oldVnode)
     }
 
+    // 如果是 jsx`aaa` 这种语法
+    if (isPrimitive(vnode)) {
+      vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
+    }
+
     // 如果是同一个 vnode，则需要 diff -> patch
     if (sameVnode(oldVnode, vnode)) {
 
     } else {
       // 创建元素
       const parent = api.parentNode(oldVnode.elm)
-      createElm(vnode, insertedVnodeQueue)
+      createElm(vnode, insertedVnodeQueue, null)
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parent !== null) {
@@ -134,4 +160,5 @@ export default function init(modules, domApi) {
     }
     return vnode
   }
+  return patch
 }
