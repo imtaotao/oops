@@ -5,13 +5,14 @@ class Component {
   }
 
   render(parent) {
-    
+    console.log(parent)
   }
 }
 
 const createComponentInstanceForVnode = patch => {
-  return function (vnode) {
+  return function (vnode, parent) {
     vnode.componentInstance = new Component(vnode, patch)
+    vnode.componentInstance.render(parent)
   }
 }
 
