@@ -1,5 +1,6 @@
 import vnode from './vnode.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
+import createComponentInstanceForVnode from './create-component.js'
 
 const HOOK = 'hook'
 const CLASS = 'class'
@@ -112,6 +113,7 @@ export default function h(tag, props, ...children) {
   // 如果组件
   if (typeof tag === 'function') {
     data = props || {}
+    ;(data.hook || (data.hook = {})).init = createComponentInstanceForVnode
   } else {
     data = separateProps(props)
   }

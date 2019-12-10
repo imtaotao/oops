@@ -19,10 +19,6 @@ export function isPrimitive(s) {
   return typeof s === 'string' || typeof s === 'number'
 }
 
-export function isReactivated(vnode) {
-  return vnode.componentInstance !== undefined
-} 
-
 export function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }

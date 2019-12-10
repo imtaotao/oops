@@ -1,5 +1,6 @@
+import h from './vdom/h.js'
 import jsx from './jsx/index.js'
-import patch, { h } from './vdom/index.js'
+import patch from './vdom/patch.js'
 
 const oops = {
   h,

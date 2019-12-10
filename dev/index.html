@@ -13,10 +13,10 @@
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
-  const Footer = props => jsx`<footer ...${props} />`
+  const Footer = props => jsx`<footer ...${props}>${props.children}</>`
 
   const ast = jsx`
-    <div prop=value>
+    <div>
       <${Header}/>
       <ul>
         ${todos.map(todo => jsx`
