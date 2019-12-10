@@ -115,7 +115,7 @@ export function build(statics) {
         // 处理属性
         mode = MODE_PROP_SET
         propName = buffer
-				buffer = ''
+        buffer = ''
       }  else if (char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
         // `/` 算作标签的结束字符而不算 propValue 里面
         // prop=va/l --> prop: 'va/l'
