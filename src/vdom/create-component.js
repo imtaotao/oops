@@ -1,8 +1,9 @@
-import * as api from './dom-api.js'
 import patch from './patch.js'
 import { isComponent, isUndef } from './is.js'
 
-export let TargetComponent = null
+export let Target = {
+  vnode: null,
+}
 
 function createProps(props, children) {
   const res = { children }
@@ -21,11 +22,11 @@ class Component {
   }
 
   render() {
-    TargetComponent = this
+    Target.vnode = this.vnode
     // 组件 vnode 的 elm 改成组件 jsx 生成的 vnode 的节点
     const props = createProps(this.vnode.data, this.vnode.children)
     this.vnode.elm = patch(undefined, this.ctor(props)).elm
-    TargetComponent = null
+    Target.vnode = null
   }
 
   destroyed() {

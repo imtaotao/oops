@@ -1,31 +1,30 @@
 import * as api from './dom-api.js'
 import createVnode from './vnode.js'
 import attributesModule from './modules/attributes.js'
+import eventListenersModule from './modules/eventlisteners.js'
 import {
   isDef,
+  isUndef,
   isArray,
   isVnode,
   isPrimitive,
   sameVnode,
   emptyNode,
-  isUndef,
 } from './is.js'
 
+const cbs = {}
 const modules = [
   attributesModule,
+  eventListenersModule,
 ]
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post']
-const cbs = {}
 
 // 存放 hooks
 for (let i = 0; i < hooks.length; i++) {
   cbs[hooks[i]] = []
   for (let j = 0; j < modules.length; j++) {
-    const m = typeof modules[j] === 'function'
-      ? modules[j](patch)
-      : modules
-    if (isDef(m[hooks[i]])) {
-      cbs[hooks[i]].push(m[hooks[i]])
+    if (isDef(modules[j][hooks[i]])) {
+      cbs[hooks[i]].push(modules[j][hooks[i]])
     }
   }
 }
@@ -60,11 +59,6 @@ export function createElm(vnode, insertedVnodeQueue) {
         // </>
         ? api.createDocumentFragment()
         : api.createElement(tag)
-
-    // 调用模块 create 钩子
-    for (let i = 0; i < cbs.create.length; i++) {
-      cbs.create[i](emptyNode, vnode)
-    }
 
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {
@@ -108,8 +102,59 @@ function createComponent(vnode, insertedVnodeQueue) {
   return false
 }
 
-function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
+function invokeDestroyHook(vnode) {
+  let i, j
+  let data = vnode.data
 
+  if (isDef(data)) {
+    if (isDef(i = data.hook) && isDef(i = i.destroy)) {
+      i(vnode)
+    }
+
+    for (i = 0; i < cbs.destroy.length; i++) {
+      cbs.destroy[i](vnode)
+    }
+
+    if (isDef(vnode.children)) {
+      for (j = 0; j < vnode.children.length; j++) {
+        i = vnode.children[j]
+        if (i != null && typeof i !== 'string') {
+          invokeDestroyHook(i)
+        }
+      }
+    }
+  }
+}
+
+function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQueue) {
+
+}
+
+function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
+  for (; startIdx <= endIdx; startIdx++) {
+    let i, rm, listeners
+    let ch = vnodes[startIdx]
+
+    if (ch != null) {
+      if (isDef(ch.sel)) {
+        invokeDestroyHook(ch)
+        listeners = cbs.remove.length + 1
+        rm = createRmCb(ch.elm, listeners)
+        for (i = 0; i < cbs.remove.length; ++i) {
+          cbs.remove[i](ch, rm)
+        }
+
+        // 调用 remove 钩子
+        if (isDef(i = ch.data) && isDef(i = i.hook) && isDef(i = i.remove)) {
+          i(ch, rm)
+        } else {
+          rm()
+        }
+      } else { // Text node
+        api.removeChild(parentElm, ch.elm)
+      }
+    }
+  }
 }
 
 // diff -> patch
@@ -152,7 +197,7 @@ export default function patch(oldVnode, vnode) {
       if (parent !== null) {
         api.insertBefore(parent, vnode.elm, api.nextSibling(oldVnode.elm))
         // 删除旧的元素
-        removeVnodes(parent, [oldVnode, 0, 0])
+        removeVnodes(parent, [oldVnode], 0, 0)
       }
     }
   }
@@ -161,8 +206,7 @@ export default function patch(oldVnode, vnode) {
     insertedVnodeQueue[i].data.hook.insert(insertedVnodeQueue[i])
   }
   for (let i = 0; i < cbs.post.length; ++i) {
-    // done
-    cbs.post[i]()
+    cbs.post[i]() // done
   }
   return vnode
 }

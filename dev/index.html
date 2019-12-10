@@ -8,12 +8,32 @@
 <body>
 <p id='app'></p>
 <script type="module">
-  import { jsx, patch } from '../src/index.js'
-
+  import { jsx, patch, useReducer } from '../src/index.js'
+  
   const page = 'demo page'
   const todos = [1, 2, 3]
   const Header = ({ name }) => jsx`<h1>${name} List</h1>`
   const Footer = props => jsx`<footer ...${props}>${props.children}</>`
+
+  const initialState = {count: 0};
+  function reducer(state, action) {
+    switch (action.type) {
+      case 'increment':
+        return {count: state.count + 1};
+      case 'decrement':
+        return {count: state.count - 1};
+      default:
+        throw new Error();
+    }
+  }
+  
+  function btn (props) {
+    const [state, dispatch] = useReducer(reducer, initialState)
+    const click = e => {
+      console.log(e);
+    }
+    return jsx`<button onclick=${click}>Add Todo</button>`
+  }
 
   const ast = jsx`
     <div>
@@ -25,7 +45,7 @@
       </ul>
       <${Footer}>footer content here</>
       <${Header} name="ToDo's (${page})" />
-      <button onClick=${() => this.addTodo()}>Add Todo</button>
+      <${btn} />
     <//>
   `
 
