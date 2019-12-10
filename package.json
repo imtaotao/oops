@@ -1,6 +1,6 @@
 {
   "name": "@rustle/oops",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "use es6 template string to make jsx",
   "main": "index.js",
   "scripts": {

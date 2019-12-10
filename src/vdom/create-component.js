@@ -27,7 +27,7 @@ export class Component {
 
   // 添加不重复的 state
   setState(partialState) {
-    const key = this.cursor + 1
+    const key = this.cursor++
     if (this.state[key]) {
       return [this.state[key], key]
     }
@@ -45,8 +45,12 @@ export class Component {
     // 组件 vnode 的 elm 改成组件 jsx 生成的 vnode 的节点
     Target.component = this
     const { data, children } = this.vnode
+
     this.props = mergeProps(data, children)
     this.oldRootVnode = patch(this.oldRootVnode, this.Ctor(this.props))
+
+    // cursor 每次用完都要清空，保证每个 key 是唯一的，而重新调用时顺序一致
+    this.cursor = 0
     this.vnode.elm = this.oldRootVnode.elm
     Target.component = null
   }
