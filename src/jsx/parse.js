@@ -1,5 +1,3 @@
-import { isVnode } from '../vdom/is.js'
-
 const MODE_SLASH = 0
 const MODE_TEXT = 1
 const MODE_WHITESPACE = 2
