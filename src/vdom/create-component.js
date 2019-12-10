@@ -35,10 +35,6 @@ export class Component {
     return [partialState, key]
   }
 
-  useState() {
-
-  }
-
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
     this.state[key] = newValue

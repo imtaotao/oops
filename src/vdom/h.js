@@ -71,7 +71,7 @@ function separateProps(props) {
       } else if (key.startsWith('on')) {
         if (isUndef(data.on)) data.on = {}
         // 同一个事件只有一个回调
-        data.on[key.slice(2)] = value
+        data.on[key.slice(2).toLocaleLowerCase()] = value
       } else if (key.startsWith('data-')) {
         if (isUndef(data.dataset)) data.dataset = {}
         data.dataset[key.slice(5)] = value

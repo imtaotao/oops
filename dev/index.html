@@ -3,51 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oops</title>
+  <title>oops</title>
 </head>
 <body>
-<p id='app'></p>
-<script type="module">
-  import Oops, { jsx, useReducer } from '../src/index.js'
-
-  const initialState = {count: 0};
-  function reducer(state, action) {
-    switch (action.type) {
-      case 'increment':
-        return {count: state.count + 1};
-      case 'decrement':
-        return {count: state.count - 1};
-      default:
-        throw new Error();
+  <div id='app'></div>
+  <script type="module">
+    import { jsx, render, useState } from '../src/index.js'
+    
+    function Example() {
+      const [count, setCount] = useState(0)
+      return jsx`
+        <div>
+          <p>You clicked ${count} times</p>
+          <button onClick=${() => setCount(count + 1)}>
+            Click me
+          </button>
+        </div>
+      `
     }
-  }
-  
-  function btn (props) {
-    const [state, dispatch] = useReducer(reducer, initialState)
-    return jsx`
-    <div>
-      props count: ${props.count}
-      <br/>
-      Count: ${state.count}
-      <button onclick=${() => dispatch({type: 'decrement'})}>-</button>
-      <button onclick=${() => dispatch({type: 'increment'})}>+</button>
-    </>
-    `
-  }
-  
- 
 
-  Oops.render(document.getElementById('app'), () => {
-    const [state, dispatch] = useReducer((state, payload) => {
-      return payload
-    }, 0)
-    return jsx`
-      <div>
-        <div onclick=${e => dispatch(state + 1)}>${state}</>
-        ${ state < 1 ? jsx`<${btn} count=${state}/>` : '' }
-      </>
-    `
-  })
-</script>
+    render(document.getElementById('app'), Example)
+  </script>
 </body>
 </html>
