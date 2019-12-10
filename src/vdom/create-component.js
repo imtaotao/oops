@@ -48,7 +48,8 @@ export class Component {
   render() {
     // 组件 vnode 的 elm 改成组件 jsx 生成的 vnode 的节点
     Target.component = this
-    this.props = mergeProps(this.vnode.data, this.vnode.children)
+    const { data, children } = this.vnode
+    this.props = mergeProps(data, children)
     this.oldRootVnode = patch(this.oldRootVnode, this.Ctor(this.props))
     this.vnode.elm = this.oldRootVnode.elm
     Target.component = null

@@ -97,13 +97,13 @@ export function build(statics) {
         // 过滤引号
         // ""a"" --> "a"
         // "'a'" --> "'a'"
-				if (char === quote) {
-					quote = ''
-				} else {
-					buffer += char
-				}
-			} else if (char === '"' || char === "'") {
-				quote = char
+        if (char === quote) {
+          quote = ''
+        } else {
+          buffer += char
+        }
+      } else if (char === '"' || char === "'") {
+        quote = char
       } else if (char === '>') {
         // 标签的结束
         commit()
@@ -156,57 +156,6 @@ export function build(statics) {
 
   commit()
   return scope
-}
-
-// For example:
-// 	treeify(
-//		build'<div href="1${a}" ...${b}><${x} /></div>`,
-//		[X, Y, Z]
-//	)
-// returns:
-// 	{
-// 		tag: 'div',
-//		props: [ { href: ["1", X] },	Y ],
-// 		children: [ { tag: Z, props: [], children: [] } ]
-// 	}
-export function treeify(built, fields) {
-  const _treeify = built => {
-    let tag = ''
-		let currentProps = null
-		const props = []
-    const children = []
-
-    for (let i = 0; i < built.length; i++) {
-      const [type, name, prop] = built[i]
-      // 当是 number 时，就是 field 注入的
-      const field = prop === undefined ? name :  prop
-      const value = typeof field === 'number' ? fields[field - 1] : field
-
-      if (type === TAG_SET) {
-        tag = value
-      } else if (type === PROPS_ASSIGN) {
-        props.push(value)
-        // 中间隔一个 assign 就新建一个数组
-				currentProps = null
-      } else if (type === PROP_SET) {
-        if (!currentProps) {
-          currentProps = Object.create(null)
-          props.push(currentProps)
-        }
-        currentProps[name] = [value]
-      } else if (type === PROP_APPEND) {
-        currentProps[name].push(value)
-      } else if (type === CHILD_RECURSE) {
-        children.push(_treeify(value))
-      } else if (type === CHILD_APPEND) {
-        children.push(value)
-      }
-    }
-    return { tag, props, children }
-  }
-
-  const { children } = _treeify(built)
-  return children.length > 1 ? children : children[0]
 }
 
 export function evaluate(h, built, fields, args) {
