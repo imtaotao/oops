@@ -3,17 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>oops</title>
+  <title>Oops</title>
 </head>
 <body>
 <p id='app'></p>
 <script type="module">
-  import { jsx, patch, useReducer } from '../src/index.js'
-  
-  const page = 'demo page'
-  const todos = [1, 2, 3]
-  const Header = ({ name }) => jsx`<h1>${name} List</h1>`
-  const Footer = props => jsx`<footer ...${props}>${props.children}</>`
+  import Oops, { jsx, useReducer } from '../src/index.js'
 
   const initialState = {count: 0};
   function reducer(state, action) {
@@ -29,27 +24,30 @@
   
   function btn (props) {
     const [state, dispatch] = useReducer(reducer, initialState)
-    const click = e => {
-      console.log(e);
-    }
-    return jsx`<button onclick=${click}>Add Todo</button>`
-  }
-
-  const ast = jsx`
+    return jsx`
     <div>
-      <${Header}/>
-      <ul>
-        ${todos.map(todo => jsx`
-          <li>${todo}</li>
-        `)}
-      </ul>
-      <${Footer}>footer content here</>
-      <${Header} name="ToDo's (${page})" />
-      <${btn} />
-    <//>
-  `
+      props count: ${props.count}
+      <br/>
+      Count: ${state.count}
+      <button onclick=${() => dispatch({type: 'decrement'})}>-</button>
+      <button onclick=${() => dispatch({type: 'increment'})}>+</button>
+    </>
+    `
+  }
+  
+ 
 
-  patch(document.getElementById('app'), ast)
+  Oops.render(document.getElementById('app'), () => {
+    const [state, dispatch] = useReducer((state, payload) => {
+      return payload
+    }, 0)
+    return jsx`
+      <div>
+        <div onclick=${e => dispatch(state + 1)}>${state}</>
+        ${ state < 1 ? jsx`<${btn} count=${state}/>` : '' }
+      </>
+    `
+  })
 </script>
 </body>
 </html>

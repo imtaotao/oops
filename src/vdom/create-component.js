@@ -1,11 +1,10 @@
 import patch from './patch.js'
-import { isComponent, isUndef } from './is.js'
 
-export let Target = {
-  vnode: null,
+export const Target = {
+  component: null,
 }
 
-function createProps(props, children) {
+function mergeProps(props, children) {
   const res = { children }
   for (const key in props) {
     if (key !== 'hook') {
@@ -15,30 +14,47 @@ function createProps(props, children) {
   return res
 }
 
-class Component {
+export class Component {
   constructor(vnode) {
+    this.cursor = 0
+    this.preProps = {}
     this.vnode = vnode
-    this.ctor = vnode.tag
+    this.Ctor = vnode.tag
+    this.oldRootVnode = undefined
+    this.state = Object.create(null)
+    this.effects = []
+  }
+
+  // 添加不重复的 state
+  setState(partialState) {
+    const key = this.cursor + 1
+    if (this.state[key]) {
+      return [this.state[key], key]
+    }
+    this.state[key] = partialState
+    return [partialState, key]
+  }
+
+  useState() {
+
+  }
+
+  useReducer(payload, key, reducer) {
+    const newValue = reducer(this.state[key], payload)
+    this.state[key] = newValue
+    this.render()
   }
 
   render() {
-    Target.vnode = this.vnode
     // 组件 vnode 的 elm 改成组件 jsx 生成的 vnode 的节点
-    const props = createProps(this.vnode.data, this.vnode.children)
-    this.vnode.elm = patch(undefined, this.ctor(props)).elm
-    Target.vnode = null
+    Target.component = this
+    this.props = mergeProps(this.vnode.data, this.vnode.children)
+    this.oldRootVnode = patch(this.oldRootVnode, this.Ctor(this.props))
+    this.vnode.elm = this.oldRootVnode.elm
+    Target.component = null
   }
 
-  destroyed() {
-    console.log('destroy')
-  }
-}
-
-export default function createComponentInstanceForVnode(vnode) {
-  if (isComponent(vnode)) {
-    if (isUndef(vnode.componentInstance)) {
-      vnode.componentInstance = new Component(vnode)
-      vnode.componentInstance.render()
-    }
+  destroy(vnode) {
+    console.log('destroy', vnode)
   }
 }

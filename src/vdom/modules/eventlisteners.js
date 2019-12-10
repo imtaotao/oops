@@ -40,8 +40,8 @@ function updateEventListeners(oldVnode, vnode) {
   const oldElm = oldVnode.elm
   const oldOn = oldVnode.data.on
   const oldListener = oldVnode.listener
-  const elm = vnode.elm
-  const on = vnode.data.on
+  const elm = vnode && vnode.elm
+  const on = vnode && vnode.data.on
 
   if (oldOn === on) return
 

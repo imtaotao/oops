@@ -1,18 +1,6 @@
 import vnode from './vnode.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
-import createComponentInstanceForVnode from './create-component.js'
-
-const HOOK = 'hook'
-const CLASS = 'class'
-const STYLE = 'style'
-const ATTRS = 'attrs'
-const DATASET = 'dataset'
-const EVENT = 'on'
-const EVENT_PRE = 'on'
-const DATASET_PRE = 'data-'
-
-const STYLE_DELAYED = 'delayed'
-const STYLE_REMOVE = 'remove'
+import componentVNodeHooks from './component-hooks.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -49,7 +37,7 @@ const parseStyleText = cached(cssText => {
       if (tmp.length > 1) {
         const name = tmp[0].trim()
         const value = tmp[1].trim()
-        if ((name === STYLE_DELAYED || name === STYLE_REMOVE) &&
+        if ((name === 'delayed' || name === 'remove') &&
             typeof value === 'string') {
           res[name] = new Function('return ' + value)()
         } else {
@@ -66,25 +54,25 @@ function separateProps(props) {
   if (props) {
     for (const key in props) {
       const value = props[key]
-      if (key === CLASS) {
+      if (key === 'class') {
         data.class = typeof value === 'string'
           ? parseClassText(value)
-          :value
-      } else if (key === STYLE) {
+          : value
+      } else if (key === 'style') {
         data.style = typeof value === 'string'
           ? parseStyleText(value)
           : value
-      } else if (key === HOOK) {
+      } else if (key === 'hook') {
         data.hook = value
-      } else if (key === EVENT || key === DATASET || key === ATTRS) {
+      } else if (key === 'on' || key === 'dataset' || key === 'attrs') {
         if (typeof value === 'object') {
           data[key] = value
         }
-      } else if (key.startsWith(EVENT_PRE)) {
+      } else if (key.startsWith('on')) {
         if (isUndef(data.on)) data.on = {}
         // 同一个事件只有一个回调
         data.on[key.slice(2)] = value
-      } else if (key.startsWith(DATASET_PRE)) {
+      } else if (key.startsWith('data-')) {
         if (isUndef(data.dataset)) data.dataset = {}
         data.dataset[key.slice(5)] = value
       } else {
@@ -108,15 +96,18 @@ function addNS(data, children, tag) {
   }
 }
 
-export default function h(tag, props, ...children) {
-  let data
-  // 如果组件
-  if (typeof tag === 'function') {
-    data = props || {}
-    ;(data.hook || (data.hook = {})).init = createComponentInstanceForVnode
-  } else {
-    data = separateProps(props)
+function installHooks(data = {}) {
+  const hook = data.hook || (data.hook = {})
+  for (const name in componentVNodeHooks) {
+    hook[name] = componentVNodeHooks[name]
   }
+  return data
+}
+
+export default function h(tag, props, ...children) {
+  const data = typeof tag === 'function'
+    ? installHooks(props)
+    : separateProps(props)
 
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {

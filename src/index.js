@@ -1,6 +1,6 @@
 import h from './vdom/h.js'
 import jsx from './jsx/index.js'
-import patch from './vdom/patch.js'
+import render from './api/render.js'
 import useState from './hooks/use-state.js'
 import useEffect from './hooks/use-effect.js'
 import useReducer from './hooks/use-reducer.js'
@@ -8,7 +8,7 @@ import useReducer from './hooks/use-reducer.js'
 const oops = {
   h,
   jsx,
-  patch,
+  render,
   useState,
   useEffect,
   useReducer,
@@ -17,7 +17,7 @@ const oops = {
 export {
   h,
   jsx,
-  patch,
+  render,
   useState,
   useEffect,
   useReducer,

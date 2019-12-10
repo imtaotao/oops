@@ -29,6 +29,18 @@ for (let i = 0; i < hooks.length; i++) {
   }
 }
 
+function createKeyToOldIdx(children, beginIdx, endIdx) {
+  let map = {}, key, ch
+  for (let i = beginIdx; i <= endIdx; ++i) {
+    ch = children[i]
+    if (ch != null) {
+      key = ch.key
+      if (key !== undefined) map[key] = i
+    }
+  }
+  return map
+}
+
 function emptyNodeAt(elm) {
   return createVnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
 }
@@ -127,7 +139,12 @@ function invokeDestroyHook(vnode) {
 }
 
 function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQueue) {
-
+  for (; startIdx <= endIdx; ++startIdx) {
+    const ch = vnodes[startIdx]
+    if (ch != null) {
+      api.insertBefore(parentElm, createElm(ch, insertedVnodeQueue), before)
+    }
+  }
 }
 
 function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
@@ -136,7 +153,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
     let ch = vnodes[startIdx]
 
     if (ch != null) {
-      if (isDef(ch.sel)) {
+      if (isDef(ch.tag)) {
         invokeDestroyHook(ch)
         listeners = cbs.remove.length + 1
         rm = createRmCb(ch.elm, listeners)
@@ -157,9 +174,131 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   }
 }
 
+// diff children
+function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
+  let oldStartIdx = 0, newStartIdx = 0
+  let oldEndIdx = oldCh.length - 1
+  let oldStartVnode = oldCh[0]
+  let oldEndVnode = oldCh[oldEndIdx]
+  let newEndIdx = newCh.length - 1
+  let newStartVnode = newCh[0]
+  let newEndVnode = newCh[newEndIdx]
+  let oldKeyToIdx
+  let idxInOld
+  let elmToMove
+  let before
+
+  while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+    if (oldStartVnode == null) {
+      oldStartVnode = oldCh[++oldStartIdx] // Vnode might have been moved left
+    } else if (oldEndVnode == null) {
+      oldEndVnode = oldCh[--oldEndIdx]
+    } else if (newStartVnode == null) {
+      newStartVnode = newCh[++newStartIdx]
+    } else if (newEndVnode == null) {
+      newEndVnode = newCh[--newEndIdx]
+    } else if (sameVnode(oldStartVnode, newStartVnode)) {
+      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
+      oldStartVnode = oldCh[++oldStartIdx]
+      newStartVnode = newCh[++newStartIdx]
+    } else if (sameVnode(oldEndVnode, newEndVnode)) {
+      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
+      oldEndVnode = oldCh[--oldEndIdx]
+      newEndVnode = newCh[--newEndIdx]
+    } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
+      api.insertBefore(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
+      oldStartVnode = oldCh[++oldStartIdx]
+      newEndVnode = newCh[--newEndIdx]
+    } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
+      api.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+      oldEndVnode = oldCh[--oldEndIdx]
+      newStartVnode = newCh[++newStartIdx]
+    } else {
+      if (oldKeyToIdx === undefined) {
+        oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
+      }
+      idxInOld = oldKeyToIdx[newStartVnode.key]
+      if (isUndef(idxInOld)) { // New element
+        api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+        newStartVnode = newCh[++newStartIdx]
+      } else {
+        elmToMove = oldCh[idxInOld]
+        if (elmToMove.tag !== newStartVnode.tag) {
+          api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+        } else {
+          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
+          oldCh[idxInOld] = undefined
+          api.insertBefore(parentElm, elmToMove.elm, oldStartVnode.elm)
+        }
+        newStartVnode = newCh[++newStartIdx]
+      }
+    }
+  }
+  if (oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx) {
+    if (oldStartIdx > oldEndIdx) {
+      before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm
+      addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
+    } else {
+      removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
+    }
+  }
+}
+
 // diff -> patch
 function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
+  let i, hook
+  // 调用 prepatch 钩子
+  if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
+    i(oldVnode, vnode)
+  }
 
+  if (oldVnode === vnode) return
+
+  let ch = vnode.children
+  let oldCh = oldVnode.children
+  const elm = vnode.elm = oldVnode.elm
+
+  // 调用 update 钩子
+  if (isDef(vnode.data)) {
+    for (i = 0; i < cbs.update.length; ++i) {
+      cbs.update[i](oldVnode, vnode)
+    }
+    i = vnode.data.hook
+    if (isDef(i) && isDef(i = i.update)) {
+      i(oldVnode, vnode)
+    }
+  }
+
+  if (isUndef(vnode.text)) {
+    // 如果新旧节点都有子元素，则 diff children
+    if (isDef(oldCh) && isDef(ch)) {
+      if (oldCh !== ch) {
+        updateChildren(elm, oldCh, ch, insertedVnodeQueue)
+      }
+    } else if (isDef(ch)) {
+      if (isDef(oldVnode.text)) {
+        api.setTextContent(elm, '')
+      }
+      addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
+    } else if (isDef(oldCh)) {
+      removeVnodes(elm, oldCh, 0, oldCh.length - 1)
+    } else if (isDef(oldVnode.text)) {
+      api.setTextContent(elm, '')
+    }
+  } else if (oldVnode.text !== vnode.text) {
+    // 文本节点
+    if (isDef(oldCh)) {
+      removeVnodes(elm, oldCh, 0, oldCh.length - 1)
+    }
+    api.setTextContent(elm, vnode.text)
+  }
+
+  // 调用 postpatch 钩子
+  if (isDef(hook) && isDef(i = hook.postpatch)) {
+    i(oldVnode, vnode)
+  }
 }
 
 export default function patch(oldVnode, vnode) {
@@ -187,7 +326,7 @@ export default function patch(oldVnode, vnode) {
 
     // 如果是同一个 vnode，则需要 diff -> patch
     if (sameVnode(oldVnode, vnode)) {
-
+      patchVnode(oldVnode, vnode, insertedVnodeQueue)
     } else {
       // 创建元素
       const parent = api.parentNode(oldVnode.elm)
