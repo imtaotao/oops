@@ -30,13 +30,26 @@ function depsEqual(a, b) {
   return true
 }
 
+function callEffectCallback(create, destroy, effect) {
+  if (typeof destroy === 'function') destroy()
+  const cleanup = create()
+  if (isDef(cleanup) && typeof cleanup !== 'function') {
+    throw new Error('An effect function must not return anything besides a function, which is used for clean-up.')
+  }
+  effect.destroy = cleanup
+}
+
 function updateEffect(effects) {
   for (const key in effects) {
-    const { create, destroy } = effects[key]
-    if (typeof destroy === 'function') {
-      destroy()
+    const { deps, prevDeps, create, destroy } = effects[key]
+    if (isArray(deps) && isArray(prevDeps)) {
+      // 如果依赖不等才调用
+      if (!depsEqual(deps, prevDeps)) {
+        callEffectCallback(create, destroy, effects[key])
+      }
+    } else {
+      callEffectCallback(create, destroy, effects[key])
     }
-    effects[key].destroy = create()
   }
 }
 
@@ -65,20 +78,15 @@ export class Component {
 
   useEffect(create, deps) {
     let destroy = undefined
+    let prevDeps = undefined
     const key = this.cursor++
     const prevEffect = this.effects[key]
 
     if (prevEffect) {
       destroy = prevEffect.destroy
-      if (isArray(prevEffect.deps) && isArray(deps)) {
-        // 如果依赖不等
-        if (!depsEqual(prevEffect.deps, deps)) {
-          this.effects[key] = { deps, create, destroy }
-        }
-        return
-      }
+      prevDeps = prevEffect.deps
     }
-    this.effects[key] = { deps, create, destroy }
+    this.effects[key] = { deps, prevDeps, create, destroy }
   }
 
   useReducer(payload, key, reducer) {
