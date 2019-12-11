@@ -22,7 +22,8 @@ function enqueueTask(callback) {
   channel.port2.postMessage(undefined)
 }
 
-function depsEqual(a, b) {
+function equalDeps(a, b) {
+  if (a.length === 0 && b.length === 0) return false
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return false
@@ -44,7 +45,7 @@ function updateEffect(effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
     if (isArray(deps) && isArray(prevDeps)) {
       // 如果依赖不等才调用
-      if (!depsEqual(deps, prevDeps)) {
+      if (!equalDeps(deps, prevDeps)) {
         callEffectCallback(create, destroy, effects[key])
       }
     } else {
