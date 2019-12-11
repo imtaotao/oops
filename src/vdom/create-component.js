@@ -2,6 +2,7 @@ import patch from './patch.js'
 import { isDef, isArray } from './is.js'
 
 const RE_RENDER_LIMIT = 25
+
 export const Target = {
   component: undefined,
 }
@@ -23,7 +24,7 @@ function enqueueTask(callback) {
 }
 
 function equalDeps(a, b) {
-  if (a.length === 0 && b.length === 0) return false
+  if (a.length === 0 && b.length === 0) return true
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return false
@@ -44,7 +45,7 @@ function updateEffect(effects) {
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
     if (isArray(deps) && isArray(prevDeps)) {
-      // 如果依赖不等才调用
+      // 如果依赖不相等才调用
       if (!equalDeps(deps, prevDeps)) {
         callEffectCallback(create, destroy, effects[key])
       }

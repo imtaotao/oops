@@ -39,7 +39,20 @@
       `
     }
 
-    render(document.getElementById('app'), Example)
+    function Counter() {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        const id = setInterval(() => {
+          setCount(c => c + 1); // ✅ 在这不依赖于外部的 `count` 变量
+        }, 1000);
+        return () => clearInterval(id);
+      }, []); // ✅ 我们的 effect 不适用组件作用域中的任何变量
+
+      return jsx`<h1>${count}</h1>`
+    }
+
+    render(Counter, document.getElementById('app'))
   </script>
 </body>
 </html>
