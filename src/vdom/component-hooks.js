@@ -5,15 +5,9 @@ function createComponentInstanceForVnode(vnode) {
   if (isComponent(vnode)) {
     if (isUndef(vnode.componentInstance)) {
       vnode.componentInstance = new Component(vnode)
-      vnode.componentInstance.render()
+      vnode.componentInstance.init()
     }
   }
-}
-
-function updateChildComponent(component, vnode) {
-  // 换成新的 vnode，这样就会有新的 props
-  component.vnode = vnode
-  component.render()
 }
 
 const componentVNodeHooks = {
@@ -23,7 +17,9 @@ const componentVNodeHooks = {
 
   prepatch(oldVnode, vnode) {
     const component = vnode.componentInstance = oldVnode.componentInstance
-    updateChildComponent(component, vnode)
+    // 换成新的 vnode，这样就会有新的 props
+    component.vnode = vnode
+    component.init()
   },
 
   destroy(vnode) {

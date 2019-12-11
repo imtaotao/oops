@@ -40,7 +40,7 @@ function updateAttrs(oldVnode, vnode) {
   }
 
   // 移除需要移除的属性
-  for (key in oldAttrs) {
+  for (const key in oldAttrs) {
     if (!(key in attrs)) {
       elm.removeAttribute(key)
     }

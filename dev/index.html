@@ -8,16 +8,32 @@
 <body>
   <div id='app'></div>
   <script type="module">
-    import { jsx, render, useState } from '../src/index.js'
+    import { jsx, render, useState, useEffect } from '../src/index.js'
     
+    const log = () => console.log(11)
+
+    function Child(props) {
+      const [c, setc] = useState(0)
+      useEffect()
+      return jsx`
+        <div onclick=${() => setc(c + 1)}>${props.count} + ${c}</div>
+      `
+    }
+
     function Example() {
       const [count, setCount] = useState(0)
+
       return jsx`
         <div>
-          <p>You clicked ${count} times</p>
+          <p id='a'>You clicked ${count} times</p>
           <button onClick=${() => setCount(count + 1)}>
             Click me
           </button>
+          ${
+            count > 2
+              ? ''
+              : jsx`<${Child} count=${count}/>`
+          }
         </div>
       `
     }

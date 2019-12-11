@@ -96,8 +96,8 @@ function addNS(data, children, tag) {
   }
 }
 
-function installHooks(data = {}) {
-  const hook = data.hook || (data.hook = {})
+function installHooks(data) {
+  const hook = (data || (data = {})).hook || (data.hook = {})
   for (const name in componentVNodeHooks) {
     hook[name] = componentVNodeHooks[name]
   }
