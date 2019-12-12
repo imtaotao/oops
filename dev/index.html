@@ -9,7 +9,6 @@
   <div id='app'></div>
   <script type="module">
     import { jsx, render, useState, useEffect } from '../src/index.js'
-    
     function Child(props) {
       const [c, setc] = useState(0)
       useEffect(() => {
@@ -52,7 +51,7 @@
       return jsx`<h1>${count}</h1>`
     }
 
-    render(Counter, document.getElementById('app'))
+    render(jsx`<${Counter} />`, document.getElementById('app'))
   </script>
 </body>
 </html>

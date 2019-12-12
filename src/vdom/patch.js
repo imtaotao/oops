@@ -1,7 +1,6 @@
 import * as api from './dom-api.js'
 import createVnode from './vnode.js'
-import attributesModule from './modules/attributes.js'
-import eventListenersModule from './modules/eventlisteners.js'
+import cbs from './modules/index.js'
 import {
   isDef,
   isUndef,
@@ -11,23 +10,6 @@ import {
   sameVnode,
   emptyNode,
 } from './is.js'
-
-const cbs = {}
-const modules = [
-  attributesModule,
-  eventListenersModule,
-]
-const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post']
-
-// 存放 hooks
-for (let i = 0; i < hooks.length; i++) {
-  cbs[hooks[i]] = []
-  for (let j = 0; j < modules.length; j++) {
-    if (isDef(modules[j][hooks[i]])) {
-      cbs[hooks[i]].push(modules[j][hooks[i]])
-    }
-  }
-}
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch
@@ -311,17 +293,17 @@ export default function patch(oldVnode, vnode) {
     cbs.pre[i]()
   }
 
+  // 如果是 jsx`aaa` 这种语法
+  if (isPrimitive(vnode)) {
+    vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
+  }
+
   if (isUndef(oldVnode)) {
     createElm(vnode, insertedVnodeQueue)
   } else {
     // 如果 oldVnode 是一个真实的 dom
     if (!isVnode(oldVnode)) {
       oldVnode = emptyNodeAt(oldVnode)
-    }
-
-    // 如果是 jsx`aaa` 这种语法
-    if (isPrimitive(vnode)) {
-      vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
     }
 
     // 如果是同一个 vnode，则需要 diff -> patch
