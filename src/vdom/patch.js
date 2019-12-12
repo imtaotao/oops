@@ -46,13 +46,7 @@ export function createElm(vnode, insertedVnodeQueue) {
   if (isDef(tag)) {
     const elm = vnode.elm = isDef(data) && isDef(data.ns)
       ? api.createElementNS(data.ns, tag)
-      : tag === ''
-        // <>
-        //  <div></div>
-        //  <div></div>
-        // </>
-        ? api.createDocumentFragment()
-        : api.createElement(tag)
+      : api.createElement(tag)
 
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {

@@ -8,50 +8,50 @@
 <body>
   <div id='app'></div>
   <script type="module">
-    import { jsx, render, useState, useEffect } from '../src/index.js'
-    function Child(props) {
-      const [c, setc] = useState(0)
-      useEffect(() => {
-        console.log(1)
-        return () => console.log('clear')
-      }, [])
+    import { jsx, render, useState, useEffect, useContext, createContext } from '../src/index.js'
+    
+    const themes = {
+      light: {
+        foreground: "#000000",
+        background: "#eeeeee"
+      },
+      dark: {
+        foreground: "#ffffff",
+        background: "#222222"
+      }
+    };
+
+    const ThemeContext = createContext(themes.light);
+
+    console.log(ThemeContext)
+
+    function App() {
       return jsx`
-        <div onclick=${() => setc(c + 1)}>${props.count} + ${c}</div>
-      `
+        <${ThemeContext.Provider} value=${themes.dark}>
+        <${Toolbar} />
+        </>
+      `;
     }
 
-    function Example() {
-      const [count, setCount] = useState(0)
-
+    function Toolbar(props) {
       return jsx`
         <div>
-          <p id='a'>You clicked ${count} times</p>
-          <button onClick=${() => setCount(count + 1)}>
-            Click me
-          </button>
-          ${
-            count > 2
-              ? ''
-              : jsx`<${Child} count=${count}/>`
-          }
+          <${ThemedButton} />
         </div>
       `
     }
 
-    function Counter() {
-      const [count, setCount] = useState(0);
+    function ThemedButton() {
+      const theme = useContext(ThemeContext);
+      console.log(theme)
 
-      useEffect(() => {
-        const id = setInterval(() => {
-          setCount(c => c + 1); // ✅ 在这不依赖于外部的 `count` 变量
-        }, 1000);
-        return () => clearInterval(id);
-      }, []); // ✅ 我们的 effect 不适用组件作用域中的任何变量
-
-      return jsx`<h1>${count}</h1>`
+      return jsx`
+        <button style=${{ background: theme.background, color: theme.foreground }}>
+          I am styled by theme context!
+        </button>
+      `
     }
-
-    render(jsx`<${Counter} />`, document.getElementById('app'))
+    render(App, document.getElementById('app'))
   </script>
 </body>
 </html>
