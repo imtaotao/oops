@@ -105,7 +105,7 @@ function installHooks(data) {
   return data
 }
 
-function createContextProviderVnode(tag, props, children) {
+function createContextProvider(tag, props, children) {
   // 不用接受 props，因为已经可以拿到
   const provider = () => {
     if (props && 'value' in props) {
@@ -116,16 +116,16 @@ function createContextProviderVnode(tag, props, children) {
   return provider
 }
 
-function createContextConsumerVnode(tag, props, children) {
+function createContextConsumer(tag, props, children) {
 
 }
 
 export default function h(tag, props, ...children) {
   if (typeof tag !== 'string' && tag.$$typeof === PROVIDER_TYPE) {
     if (tag.$$typeof === PROVIDER_TYPE) {
-      tag = createContextProviderVnode(tag, props, children)
+      tag = createContextProvider(tag, props, children)
     } else if (tag.$$typeof === CONTEXT_TYPE) {
-      tag = createContextConsumerVnode(tag, props, children)
+      tag = createContextConsumer(tag, props, children)
     }
   }
 
