@@ -1,6 +1,7 @@
 import vnode from './vnode.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
+import { PROVIDER_TYPE } from '../api/create-context.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -104,7 +105,30 @@ function installHooks(data) {
   return data
 }
 
+function createContextProviderVnode(tag, props, children) {
+  // 不用接受 props，因为已经可以拿到
+  const provider = () => {
+    if (props && 'value' in props) {
+      tag._context._currentValue2 = props.value
+    }
+    return children[0]
+  }
+  return provider
+}
+
+function createContextConsumerVnode(tag, props, children) {
+
+}
+
 export default function h(tag, props, ...children) {
+  if (typeof tag !== 'string' && tag.$$typeof === PROVIDER_TYPE) {
+    if (tag.$$typeof === PROVIDER_TYPE) {
+      tag = createContextProviderVnode(tag, props, children)
+    } else if (tag.$$typeof === CONTEXT_TYPE) {
+      tag = createContextConsumerVnode(tag, props, children)
+    }
+  }
+
   const data = typeof tag === 'function'
     ? installHooks(props)
     : separateProps(props)

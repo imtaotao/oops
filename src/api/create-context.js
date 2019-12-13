@@ -14,6 +14,7 @@ export default function createContext(defaultValue, calculateChangedBits) {
   const context = {
     $$typeof: CONTEXT_TYPE,
     _currentValue: defaultValue,
+    _currentValue2: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
     Consumer: null,
