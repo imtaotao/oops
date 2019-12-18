@@ -6,9 +6,8 @@ export const FRAGMENTS_TYPE = Symbol('fragments')
 export default class Fragments {
   constructor(vnode) {
     this.vnode = vnode
-    // 存放多个 element
-    this.oldRootVnodes = this.vnode.children.map(() => undefined)
-    this.vnode.elm = this.oldRootVnodes.slice()
+    this.vnode.elm = []
+    this.oldRootVnodes = []
   }
 
   init() {
@@ -16,7 +15,7 @@ export default class Fragments {
   }
 
   update() {
-    this.vnode.elm = this.oldRootVnodes.map(() => undefined)
+    this.vnode.elm = []
     this.render()
   }
 

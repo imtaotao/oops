@@ -158,7 +158,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
 function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   for (; startIdx <= endIdx; startIdx++) {
     let i, rm, listeners
-    let ch = vnodes[startIdx]
+    let ch = vnodes[startIdx] // ch 有可能是组件（包括内置组件）
 
     if (ch != null) {
       if (isDef(ch.tag)) {
