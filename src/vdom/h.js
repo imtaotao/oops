@@ -2,6 +2,7 @@ import vnode from './vnode.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
 import { PROVIDER_TYPE } from '../api/create-context.js'
+import { FRAGMENTS_TYPE } from '../components/fragments.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -121,6 +122,7 @@ function createContextConsumer(tag, props, children) {
 }
 
 export default function h(tag, props, ...children) {
+  let elm, data
   if (typeof tag !== 'string' && tag.$$typeof === PROVIDER_TYPE) {
     if (tag.$$typeof === PROVIDER_TYPE) {
       tag = createContextProvider(tag, props, children)
@@ -129,9 +131,19 @@ export default function h(tag, props, ...children) {
     }
   }
 
-  const data = typeof tag === 'function'
-    ? installHooks(props)
-    : separateProps(props)
+  // fragments
+  if (tag === '') {
+    tag = FRAGMENTS_TYPE
+  }
+
+  // 对组件进行 hook 安装
+  if (typeof tag === 'function') {
+    data = installHooks(props)
+  } else if (tag === FRAGMENTS_TYPE) {
+    data = installHooks(props)
+  } else {
+    data = separateProps(props)
+  }
 
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
@@ -143,5 +155,5 @@ export default function h(tag, props, ...children) {
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
-  return vnode(tag, data, children, undefined, undefined)
+  return vnode(tag, data, children, undefined, elm)
 }

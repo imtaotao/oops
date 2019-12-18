@@ -36,6 +36,16 @@ function createRmCb(childElm, listeners) {
   }
 }
 
+export function appendChild(parent, child) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      appendChild(parent, child[i])
+    }
+  } else {
+    api.appendChild(parent, child)
+  }
+}
+
 export function createElm(vnode, insertedVnodeQueue) {
   // 如果是一个组件则没必要往下走
   if (createComponent(vnode, insertedVnodeQueue)) {
@@ -52,7 +62,7 @@ export function createElm(vnode, insertedVnodeQueue) {
       for (let i = 0; i < children.length; i++) {
         const chVNode = children[i]
         if (chVNode != null) {
-          api.appendChild(elm, createElm(chVNode, insertedVnodeQueue))
+          appendChild(elm, createElm(chVNode, insertedVnodeQueue))
         }
       }
     } else if (isPrimitive(vnode.text)) {

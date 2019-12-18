@@ -13,6 +13,6 @@
 + `useReducer`
 
 ## API
-+ `memo`
++ `jsx`
 + `render`
 + `createContext`

@@ -1,16 +1,15 @@
 import h from '../vdom/h.js'
-import patch from '../vdom/patch.js'
-import * as api from '../vdom/dom-api.js'
 import { isVnode, isPrimitive } from '../vdom/is.js'
+import patch, { appendChild } from '../vdom/patch.js'
 
 export default function render(vnode, app) {
   if (app) {
     if (typeof vnode === 'function') {
-      vnode = h(vnode, undefined, undefined, undefined, undefined)
+      vnode = h(vnode, undefined)
     }
     if (isVnode(vnode) || isPrimitive(vnode)) {
       const elm = patch(undefined, vnode).elm
-      api.appendChild(app, elm)
+      appendChild(app, elm)
     }
   }
 }

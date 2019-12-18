@@ -1,18 +1,26 @@
 import { isComponent, isUndef } from './is.js'
 import { Component } from './create-component.js'
+import Fragments, { FRAGMENTS_TYPE } from '../components/fragments.js'
 
 function createComponentInstanceForVnode(vnode) {
-  if (isComponent(vnode)) {
-    if (isUndef(vnode.componentInstance)) {
-      vnode.componentInstance = new Component(vnode)
-      vnode.componentInstance.init()
-    }
+  if (isUndef(vnode.componentInstance)) {
+    vnode.componentInstance = new Component(vnode)
+    vnode.componentInstance.init()
   }
+}
+
+function createFragmentsComponent(vnode) {
+  vnode.componentInstance = new Fragments(vnode)
+  vnode.componentInstance.init()
 }
 
 const componentVNodeHooks = {
   init(vnode) {
-    createComponentInstanceForVnode(vnode)
+    if (vnode.tag === FRAGMENTS_TYPE) {
+      createFragmentsComponent(vnode)
+    } else if (isComponent(vnode)) {
+      createComponentInstanceForVnode(vnode)
+    }
   },
 
   prepatch(oldVnode, vnode) {

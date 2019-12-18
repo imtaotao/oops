@@ -7,12 +7,14 @@ import useEffect from './hooks/use-effect.js'
 import useContext from './hooks/use-context.js'
 import useReducer from './hooks/use-reducer.js'
 import createContext from './api/create-context.js'
+import { FRAGMENTS_TYPE as Fragment } from './components/fragments.js'
 
 const oops = {
   h,
   jsx,
   memo,
   render,
+  Fragment,
   useState,
   useEffect,
   useContext,
@@ -25,6 +27,7 @@ export {
   jsx,
   memo,
   render,
+  Fragment,
   useState,
   useEffect,
   useContext,
