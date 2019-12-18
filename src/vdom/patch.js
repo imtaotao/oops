@@ -61,7 +61,7 @@ function insertChild(parentElm, child, before) {
 function removeChild(parentElm, child) {
   if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
-      removeChild(parentElm, child[i])
+      removeChild(api.parentNode(child[i]), child[i])
     }
   } else {
     api.removeChild(parentElm, child)

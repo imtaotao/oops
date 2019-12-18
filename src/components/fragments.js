@@ -27,4 +27,8 @@ export default class Fragments {
       this.vnode.elm[i] = this.oldRootVnodes[i].elm
     }
   }
+
+  destroy(vnode) {
+    // 什么都不做
+  }
 }

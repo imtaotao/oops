@@ -69,7 +69,9 @@
     function App() {
       const [list, setList] = useState([{term: 1, description: 'one'}, {term: 2, description: 'two'}])
       return jsx`
-        <div onclick=${e => setList([...list, {term: 1, description: 'one'}])}>
+        <div>
+          <div onclick=${e => setList([...list, {term: 1, description: 'one'}])}>add</>
+          <div onclick=${e => setList([])}>remove</>
           <${Glossary} items=${list}></>
         </div>
       `
