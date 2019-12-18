@@ -16,3 +16,6 @@
 + `jsx`
 + `render`
 + `createContext`
+
+## 内置组件
++ `<${Fragment}/>`
