@@ -54,6 +54,7 @@
     // render(App, app)
 
     function Glossary(props) {
+      console.log(props);
       return jsx`
         <dl>
           ${props.items.map(item => (
@@ -67,8 +68,11 @@
     }
 
     function App() {
+      const [list, setList] = useState([{term: 1, description: 'one'}, {term: 2, description: 'two'}])
       return jsx`
-        <${Glossary} items=${[{term: 1, description: 'one'}, {term: 2, description: 'two'}]}></>
+        <div onclick=${e => setList([...list, {term: 1, description: 'one'}])}>
+          <${Glossary} items=${list}></>
+        </div>
       `
     }
 

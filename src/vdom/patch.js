@@ -36,13 +36,25 @@ function createRmCb(childElm, listeners) {
   }
 }
 
-export function appendChild(parent, child) {
+// 对 array 会做处理
+export function appendChild(parentElm, child) {
   if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
-      appendChild(parent, child[i])
+      appendChild(parentElm, child[i])
     }
   } else {
-    api.appendChild(parent, child)
+    api.appendChild(parentElm, child)
+  }
+}
+
+export function insertVnode(parentElm, child, before) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      // 依次插入，没得问题
+      insertVnode(parentElm, child[i], before)
+    }
+  } else {
+    api.insertBefore(parentElm, child, before)
   }
 }
 
@@ -128,7 +140,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
   for (; startIdx <= endIdx; ++startIdx) {
     const ch = vnodes[startIdx]
     if (ch != null) {
-      api.insertBefore(parentElm, createElm(ch, insertedVnodeQueue), before)
+      insertVnode(parentElm, createElm(ch, insertedVnodeQueue), before)
     }
   }
 }
@@ -193,12 +205,12 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
       patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
-      api.insertBefore(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
+      insertVnode(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
       oldStartVnode = oldCh[++oldStartIdx]
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
       patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
-      api.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+      insertVnode(parentElm, oldEndVnode.elm, oldStartVnode.elm)
       oldEndVnode = oldCh[--oldEndIdx]
       newStartVnode = newCh[++newStartIdx]
     } else {
@@ -207,16 +219,16 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key]
       if (isUndef(idxInOld)) { // New element
-        api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+        insertVnode(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         newStartVnode = newCh[++newStartIdx]
       } else {
         elmToMove = oldCh[idxInOld]
         if (elmToMove.tag !== newStartVnode.tag) {
-          api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+          insertVnode(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         } else {
           patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
           oldCh[idxInOld] = undefined
-          api.insertBefore(parentElm, elmToMove.elm, oldStartVnode.elm)
+          insertVnode(parentElm, elmToMove.elm, oldStartVnode.elm)
         }
         newStartVnode = newCh[++newStartIdx]
       }
@@ -320,7 +332,7 @@ export default function patch(oldVnode, vnode) {
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parent !== null) {
-        api.insertBefore(parent, vnode.elm, api.nextSibling(oldVnode.elm))
+        insertVnode(parent, vnode.elm, api.nextSibling(oldVnode.elm))
         // 删除旧的元素
         removeVnodes(parent, [oldVnode], 0, 0)
       }

@@ -16,6 +16,7 @@ export default class Fragments {
   }
 
   update() {
+    this.vnode.elm = this.oldRootVnodes.map(() => undefined)
     this.render()
   }
 
