@@ -1,7 +1,6 @@
 import vnode from './vnode.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
-import { PROVIDER_TYPE } from '../api/create-context.js'
 import { FRAGMENTS_TYPE } from '../components/fragments.js'
 
 function cached(fn) {
@@ -106,44 +105,15 @@ function installHooks(data) {
   return data
 }
 
-function createContextProvider(tag, props, children) {
-  // 不用接受 props，因为已经可以拿到
-  const provider = () => {
-    if (props && 'value' in props) {
-      tag._context._currentValue2 = props.value
-    }
-    return children[0]
-  }
-  return provider
-}
-
-function createContextConsumer(tag, props, children) {
-
-}
-
 export default function h(tag, props, ...children) {
-  let elm, data
-  if (typeof tag !== 'string' && tag.$$typeof === PROVIDER_TYPE) {
-    if (tag.$$typeof === PROVIDER_TYPE) {
-      tag = createContextProvider(tag, props, children)
-    } else if (tag.$$typeof === CONTEXT_TYPE) {
-      tag = createContextConsumer(tag, props, children)
-    }
-  }
-
   // fragments
   if (tag === '') {
     tag = FRAGMENTS_TYPE
   }
 
-  // 对组件进行 hook 安装
-  if (typeof tag === 'function') {
-    data = installHooks(props)
-  } else if (tag === FRAGMENTS_TYPE) {
-    data = installHooks(props)
-  } else {
-    data = separateProps(props)
-  }
+  const data = typeof tag === 'string'
+    ? separateProps(props)
+    : installHooks(props)
 
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
@@ -155,5 +125,5 @@ export default function h(tag, props, ...children) {
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
-  return vnode(tag, data, children, undefined, elm)
+  return vnode(tag, data, children, undefined, undefined)
 }
