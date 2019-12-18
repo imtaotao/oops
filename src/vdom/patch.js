@@ -31,7 +31,7 @@ function createRmCb(childElm, listeners) {
   return function remove() {
     if (--listeners === 0) {
       const parent = api.parentNode(childElm)
-      api.removeChild(parent, childElm)
+      removeChild(parent, childElm)
     }
   }
 }
@@ -47,14 +47,24 @@ export function appendChild(parentElm, child) {
   }
 }
 
-export function insertVnode(parentElm, child, before) {
+function insertChild(parentElm, child, before) {
   if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
       // 依次插入，没得问题
-      insertVnode(parentElm, child[i], before)
+      insertChild(parentElm, child[i], before)
     }
   } else {
     api.insertBefore(parentElm, child, before)
+  }
+}
+
+function removeChild(parentElm, child) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      removeChild(parentElm, child[i])
+    }
+  } else {
+    api.removeChild(parentElm, child)
   }
 }
 
@@ -140,7 +150,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
   for (; startIdx <= endIdx; ++startIdx) {
     const ch = vnodes[startIdx]
     if (ch != null) {
-      insertVnode(parentElm, createElm(ch, insertedVnodeQueue), before)
+      insertChild(parentElm, createElm(ch, insertedVnodeQueue), before)
     }
   }
 }
@@ -166,7 +176,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
           rm()
         }
       } else { // Text node
-        api.removeChild(parentElm, ch.elm)
+        removeChild(parentElm, ch.elm)
       }
     }
   }
@@ -205,12 +215,12 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
       patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
-      insertVnode(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
+      insertChild(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
       oldStartVnode = oldCh[++oldStartIdx]
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
       patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
-      insertVnode(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+      insertChild(parentElm, oldEndVnode.elm, oldStartVnode.elm)
       oldEndVnode = oldCh[--oldEndIdx]
       newStartVnode = newCh[++newStartIdx]
     } else {
@@ -219,16 +229,16 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key]
       if (isUndef(idxInOld)) { // New element
-        insertVnode(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         newStartVnode = newCh[++newStartIdx]
       } else {
         elmToMove = oldCh[idxInOld]
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertVnode(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         } else {
           patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
           oldCh[idxInOld] = undefined
-          insertVnode(parentElm, elmToMove.elm, oldStartVnode.elm)
+          insertChild(parentElm, elmToMove.elm, oldStartVnode.elm)
         }
         newStartVnode = newCh[++newStartIdx]
       }
@@ -332,7 +342,7 @@ export default function patch(oldVnode, vnode) {
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parent !== null) {
-        insertVnode(parent, vnode.elm, api.nextSibling(oldVnode.elm))
+        insertChild(parent, vnode.elm, api.nextSibling(oldVnode.elm))
         // 删除旧的元素
         removeVnodes(parent, [oldVnode], 0, 0)
       }
