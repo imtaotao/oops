@@ -28,7 +28,7 @@ function equalDeps(a, b) {
   if (isArray(a) && isArray(b)) {
     if (a.length === 0 && b.length === 0) return true
     if (a.length !== b.length) return false
-    return b.some((v, i) => v === a[i])
+    return !b.some((v, i) => v !== a[i])
   }
   return false
 }
@@ -99,7 +99,6 @@ export class Component {
     const key = this.cursor++
     const memoized = this.memos[key] || (this.memos[key] = [])
 
-    // 如果依赖有变化才返回新的
     if (equalDeps(memoized[1], deps)) {
       return memoized[0]
     } else {
@@ -142,7 +141,7 @@ export class Component {
       }
       Target.component = this
       this.props = mergeProps(this.vnode)
-      this.updateVnode = this.Ctor(this.props)
+      this.updateVnode = this.Ctor.call(this, this.props)
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +

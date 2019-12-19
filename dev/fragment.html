@@ -45,8 +45,9 @@
 </head>
 <body>
   <div id='app'></div>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
   <script type="module">
-    import { jsx, render, Fragment, useState } from '../src/index.js'
+    import { jsx, render, Fragment, useState, useCallback } from '../src/index.js'
     function List(props) {
       const [newItemText, setNewItemText] = useState("");
       const [items, setItems] = useState([
@@ -71,6 +72,21 @@
         }
       }, [newItemText, items, uid]);
 
+      // const handleClick = () => {
+      //   if (newItemText !== "") {
+      //     setItems([
+      //       ...items,
+      //       {
+      //         id: uid,
+      //         isComplete: false,
+      //         text: newItemText
+      //       }
+      //     ]);
+      //     setUID(uid + 1);
+      //     setNewItemText("");
+      //   }
+      // }
+
       const handleKeyPress = useCallback(
         event => {
           if (event.key === "Enter") {
@@ -80,17 +96,28 @@
         [handleClick]
       );
 
+      // const handleKeyPress = event => {
+      //   if (event.key === "Enter") {
+      //     handleClick();
+      //   }
+      // }
+
       const handleChange = useCallback(
         event => {
           setNewItemText(event.currentTarget.value);
         },
         [setNewItemText]
       );
+      // const handleChange = event => {
+      //   setNewItemText(event.currentTarget.value);
+      // }
 
       const removeItem = useCallback(
         itemToRemove => setItems(items.filter(item => item !== itemToRemove)),
         [items]
       );
+
+      // const removeItem = itemToRemove => setItems(items.filter(item => item !== itemToRemove))
 
       const toggleItem = useCallback(
         itemToToggle => {
@@ -109,38 +136,52 @@
         [items]
       );
 
-      return (
-        <Fragment>
+      // const toggleItem = itemToToggle => {
+      //   const index = items.indexOf(itemToToggle);
+
+      //   setItems(
+      //     items
+      //       .slice(0, index)
+      //       .concat({
+      //         ...itemToToggle,
+      //         isComplete: !itemToToggle.isComplete
+      //       })
+      //       .concat(items.slice(index + 1))
+      //   );
+      // }
+
+      return jsx`
+        <${Fragment}>
           <h1>List</h1>
           <input
             type="text"
             placeholder="New list item..."
             className="Input"
-            value={newItemText}
-            onChange={handleChange}
-            onKeyPress={handleKeyPress}
+            value=${newItemText}
+            onChange=${handleChange}
+            onKeyPress=${handleKeyPress}
           />
           <button
             className="IconButton"
-            disabled={newItemText === ""}
-            onClick={handleClick}
+            disabled=${newItemText === ""}
+            onClick=${handleClick}
           >
             <span role="img" aria-label="Add item">
               ➕
             </span>
           </button>
           <ul className="List">
-            {items.map(item => (
-              <ListItem
-                key={item.id}
-                item={item}
-                removeItem={removeItem}
-                toggleItem={toggleItem}
-              />
+            ${items.map(item => (
+              jsx`<${ListItem}
+                key=${item.id}
+                item=${item}
+                removeItem=${removeItem}
+                toggleItem=${toggleItem}
+              />`
             ))}
           </ul>
         </Fragment>
-      );
+      `
     }
 
     function ListItem({ item, removeItem, toggleItem }) {
@@ -151,39 +192,39 @@
       const handleToggle = useCallback(() => {
         toggleItem(item);
       }, [item, toggleItem]);
-
-      return (
+    
+      return jsx`
         <li className="ListItem">
-          <button className="IconButton" onClick={handleDelete}>
+          <button className="IconButton" onClick=${handleDelete}>
             🗑
           </button>
           <label className="Label">
             <input
               className="Input"
-              checked={item.isComplete}
-              onChange={handleToggle}
+              checked=${item.isComplete}
+              onChange=${handleToggle}
               type="checkbox"
-            />{" "}
-            {item.text}
+            />${" "}
+            ${item.text}
           </label>
         </li>
-      );
+      `
     }
 
     function SimpleValues() {
-      return (
-        <ChildComponent
+      return jsx`
+        <${ChildComponent}
           string="abc"
           emptyString=""
-          number={123}
-          undefined={undefined}
-          null={null}
-          nan={NaN}
-          infinity={Infinity}
-          true={true}
-          false={false}
+          number=${123}
+          undefined=${undefined}
+          null=${null}
+          nan=${NaN}
+          infinity=${Infinity}
+          true=${true}
+          false=${false}
         />
-      );
+      `
     }
 
     class Custom {
@@ -194,7 +235,7 @@
     }
 
     function CustomObject() {
-      return <ChildComponent customObject={new Custom()} />;
+      return jsx`<${ChildComponent} customObject=${new Custom()} />`
     }
 
     const object = {
@@ -208,17 +249,17 @@
     };
 
     function ObjectProps() {
-      return (
-        <ChildComponent
-          object={{
+      return jsx`
+        <${ChildComponent}
+          object=${{
             outer: {
               inner: object
             }
           }}
-          array={["first", "second", "third"]}
-          objectInArray={[object]}
-          arrayInObject={{ array: ["first", "second", "third"] }}
-          deepObject={{
+          array=${["first", "second", "third"]}
+          objectInArray=${[object]}
+          arrayInObject=${{ array: ["first", "second", "third"] }}
+          deepObject=${{
             // Known limitation: we won't go deeper than several levels.
             // In the future, we might offer a way to request deeper access on demand.
             a: {
@@ -242,7 +283,7 @@
             }
           }}
         />
-      );
+      `
     }
 
     const set = new Set(['abc', 123]);
@@ -260,40 +301,41 @@
     });
 
     function UnserializableProps() {
-      return (
-        <ChildComponent
-          map={map}
-          set={set}
-          mapOfMaps={mapOfMaps}
-          setOfSets={setOfSets}
-          typedArray={typedArray}
-          immutable={immutable}
+      return jsx`
+        <${ChildComponent}
+          map=${map}
+          set=${set}
+          mapOfMaps=${mapOfMaps}
+          setOfSets=${setOfSets}
+          typedArray=${typedArray}
+          immutable=${immutable}
         />
-      );
+      `
     }
 
-    function ChildComponent(props: any) {
+    function ChildComponent(props) {
       return null;
     }
 
     function InspectableElements() {
-      return (
-        <Fragment>
-          <SimpleValues />
-          <ObjectProps />
-          <UnserializableProps />
-          <CustomObject />
-        </Fragment>
-      );
+      return jsx`
+        <${Fragment}>
+          <${SimpleValues} />
+          <${ObjectProps} />
+          <${UnserializableProps} />
+          <${CustomObject} />
+        </>
+      `
     }
 
+    // <${InspectableElements} />
     function App() {
-      return (
-        <Fragment>
-          <List />
-          <InspectableElements />
-        </Fragment>
-      );
+      return jsx`
+        <${Fragment}>
+          <${List} />
+          <${InspectableElements} />
+        </>
+      `
     }
 
     render(App, app)

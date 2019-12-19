@@ -43,7 +43,7 @@ export function appendChild(parentElm, child) {
       appendChild(parentElm, child[i])
     }
   } else {
-    api.appendChild(parentElm, child)
+    child && api.appendChild(parentElm, child)
   }
 }
 
@@ -54,7 +54,7 @@ function insertChild(parentElm, child, before) {
       insertChild(parentElm, child[i], before)
     }
   } else {
-    api.insertBefore(parentElm, child, before)
+    child && api.insertBefore(parentElm, child, before)
   }
 }
 
@@ -67,7 +67,7 @@ function removeChild(parentElm, child) {
       removeChild(parentElm, child[i])
     }
   } else {
-    api.removeChild(parentElm, child)
+    child && api.removeChild(parentElm, child)
   }
 }
 

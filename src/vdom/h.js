@@ -55,7 +55,8 @@ function separateProps(props) {
   if (props) {
     for (const key in props) {
       const value = props[key]
-      if (key === 'class') {
+      if (key === 'class' || key === 'className') {
+        // 兼容 className
         data.class = typeof value === 'string'
           ? parseClassText(value)
           : value
