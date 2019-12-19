@@ -60,7 +60,6 @@
           { id: 3, isComplete: false, text: "Third" }
         ]);
         const [uid, setUID] = useState(4);
-        console.log(newItemText);
         const handleClick = useCallback(() => {
           if (newItemText !== "") {
             setItems([

@@ -7,8 +7,10 @@ import {
   isArray,
   isVnode,
   isPrimitive,
+  isInterComponent,
   sameVnode,
   emptyNode,
+  isComponent,
 } from './is.js'
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
@@ -36,7 +38,7 @@ function createRmCb(childElm, listeners) {
   }
 }
 
-// 对 array 会做处理
+// 对 array 会做处理，因为组件可能会 return null，所以 child 可能没有
 export function appendChild(parentElm, child) {
   if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
@@ -63,11 +65,8 @@ function removeChild(parentElm, child) {
     for (let i = 0; i < child.length; i++) {
       removeChild(parentElm, child[i])
     }
-  } else if (child) {
-    if (!parentElm) {
-      parentElm = api.parentNode(child)
-    }
-    parentElm && api.removeChild(parentElm, child)
+  } else {
+    child && api.removeChild(parentElm, child)
   }
 }
 
@@ -267,9 +266,11 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
 
   if (oldVnode === vnode) return
 
+  // 如果是组件，则不需要对组件的 elm 进行diff，我们会在组件内部调用 update
+  // 在 update 钩子里面，自己自己会diff
   let ch = vnode.children
   let oldCh = oldVnode.children
-  const elm = vnode.elm = oldVnode.elm
+  let elm = vnode.elm = oldVnode.elm
 
   // 调用 update 钩子
   if (isDef(vnode.data)) {
@@ -282,7 +283,9 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     }
   }
 
-  if (isUndef(vnode.text)) {
+  if ((isComponent(oldVnode) || isComponent(vnode)) || (isInterComponent(oldVnode) || isInterComponent(vnode))) {
+    // 如果是组件或者内置组件，则不用管，diff patch 会在组件内部进行
+  } else if (isUndef(vnode.text)) {
     // 如果新旧节点都有子元素，则 diff children
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {

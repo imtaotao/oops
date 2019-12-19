@@ -108,6 +108,7 @@ export class Component {
   }
 
   syncPatch() {
+    // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
     if (this.updateVnode !== null) {
       this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
       this.vnode.elm = this.oldRootVnode.elm

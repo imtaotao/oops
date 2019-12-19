@@ -15,14 +15,17 @@ export default class Fragments {
   }
 
   update() {
-    this.vnode.elm = []
+    // 已经在 prepatch 后面调用 `vnode.elm = oldVnode.elm`
+    // 所有新的 vnode.elm 也是一个 array
     this.render()
   }
 
+  // 需要重构
   render() {
     const children = this.vnode.children
     for (let i = 0; i < children.length; i++) {
       this.oldRootVnodes[i] = patch(this.oldRootVnodes[i], children[i])
+      // childVnode.elm 收集到当前 vnode.elm 中去
       this.vnode.elm[i] = this.oldRootVnodes[i].elm
     }
   }

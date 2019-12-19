@@ -27,8 +27,14 @@ const componentVNodeHooks = {
     const component = vnode.componentInstance = oldVnode.componentInstance
     // 换成新的 vnode，这样就会有新的 props
     component.vnode = vnode
+  },
+
+  update(oldVnode, vnode) {
+    const component = vnode.componentInstance
     component.update()
   },
+
+  // postpatch(oldVnode, vnode) {},
 
   destroy(vnode) {
     vnode.componentInstance.destroy(vnode)

@@ -72,21 +72,6 @@
         }
       }, [newItemText, items, uid]);
 
-      // const handleClick = () => {
-      //   if (newItemText !== "") {
-      //     setItems([
-      //       ...items,
-      //       {
-      //         id: uid,
-      //         isComplete: false,
-      //         text: newItemText
-      //       }
-      //     ]);
-      //     setUID(uid + 1);
-      //     setNewItemText("");
-      //   }
-      // }
-
       const handleKeyPress = useCallback(
         event => {
           if (event.key === "Enter") {
@@ -96,28 +81,17 @@
         [handleClick]
       );
 
-      // const handleKeyPress = event => {
-      //   if (event.key === "Enter") {
-      //     handleClick();
-      //   }
-      // }
-
       const handleChange = useCallback(
         event => {
           setNewItemText(event.currentTarget.value);
         },
         [setNewItemText]
       );
-      // const handleChange = event => {
-      //   setNewItemText(event.currentTarget.value);
-      // }
 
       const removeItem = useCallback(
         itemToRemove => setItems(items.filter(item => item !== itemToRemove)),
         [items]
       );
-
-      // const removeItem = itemToRemove => setItems(items.filter(item => item !== itemToRemove))
 
       const toggleItem = useCallback(
         itemToToggle => {
@@ -135,20 +109,6 @@
         },
         [items]
       );
-
-      // const toggleItem = itemToToggle => {
-      //   const index = items.indexOf(itemToToggle);
-
-      //   setItems(
-      //     items
-      //       .slice(0, index)
-      //       .concat({
-      //         ...itemToToggle,
-      //         isComplete: !itemToToggle.isComplete
-      //       })
-      //       .concat(items.slice(index + 1))
-      //   );
-      // }
 
       return jsx`
         <${Fragment}>
@@ -328,7 +288,6 @@
       `
     }
 
-    // <${InspectableElements} />
     function App() {
       return jsx`
         <${Fragment}>
