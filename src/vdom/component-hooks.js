@@ -31,7 +31,7 @@ const componentVNodeHooks = {
 
   update(oldVnode, vnode) {
     const component = vnode.componentInstance
-    component.update()
+    component.update(oldVnode, vnode)
   },
 
   // postpatch(oldVnode, vnode) {},

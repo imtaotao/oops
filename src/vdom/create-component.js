@@ -92,7 +92,7 @@ export class Component {
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
     this.state[key] = newValue
-    this.update()
+    this.forceUpdate()
   }
 
   useMemo(create, deps) {
@@ -171,8 +171,11 @@ export class Component {
     this.createVnodeByCtor(true)
   }
 
-  update() {
+  forceUpdate() {
     this.createVnodeByCtor(false)
+  }
+
+  update(oldVnode, vnode) {
   }
 
   destroy(vnode) {

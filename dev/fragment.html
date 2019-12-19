@@ -89,7 +89,10 @@
       );
 
       const removeItem = useCallback(
-        itemToRemove => setItems(items.filter(item => item !== itemToRemove)),
+        itemToRemove => {
+          console.log(items, items.filter(item => item !== itemToRemove));
+          setItems(items.filter(item => item !== itemToRemove))
+        },
         [items]
       );
 
@@ -131,14 +134,15 @@
             </span>
           </button>
           <ul className="List">
-            ${items.map(item => (
-              jsx`<${ListItem}
+            ${items.map(item => {
+              return jsx`<${ListItem}
                 key=${item.id}
                 item=${item}
                 removeItem=${removeItem}
                 toggleItem=${toggleItem}
               />`
-            ))}
+            }
+            )}
           </ul>
         </Fragment>
       `

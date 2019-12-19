@@ -46,75 +46,27 @@
 <body>
   <div id='app'></div>
   <script type="module">
-    import { jsx, render, Fragment, useState, useEffect, useContext, createContext } from '../src/index.js'
-    
-    // const themes = {
-    //   light: {
-    //     foreground: "#000000",
-    //     background: "#eeeeee"
-    //   },
-    //   dark: {
-    //     foreground: "#ffffff",
-    //     background: "#222222"
-    //   }
-    // };
-
-    // const ThemeContext = createContext(themes.light);
-
-    // console.log(ThemeContext)
-
-    // function App() {
-    //   return jsx`
-    //     <${ThemeContext.Provider} value=${themes.dark}>
-    //       <${Toolbar} />
-    //     </>
-    //   `;
-    // }
-
-    // function Toolbar(props) {
-    //   return jsx`
-    //     <div>
-    //       <${ThemedButton} />
-    //     </div>
-    //   `
-    // }
-
-    // function ThemedButton() {
-    //   const theme = useContext(ThemeContext);
-    //   console.log(theme)
-
-    //   return jsx`
-    //     <button style=${{ background: theme.background, color: theme.foreground }}>
-    //       I am styled by theme context!
-    //     </button>
-    //   `
-    // }
-    // render(App, app)
-
-    function Glossary(props) {
-      return jsx`
-        <dl>
-          ${props.items.map(item => (
-            jsx`<key=${item.id}>
-              <dt>${item.term}</dt>
-              <dd>${item.description}</dd>
-            </>`
-          ))}
-        </dl>
-      `
-    }
+    import { jsx, render, Fragment, useState } from '../src/index.js'
 
     function App() {
-      const [list, setList] = useState([{term: 1, description: 'one'}, {term: 2, description: 'two'}])
+      const [list, setList] = useState([1, 2, 3])
+
+      const remove = i => setList(list.filter(v => v !== i))
       return jsx`
-        <div>
-          <div onclick=${e => setList([...list, {term: 1, description: 'one'}])}>add</>
-          <div onclick=${e => setList([])}>remove</>
-          <${Glossary} items=${list}></>
-        </div>
+        <>
+          <div>title</>
+          <div onclick=${e => setList([...list, 11])}>add</>
+          <ul>
+            ${list.map(v => {
+              return jsx`
+                <li onclick=${e => remove(v)}>${v}</>
+              `
+            })}  
+          </>
+        </>
       `
     }
-
+    
     render(App, app)
   </script>
 </body>

@@ -72,7 +72,7 @@ function removeChild(parentElm, child) {
 
 export function createElm(vnode, insertedVnodeQueue) {
   // 如果是一个组件则没必要往下走
-  if (createComponent(vnode, insertedVnodeQueue)) {
+  if (createComponent(vnode)) {
     return vnode.elm
   }
   
@@ -111,7 +111,7 @@ function invokeCreateHooks(vnode, insertedVnodeQueue) {
   }
 }
 
-function createComponent(vnode, insertedVnodeQueue) {
+function createComponent(vnode) {
   let i = vnode.data
   if (isDef(i)) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
@@ -185,7 +185,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
 }
 
 // diff children
-function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
+export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   let oldStartIdx = 0, newStartIdx = 0
   let oldEndIdx = oldCh.length - 1
   let oldStartVnode = oldCh[0]
@@ -272,6 +272,11 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let oldCh = oldVnode.children
   let elm = vnode.elm = oldVnode.elm
 
+  // 如果 vnode 是 fragments
+  if (isArray(elm)) {
+    elm = api.parentNode(elm[0])
+  }
+
   // 调用 update 钩子
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
@@ -343,7 +348,7 @@ export default function patch(oldVnode, vnode) {
       patchVnode(oldVnode, vnode, insertedVnodeQueue)
     } else {
       // 创建元素
-      const parent = api.parentNode(oldVnode.elm)
+      parent = api.parentNode(oldVnode.elm)
       createElm(vnode, insertedVnodeQueue)
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
