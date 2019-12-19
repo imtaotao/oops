@@ -11,6 +11,8 @@
 + `useEffect`
 + `useContext`
 + `useReducer`
++ `useMemo`
++ `useCallback`
 
 ## API
 + `jsx`

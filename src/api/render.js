@@ -9,7 +9,7 @@ export default function render(vnode, app) {
     }
     if (isVnode(vnode) || isPrimitive(vnode)) {
       const elm = patch(undefined, vnode).elm
-      appendChild(app, elm)
+      elm && appendChild(app, elm)
     }
   }
 }

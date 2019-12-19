@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>useCallback</title>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import { jsx, render, useState, useCallback } from '../src/index.js'
+    
+    const Child = ({ onClick }) => {
+      console.log('child render');
+      return jsx`<div onClick=${onClick}>click</div>`
+    }
+
+    function App() {
+      const [count, setCount] = useState(0);
+      const handleIncr = useCallback(() => {
+        setCount(c => c + 1);
+      }, []);
+      // const handleIncr = () => {
+      //   setCount(c => c + 1);
+      // }
+
+      return jsx`
+        <div>
+          ${count} <${Child} onClick=${handleIncr} />
+        </div>
+      `
+    };
+    render(App, app)
+  </script>
+</body>
+</html>

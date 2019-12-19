@@ -1,5 +1,5 @@
 import patch from './patch.js'
-import { isDef, isArray } from './is.js'
+import { isDef, isArray, isUndef } from './is.js'
 
 const RE_RENDER_LIMIT = 25
 
@@ -23,13 +23,14 @@ function enqueueTask(callback) {
   channel.port2.postMessage(undefined)
 }
 
+// 对比依赖
 function equalDeps(a, b) {
-  if (a.length === 0 && b.length === 0) return true
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false
+  if (isArray(a) && isArray(b)) {
+    if (a.length === 0 && b.length === 0) return true
+    if (a.length !== b.length) return false
+    return b.some((v, i) => v === a[i])
   }
-  return true
+  return false
 }
 
 function callEffectCallback(create, destroy, effect) {
@@ -44,12 +45,8 @@ function callEffectCallback(create, destroy, effect) {
 function updateEffect(effects) {
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
-    if (isArray(deps) && isArray(prevDeps)) {
-      // 如果依赖不相等才调用
-      if (!equalDeps(deps, prevDeps)) {
-        callEffectCallback(create, destroy, effects[key])
-      }
-    } else {
+    // 如果依赖不相等才调用
+    if (!equalDeps(deps, prevDeps)) {
       callEffectCallback(create, destroy, effects[key])
     }
   }
@@ -65,6 +62,7 @@ export class Component {
     this.updateVnode = undefined // 新的 vnode
     this.oldRootVnode = undefined
     this.state = Object.create(null)
+    this.memos = Object.create(null)
     this.effects = Object.create(null)
   }
 
@@ -97,20 +95,35 @@ export class Component {
     this.update()
   }
 
+  useMemo(create, deps) {
+    const key = this.cursor++
+    const memoized = this.memos[key] || (this.memos[key] = [])
+
+    // 如果依赖有变化才返回新的
+    if (equalDeps(memoized[1], deps)) {
+      return memoized[0]
+    } else {
+      memoized[1] = deps
+      return (memoized[0] = create()) 
+    }
+  }
+
   syncPatch() {
-    this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
-    this.vnode.elm = this.oldRootVnode.elm
-    this.updateVnode = undefined
-    enqueueTask(() => {
-      updateEffect(this.effects)
-    })
+    if (this.updateVnode !== null) {
+      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
+      this.vnode.elm = this.oldRootVnode.elm
+      this.updateVnode = undefined
+      enqueueTask(() => {
+        updateEffect(this.effects)
+      })
+    }
   }
 
   patch() {
     if (!this.updateVnode) {
       // 异步的 patch 减少对 dom 的操作
       enqueueTask(() => {
-        if (isDef(this.updateVnode)) {
+        if (this.updateVnode !== null) {
           this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
           this.vnode.elm = this.oldRootVnode.elm
           this.updateVnode = undefined
@@ -130,6 +143,13 @@ export class Component {
       Target.component = this
       this.props = mergeProps(this.vnode)
       this.updateVnode = this.Ctor(this.props)
+      if (isUndef(this.updateVnode)) {
+        throw new Error(
+          'Nothing was returned from render.' +
+          'This usually means a return statement is missing.' +
+          'Or, to render nothing, return null.'
+        )
+      }
       if (isSync) {
         this.syncPatch()
       }

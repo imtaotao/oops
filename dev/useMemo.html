@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>useCallback</title>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import { jsx, render, useState, useMemo } from '../src/index.js'
+    
+    function Button({ name, children }) {
+      function changeName(name) {
+        console.log('11')
+        return name + '改变name的方法'
+      }
+
+      // 当 name 有变化的时候，才会更新调用 changeName
+      const otherName = useMemo(() => changeName(name), [name])
+      return jsx`
+        <>
+          <div>${otherName}</div>
+          <div>${children}</div>
+        </>
+
+      `
+    }
+
+    function App() {
+      const [name, setName] = useState('名称')
+      const [content, setContent] = useState('内容')
+      return jsx`
+        <>
+          <button onClick=${() => setName(new Date().getTime())}>name</button>
+          <button onClick=${() => setContent(new Date().getTime())}>content</button>
+          <${Button} name=${name}>${content}</>
+        </>
+      `
+    }
+    render(App, app)
+  </script>
+</body>
+</html>
