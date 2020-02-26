@@ -114,7 +114,7 @@
       );
 
       return jsx`
-        <${Fragment}>
+        <div>
           <h1>List</h1>
           <input
             type="text"
@@ -144,7 +144,7 @@
             }
             )}
           </ul>
-        </Fragment>
+        </>
       `
     }
 
@@ -283,7 +283,7 @@
 
     function InspectableElements() {
       return jsx`
-        <${Fragment}>
+        <div>
           <${SimpleValues} />
           <${ObjectProps} />
           <${UnserializableProps} />
@@ -294,7 +294,7 @@
 
     function App() {
       return jsx`
-        <${Fragment}>
+        <div>
           <${List} />
           <${InspectableElements} />
         </>

@@ -1,25 +1,17 @@
 import { isComponent, isUndef } from './is.js'
 import { Component } from './create-component.js'
-import Fragments, { FRAGMENTS_TYPE } from '../components/fragments.js'
 
-function createComponentInstanceForVnode(vnode) {
+function createComponentInstanceForVnode(vnode, parentElm) {
   if (isUndef(vnode.componentInstance)) {
-    vnode.componentInstance = new Component(vnode)
+    vnode.componentInstance = new Component(vnode, parentElm)
     vnode.componentInstance.init()
   }
 }
 
-function createFragmentsComponent(vnode) {
-  vnode.componentInstance = new Fragments(vnode)
-  vnode.componentInstance.init()
-}
-
 const componentVNodeHooks = {
-  init(vnode) {
-    if (vnode.tag === FRAGMENTS_TYPE) {
-      createFragmentsComponent(vnode)
-    } else if (isComponent(vnode)) {
-      createComponentInstanceForVnode(vnode)
+  init(vnode, parentElm) {
+    if (isComponent(vnode)) {
+      createComponentInstanceForVnode(vnode, parentElm)
     }
   },
 
@@ -33,8 +25,6 @@ const componentVNodeHooks = {
     const component = vnode.componentInstance
     component.update(oldVnode, vnode)
   },
-
-  // postpatch(oldVnode, vnode) {},
 
   destroy(vnode) {
     vnode.componentInstance.destroy(vnode)

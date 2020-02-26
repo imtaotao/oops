@@ -48,14 +48,20 @@
   <script type="module">
     import { jsx, render, Fragment, useState } from '../src/index.js'
 
+    let i = 0
     function App() {
-      const [list, setList] = useState([1, 2, 3])
+      const [list, setList] = useState([-1, -2, -3])
 
-      const remove = i => setList(list.filter(v => v !== i))
+      const remove = i => {
+        const newList = list.filter(v => v !== i)
+        console.log(newList)
+        setList(newList)
+      }
+
       return jsx`
         <>
           <div>title</>
-          <div onclick=${e => setList([...list, 11])}>add</>
+          <div onclick=${e => setList([...list, ++i])}>add</>
           <ul>
             ${list.map(v => {
               return jsx`

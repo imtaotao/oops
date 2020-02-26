@@ -1,7 +1,7 @@
 import vnode from './vnode.js'
+import { FRAGMENTS_TYPE } from '../api/types.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
-import { FRAGMENTS_TYPE } from '../components/fragments.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -112,7 +112,7 @@ export default function h(tag, props, ...children) {
     tag = FRAGMENTS_TYPE
   }
 
-  const data = typeof tag === 'string'
+  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
     ? separateProps(props)
     : installHooks(props)
 

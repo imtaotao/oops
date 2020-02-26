@@ -108,7 +108,7 @@
           [items]
         );
         return (
-          <Fragment>
+          <div>
             <h1>List</h1>
             <input
               type="text"
@@ -137,7 +137,7 @@
                 />
               ))}
             </ul>
-          </Fragment>
+          </div>
         );
       }
       function ListItem({ item, removeItem, toggleItem }) {
@@ -264,20 +264,20 @@
       }
       function InspectableElements() {
         return (
-          <Fragment>
+          <div>
             <SimpleValues />
             <ObjectProps />
             <UnserializableProps />
             <CustomObject />
-          </Fragment>
+          </div>
         );
       }
       function App() {
         return (
-          <Fragment>
+          <div>
             <List />
             <InspectableElements />
-          </Fragment>
+          </div>
         );
       }
       ReactDOM.render(<App />, document.getElementById("root"));

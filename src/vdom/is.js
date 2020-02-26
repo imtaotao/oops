@@ -1,5 +1,4 @@
 import vnode from './vnode.js'
-import { FRAGMENTS_TYPE } from '../components/fragments.js'
 
 export const isArray = Array.isArray
 export const emptyNode = vnode('', {}, [], undefined, undefined)
@@ -22,10 +21,6 @@ export function isPrimitive(v) {
 
 export function isComponent(vnode) {
   return typeof vnode.tag === 'function'
-}
-
-export function isInterComponent(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE
 }
 
 export function sameVnode(a, b) {

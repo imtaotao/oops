@@ -9,7 +9,7 @@ import useContext from './hooks/use-context.js'
 import useReducer from './hooks/use-reducer.js'
 import useCallback from './hooks/use-callback.js'
 import createContext from './api/create-context.js'
-import { FRAGMENTS_TYPE as Fragment } from './components/fragments.js'
+import { FRAGMENTS_TYPE as Fragment } from './api/types.js'
 
 const oops = {
   h,

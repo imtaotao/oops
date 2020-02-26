@@ -1,17 +1,17 @@
-import * as api from './dom-api.js'
-import createVnode from './vnode.js'
-import cbs from './modules/index.js'
 import {
   isDef,
   isUndef,
   isArray,
   isVnode,
   isPrimitive,
-  isInterComponent,
+  isComponent,
   sameVnode,
   emptyNode,
-  isComponent,
 } from './is.js'
+import * as api from './dom-api.js'
+import createVnode from './vnode.js'
+import cbs from './modules/index.js'
+import { FRAGMENTS_TYPE } from '../api/types.js'
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch
@@ -70,23 +70,27 @@ function removeChild(parentElm, child) {
   }
 }
 
-export function createElm(vnode, insertedVnodeQueue) {
+export function createElm(vnode, insertedVnodeQueue, parentElm) {
   // 如果是一个组件则没必要往下走
-  if (createComponent(vnode)) {
+  if (createComponent(vnode, parentElm)) {
     return vnode.elm
   }
   
   const { tag, data, children } = vnode
   if (isDef(tag)) {
-    const elm = vnode.elm = isDef(data) && isDef(data.ns)
-      ? api.createElementNS(data.ns, tag)
-      : api.createElement(tag)
-
+    let elm
+    if (tag === FRAGMENTS_TYPE) {
+      elm = vnode.elm = parentElm
+    } else {
+      elm = vnode.elm = isDef(data) && isDef(data.ns)
+        ? api.createElementNS(data.ns, tag)
+        : api.createElement(tag)
+    }
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {
         const chVNode = children[i]
         if (chVNode != null) {
-          appendChild(elm, createElm(chVNode, insertedVnodeQueue))
+          appendChild(elm, createElm(chVNode, insertedVnodeQueue, elm))
         }
       }
     } else if (isPrimitive(vnode.text)) {
@@ -111,11 +115,11 @@ function invokeCreateHooks(vnode, insertedVnodeQueue) {
   }
 }
 
-function createComponent(vnode) {
+function createComponent(vnode, parentElm) {
   let i = vnode.data
   if (isDef(i)) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
-      i(vnode)
+      i(vnode, parentElm)
     }
     if (isDef(vnode.componentInstance)) {
       return true
@@ -152,7 +156,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
   for (; startIdx <= endIdx; ++startIdx) {
     const ch = vnodes[startIdx]
     if (ch != null) {
-      insertChild(parentElm, createElm(ch, insertedVnodeQueue), before)
+      insertChild(parentElm, createElm(ch, insertedVnodeQueue, parentElm), before)
     }
   }
 }
@@ -231,12 +235,12 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key]
       if (isUndef(idxInOld)) { // New element
-        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
         newStartVnode = newCh[++newStartIdx]
       } else {
         elmToMove = oldCh[idxInOld]
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
+          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
         } else {
           patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
           oldCh[idxInOld] = undefined
@@ -273,8 +277,8 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let elm = vnode.elm = oldVnode.elm
 
   // 如果 vnode 是 fragments
-  if (isArray(elm)) {
-    elm = api.parentNode(elm[0])
+  if (vnode.tag === FRAGMENTS_TYPE) {
+    // elm = api.parentNode(elm[0])
   }
 
   // 调用 update 钩子
@@ -288,7 +292,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     }
   }
 
-  if ((isComponent(oldVnode) || isComponent(vnode)) || (isInterComponent(oldVnode) || isInterComponent(vnode))) {
+  if ((isComponent(oldVnode) || isComponent(vnode))) {
     // 如果是组件或者内置组件，则不用管，diff patch 会在组件内部进行
   } else if (isUndef(vnode.text)) {
     // 如果新旧节点都有子元素，则 diff children
@@ -320,7 +324,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   }
 }
 
-export default function patch(oldVnode, vnode) {
+export default function patch(oldVnode, vnode, parentElm) {
   if (isArray(vnode)) {
     throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
   }
@@ -329,14 +333,14 @@ export default function patch(oldVnode, vnode) {
   for (let i = 0; i < cbs.pre.length; i++) {
     cbs.pre[i]()
   }
-
+  
   // 如果是 jsx`aaa` 这种语法
   if (isPrimitive(vnode)) {
     vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
   }
 
   if (isUndef(oldVnode)) {
-    createElm(vnode, insertedVnodeQueue)
+    createElm(vnode, insertedVnodeQueue, parentElm)
   } else {
     // 如果 oldVnode 是一个真实的 dom
     if (!isVnode(oldVnode)) {
@@ -349,7 +353,7 @@ export default function patch(oldVnode, vnode) {
     } else {
       // 创建元素
       parent = api.parentNode(oldVnode.elm)
-      createElm(vnode, insertedVnodeQueue)
+      createElm(vnode, insertedVnodeQueue, parentElm)
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parent !== null) {

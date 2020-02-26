@@ -53,11 +53,12 @@ function updateEffect(effects) {
 }
 
 export class Component {
-  constructor(vnode) {
+  constructor(vnode, parentElm) {
     this.cursor = 0
     this.preProps = {}
     this.vnode = vnode
     this.Ctor = vnode.tag
+    this.parentElm = parentElm // 父级 dom 元素
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode
     this.oldRootVnode = undefined
@@ -110,7 +111,7 @@ export class Component {
   syncPatch() {
     // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
     if (this.updateVnode !== null) {
-      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
+      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm)
       this.vnode.elm = this.oldRootVnode.elm
       this.updateVnode = undefined
       enqueueTask(() => {

@@ -1,0 +1,1 @@
+export const FRAGMENTS_TYPE = Symbol('fragments')
