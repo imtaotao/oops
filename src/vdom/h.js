@@ -107,6 +107,11 @@ function installHooks(data) {
 }
 
 export default function h(tag, props, ...children) {
+  if (typeof tag === 'function') {
+    console.log(tag.name, props, children)
+  } else {
+    console.log(tag, props, children)
+  }
   // fragments
   if (tag === '') {
     tag = FRAGMENTS_TYPE

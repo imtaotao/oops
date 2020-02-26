@@ -40,34 +40,34 @@ function createRmCb(childElm, listeners) {
 
 // 对 array 会做处理，因为组件可能会 return null，所以 child 可能没有
 export function appendChild(parentElm, child) {
-  if (isArray(child)) {
-    for (let i = 0; i < child.length; i++) {
-      appendChild(parentElm, child[i])
-    }
-  } else {
+  // if (isArray(child)) {
+  //   for (let i = 0; i < child.length; i++) {
+  //     appendChild(parentElm, child[i])
+  //   }
+  // } else {
     child && api.appendChild(parentElm, child)
-  }
+  // }
 }
 
 function insertChild(parentElm, child, before) {
-  if (isArray(child)) {
-    for (let i = 0; i < child.length; i++) {
-      // 依次插入，没得问题
-      insertChild(parentElm, child[i], before)
-    }
-  } else {
+  // if (isArray(child)) {
+  //   for (let i = 0; i < child.length; i++) {
+  //     // 依次插入，没得问题
+  //     insertChild(parentElm, child[i], before)
+  //   }
+  // } else {
     child && api.insertBefore(parentElm, child, before)
-  }
+  // }
 }
 
 function removeChild(parentElm, child) {
-  if (isArray(child)) {
-    for (let i = 0; i < child.length; i++) {
-      removeChild(parentElm, child[i])
-    }
-  } else {
+  // if (isArray(child)) {
+  //   for (let i = 0; i < child.length; i++) {
+  //     removeChild(parentElm, child[i])
+  //   }
+  // } else {
     child && api.removeChild(parentElm, child)
-  }
+  // }
 }
 
 export function createElm(vnode, insertedVnodeQueue, parentElm) {
@@ -190,6 +190,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
 
 // diff children
 export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
+  console.log(oldCh, newCh)
   let oldStartIdx = 0, newStartIdx = 0
   let oldEndIdx = oldCh.length - 1
   let oldStartVnode = oldCh[0]
@@ -255,6 +256,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
     } else {
+      console.log(oldCh, oldStartIdx, oldEndIdx)
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
     }
   }

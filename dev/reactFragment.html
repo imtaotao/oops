@@ -7,12 +7,14 @@
     <!-- DevTools -->
     <script src="http://localhost:8097"></script>
 
+    <script src="../dist/oops.umd.js"></script>
     <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
 
     <!-- Don't use this in production: -->
     <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fre"></script>
 
     <style type="text/css">
       .Input {
@@ -51,7 +53,9 @@
   <body>
     <div id="root"></div>
     <script type="text/babel">
-      const { Fragment, useCallback, useState } = React;
+      // const { Fragment, useCallback, useState } = React;
+      React.createElement = oops.h
+      const { Fragment, useCallback, useState, render } = oops
       function List(props) {
         const [newItemText, setNewItemText] = useState("");
         const [items, setItems] = useState([
@@ -107,6 +111,8 @@
           },
           [items]
         );
+
+        console.log(items);
         return (
           <div>
             <h1>List</h1>
@@ -128,14 +134,17 @@
               </span>
             </button>
             <ul className="List">
-              {items.map(item => (
-                <ListItem
-                  key={item.id}
-                  item={item}
-                  removeItem={removeItem}
-                  toggleItem={toggleItem}
-                />
-              ))}
+              {items.map(item => {
+                console.log(item)
+                return (
+                  <ListItem
+                    key={item.id}
+                    item={item}
+                    removeItem={removeItem}
+                    toggleItem={toggleItem}
+                  />
+                )
+              })}
             </ul>
           </div>
         );
@@ -280,7 +289,8 @@
           </div>
         );
       }
-      ReactDOM.render(<App />, document.getElementById("root"));
+      // ReactDOM.render(<App />, document.getElementById("root"));
+      render(<App />, document.getElementById("root"));
     </script>
   </body>
 </html>

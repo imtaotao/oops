@@ -47,6 +47,7 @@
   <div id='app'></div>
   <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
   <script type="module">
+    // 好像是 useCallback 写的有问题
     import { jsx, render, Fragment, useState, useCallback } from '../src/index.js'
     function List(props) {
       const [newItemText, setNewItemText] = useState("");
@@ -135,6 +136,7 @@
           </button>
           <ul className="List">
             ${items.map(item => {
+              console.log(item)
               return jsx`<${ListItem}
                 key=${item.id}
                 item=${item}
