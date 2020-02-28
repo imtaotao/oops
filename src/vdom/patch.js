@@ -190,7 +190,6 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
 
 // diff children
 export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
-  console.log(oldCh, newCh)
   let oldStartIdx = 0, newStartIdx = 0
   let oldEndIdx = oldCh.length - 1
   let oldStartVnode = oldCh[0]
@@ -256,7 +255,6 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
     } else {
-      console.log(oldCh, oldStartIdx, oldEndIdx)
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
     }
   }

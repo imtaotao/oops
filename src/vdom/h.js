@@ -107,19 +107,16 @@ function installHooks(data) {
 }
 
 export default function h(tag, props, ...children) {
-  if (typeof tag === 'function') {
-    console.log(tag.name, props, children)
-  } else {
-    console.log(tag, props, children)
-  }
+  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
+  children = children.flat(Infinity)
   // fragments
   if (tag === '') {
     tag = FRAGMENTS_TYPE
   }
 
   const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-    ? separateProps(props)
-    : installHooks(props)
+  ? separateProps(props)
+  : installHooks(props)
 
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {

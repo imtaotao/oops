@@ -54,8 +54,10 @@
     <div id="root"></div>
     <script type="text/babel">
       // const { Fragment, useCallback, useState } = React;
-      React.createElement = oops.h
       const { Fragment, useCallback, useState, render } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
+
       function List(props) {
         const [newItemText, setNewItemText] = useState("");
         const [items, setItems] = useState([
@@ -112,7 +114,6 @@
           [items]
         );
 
-        console.log(items);
         return (
           <div>
             <h1>List</h1>
@@ -134,17 +135,18 @@
               </span>
             </button>
             <ul className="List">
-              {items.map(item => {
-                console.log(item)
-                return (
-                  <ListItem
-                    key={item.id}
-                    item={item}
-                    removeItem={removeItem}
-                    toggleItem={toggleItem}
-                  />
-                )
-              })}
+              {[
+                items.map(item => {
+                  return (
+                    <ListItem
+                      key={item.id}
+                      item={item}
+                      removeItem={removeItem}
+                      toggleItem={toggleItem}
+                    />
+                  )
+                })
+              ]}
             </ul>
           </div>
         );
@@ -289,8 +291,7 @@
           </div>
         );
       }
-      // ReactDOM.render(<App />, document.getElementById("root"));
-      render(<App />, document.getElementById("root"));
+      ReactDOM.render(<App />, document.getElementById("root"));
     </script>
   </body>
 </html>

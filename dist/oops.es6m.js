@@ -371,7 +371,6 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   }
 }
 function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
-  console.log(oldCh, newCh);
   let oldStartIdx = 0, newStartIdx = 0;
   let oldEndIdx = oldCh.length - 1;
   let oldStartVnode = oldCh[0];
@@ -436,7 +435,6 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm;
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else {
-      console.log(oldCh, oldStartIdx, oldEndIdx);
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
     }
   }
@@ -804,17 +802,13 @@ function installHooks(data) {
   return data
 }
 function h(tag, props, ...children) {
-  if (typeof tag === 'function') {
-    console.log(tag.name, props, children);
-  } else {
-    console.log(tag, props, children);
-  }
+  children = children.flat(Infinity);
   if (tag === '') {
     tag = FRAGMENTS_TYPE;
   }
   const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-    ? separateProps(props)
-    : installHooks(props);
+  ? separateProps(props)
+  : installHooks(props);
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitive(children[i])) {
@@ -963,11 +957,7 @@ function evaluate(h, built, fields, args) {
         ),
       );
     } else if (type === CHILD_APPEND) {
-      if (Array.isArray(value)) {
-        args.push.apply(args, value);
-      } else {
-        args.push(value);
-      }
+      args.push(value);
     }
   }
   return args
@@ -1094,3 +1084,4 @@ const oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReucer as useReducer, useState };
+//# sourceMappingURL=oops.es6m.js.map

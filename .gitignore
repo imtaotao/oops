@@ -2,7 +2,6 @@
 node_modules/
 coverage/
 
-build.js
 yarn.lock
 
 # local env files
@@ -13,6 +12,9 @@ yarn.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# sourcemap
+dist/*.map
 
 # Editor directories and files
 .idea

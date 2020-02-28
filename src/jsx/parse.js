@@ -182,11 +182,7 @@ export function evaluate(h, built, fields, args) {
     } else if (type === CHILD_APPEND) {
       // value 此时也有可能是 vnode
       // children 不能使用 `<${children[0]}/>` 这种方式，应该使用 `${children[0]}`
-      if (Array.isArray(value)) {
-        args.push.apply(args, value)
-      } else {
-        args.push(value)
-      }
+      args.push(value)
     }
   }
   return args

@@ -511,7 +511,6 @@
   }
 
   function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
-    console.log(oldCh, newCh);
     var oldStartIdx = 0,
         newStartIdx = 0;
     var oldEndIdx = oldCh.length - 1;
@@ -583,7 +582,6 @@
         before = newCh[newEndIdx + 1] == null ? null : newCh[newEndIdx + 1].elm;
         addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
       } else {
-        console.log(oldCh, oldStartIdx, oldEndIdx);
         removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
       }
     }
@@ -1059,11 +1057,7 @@
       children[_key - 2] = arguments[_key];
     }
 
-    if (typeof tag === 'function') {
-      console.log(tag.name, props, children);
-    } else {
-      console.log(tag, props, children);
-    }
+    children = children.flat(Infinity);
 
     if (tag === '') {
       tag = FRAGMENTS_TYPE;
@@ -1236,11 +1230,7 @@
       } else if (type === CHILD_RECURSE) {
         args.push(h.apply(null, evaluate(h, value, fields, ['', null])));
       } else if (type === CHILD_APPEND) {
-        if (Array.isArray(value)) {
-          args.push.apply(args, value);
-        } else {
-          args.push(value);
-        }
+        args.push(value);
       }
     }
 
@@ -1397,3 +1387,4 @@
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+//# sourceMappingURL=oops.umd.js.map

@@ -510,7 +510,6 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
 }
 
 function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
-  console.log(oldCh, newCh);
   var oldStartIdx = 0,
       newStartIdx = 0;
   var oldEndIdx = oldCh.length - 1;
@@ -582,7 +581,6 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       before = newCh[newEndIdx + 1] == null ? null : newCh[newEndIdx + 1].elm;
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else {
-      console.log(oldCh, oldStartIdx, oldEndIdx);
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
     }
   }
@@ -1058,11 +1056,7 @@ function h(tag, props) {
     children[_key - 2] = arguments[_key];
   }
 
-  if (typeof tag === 'function') {
-    console.log(tag.name, props, children);
-  } else {
-    console.log(tag, props, children);
-  }
+  children = children.flat(Infinity);
 
   if (tag === '') {
     tag = FRAGMENTS_TYPE;
@@ -1235,11 +1229,7 @@ function evaluate(h, built, fields, args) {
     } else if (type === CHILD_RECURSE) {
       args.push(h.apply(null, evaluate(h, value, fields, ['', null])));
     } else if (type === CHILD_APPEND) {
-      if (Array.isArray(value)) {
-        args.push.apply(args, value);
-      } else {
-        args.push(value);
-      }
+      args.push(value);
     }
   }
 
@@ -1381,3 +1371,4 @@ var oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReucer as useReducer, useState };
+//# sourceMappingURL=oops.esm.js.map
