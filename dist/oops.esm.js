@@ -106,14 +106,14 @@ function isUndef(v) {
 function isVnode(vnode) {
   return vnode.tag !== undefined;
 }
-function isPrimitive(v) {
-  return typeof v === 'string' || typeof v === 'number';
-}
 function isComponent(vnode) {
   return typeof vnode.tag === 'function';
 }
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag;
+}
+function isPrimitive(v) {
+  return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || _typeof(v) === 'symbol';
 }
 
 function createElement(tagName) {
@@ -179,6 +179,40 @@ var classModule = {
   update: updateClass
 };
 
+function updateProps(oldVnode, vnode) {
+  var elm = vnode.elm;
+
+  if (elm) {
+    var key, cur, old;
+    var props = vnode.data.props;
+    var oldProps = oldVnode.data.props;
+    if (!oldProps && !props) return;
+    if (oldProps === props) return;
+    props = props || {};
+    oldProps = oldProps || {};
+
+    for (key in oldProps) {
+      if (!props[key]) {
+        delete elm[key];
+      }
+    }
+
+    for (key in props) {
+      cur = props[key];
+      old = oldProps[key];
+
+      if (old !== cur && (key !== 'value' || elm[key] !== cur)) {
+        elm[key] = cur;
+      }
+    }
+  }
+}
+
+var propsModule = {
+  create: updateProps,
+  update: updateProps
+};
+
 var xChar = 120;
 var colonChar = 58;
 var xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -205,9 +239,7 @@ function updateAttrs(oldVnode, vnode) {
         } else if (cur === false) {
           elm.removeAttribute(key);
         } else {
-          if (key === 'value') {
-            elm[key] = cur;
-          } else if (key.charCodeAt(0) !== xChar) {
+          if (key.charCodeAt(0) !== xChar) {
             elm.setAttribute(key, cur);
           } else if (key.charCodeAt(3) === colonChar) {
             elm.setAttributeNS(xmlNS, key, cur);
@@ -222,11 +254,7 @@ function updateAttrs(oldVnode, vnode) {
 
     for (var _key in oldAttrs) {
       if (!(_key in attrs)) {
-        if (_key === 'value') {
-          delete elm[_key];
-        } else {
-          elm.removeAttribute(_key);
-        }
+        elm.removeAttribute(_key);
       }
     }
   }
@@ -321,7 +349,7 @@ var eventListenersModule = {
 
 var cbs = {};
 var hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
-var modules = [classModule, attributesModule, eventListenersModule];
+var modules = [classModule, propsModule, attributesModule, eventListenersModule];
 
 for (var i = 0; i < hooks.length; i++) {
   cbs[hooks[i]] = [];
@@ -351,7 +379,8 @@ function createKeyToOldIdx(children, beginIdx, endIdx) {
 }
 
 function emptyNodeAt(elm) {
-  return vnode(tagName(elm).toLowerCase(), {}, [], undefined, elm);
+  var tagName$1 = tagName(elm);
+  return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm);
 }
 
 function createRmCb(childElm, listeners) {
@@ -615,6 +644,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   if (isComponent(oldVnode) || isComponent(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
+        console.log(oldCh, ch);
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
       }
     } else if (isDef(ch)) {
@@ -994,6 +1024,10 @@ var parseStyleText = cached(function (cssText) {
   return res;
 });
 
+function isProps(key) {
+  return key === 'href' || key === 'value' || key === 'checked' || key === 'disabled';
+}
+
 function separateProps(props) {
   var data = {};
 
@@ -1005,6 +1039,12 @@ function separateProps(props) {
         data["class"] = typeof value === 'string' ? parseClassText(value) : value;
       } else if (key === 'style') {
         data.style = typeof value === 'string' ? parseStyleText(value) : value;
+      } else if (isProps(key)) {
+        if (!data.props) {
+          data.props = {};
+        }
+
+        data.props[key] = value;
       } else if (key === 'hook') {
         data.hook = value;
       } else if (key === 'on' || key === 'dataset' || key === 'attrs') {
@@ -1093,7 +1133,7 @@ var PROPS_ASSIGN = 3;
 var PROP_SET = MODE_PROP_SET;
 var PROP_APPEND = MODE_PROP_APPEND;
 
-var isProps = function isProps(mode) {
+var isProps$1 = function isProps(mode) {
   return mode >= MODE_PROP_SET;
 };
 
@@ -1121,7 +1161,7 @@ function build(statics) {
       } else if (buffer && !field) {
         scope.push([PROP_SET, buffer, true]);
       }
-    } else if (isProps(mode)) {
+    } else if (isProps$1(mode)) {
       if (buffer || !field && mode === MODE_PROP_SET) {
         scope.push([mode, propName, buffer]);
         mode = MODE_PROP_APPEND;
@@ -1180,7 +1220,7 @@ function build(statics) {
         mode = MODE_PROP_SET;
         propName = buffer;
         buffer = '';
-      } else if (_char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
+      } else if (_char === '/' && (!isProps$1(mode) || statics[i][j + 1] === '>')) {
         commit();
 
         if (mode === MODE_TAGNAME) {
@@ -1371,4 +1411,3 @@ var oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReucer as useReducer, useState };
-//# sourceMappingURL=oops.esm.js.map

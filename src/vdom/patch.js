@@ -26,7 +26,8 @@ function createKeyToOldIdx(children, beginIdx, endIdx) {
 }
 
 function emptyNodeAt(elm) {
-  return createVnode(api.tagName(elm).toLowerCase(), {}, [], undefined, elm)
+  const tagName = api.tagName(elm)
+  return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
 function createRmCb(childElm, listeners) {
@@ -298,6 +299,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     // 如果新旧节点都有子元素，则 diff children
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
+        console.log(oldCh, ch)
         updateChildren(elm, oldCh, ch, insertedVnodeQueue)
       }
     } else if (isDef(ch)) {

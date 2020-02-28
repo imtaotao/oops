@@ -28,14 +28,19 @@ function isUndef(v) {
 function isVnode(vnode) {
   return vnode.tag !== undefined
 }
-function isPrimitive(v) {
-  return typeof v === 'string' || typeof v === 'number'
-}
 function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
+}
+function isPrimitive(v) {
+  return (
+    typeof v === 'string' ||
+    typeof v === 'number' ||
+    typeof v === 'boolean' ||
+    typeof v === 'symbol'
+  )
 }
 
 function createElement(tagName) {
@@ -93,6 +98,35 @@ function updateClass(oldVnode, vnode) {
 }
 var classModule = { create: updateClass, update: updateClass };
 
+function updateProps(oldVnode, vnode) {
+  const elm = vnode.elm;
+  if (elm) {
+    let key, cur, old;
+    let props = vnode.data.props;
+    let oldProps = oldVnode.data.props;
+    if (!oldProps && !props) return
+    if (oldProps === props) return
+    props = props || {};
+    oldProps = oldProps || {};
+    for (key in oldProps) {
+      if (!props[key]) {
+        delete elm[key];
+      }
+    }
+    for (key in props) {
+      cur = props[key];
+      old = oldProps[key];
+      if (old !== cur && (key !== 'value' || elm[key] !== cur)) {
+        elm[key] = cur;
+      }
+    }
+  }
+}
+var propsModule = {
+  create: updateProps,
+  update: updateProps,
+};
+
 const xChar = 120;
 const colonChar = 58;
 const xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -115,9 +149,7 @@ function updateAttrs(oldVnode, vnode) {
         } else if (cur === false) {
           elm.removeAttribute(key);
         } else {
-          if (key === 'value') {
-            elm[key] = cur;
-          } else if (key.charCodeAt(0) !== xChar) {
+          if (key.charCodeAt(0) !== xChar) {
             elm.setAttribute(key, cur);
           } else if (key.charCodeAt(3) === colonChar) {
             elm.setAttributeNS(xmlNS, key, cur);
@@ -131,11 +163,7 @@ function updateAttrs(oldVnode, vnode) {
     }
     for (const key in oldAttrs) {
       if (!(key in attrs)) {
-        if (key === 'value') {
-          delete elm[key];
-        } else {
-          elm.removeAttribute(key);
-        }
+        elm.removeAttribute(key);
       }
     }
   }
@@ -223,6 +251,7 @@ const cbs = {};
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
 const modules = [
   classModule,
+  propsModule,
   attributesModule,
   eventListenersModule,
 ];
@@ -247,7 +276,8 @@ function createKeyToOldIdx(children, beginIdx, endIdx) {
   return map
 }
 function emptyNodeAt(elm) {
-  return vnode(tagName(elm).toLowerCase(), {}, [], undefined, elm)
+  const tagName$1 = tagName(elm);
+  return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm)
 }
 function createRmCb(childElm, listeners) {
   return function remove() {
@@ -461,6 +491,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   if ((isComponent(oldVnode) || isComponent(vnode))) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
+        console.log(oldCh, ch);
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
       }
     } else if (isDef(ch)) {
@@ -750,6 +781,14 @@ const parseStyleText = cached(cssText => {
   }
   return res
 });
+function isProps(key) {
+  return (
+    key === 'href' ||
+    key === 'value' ||
+    key === 'checked' ||
+    key === 'disabled'
+  )
+}
 function separateProps(props) {
   const data = {};
   if (props) {
@@ -763,6 +802,11 @@ function separateProps(props) {
         data.style = typeof value === 'string'
           ? parseStyleText(value)
           : value;
+      } else if (isProps(key)) {
+        if (!data.props) {
+          data.props = {};
+        }
+        data.props[key] = value;
       } else if (key === 'hook') {
         data.hook = value;
       } else if (key === 'on' || key === 'dataset' || key === 'attrs') {
@@ -835,7 +879,7 @@ const CHILD_RECURSE = 2;
 const PROPS_ASSIGN = 3;
 const PROP_SET = MODE_PROP_SET;
 const PROP_APPEND = MODE_PROP_APPEND;
-const isProps = mode => mode >= MODE_PROP_SET;
+const isProps$1 = mode => mode >= MODE_PROP_SET;
 function build(statics) {
   let propName;
   let quote = '';
@@ -859,7 +903,7 @@ function build(statics) {
       } else if (buffer && !field) {
         scope.push([PROP_SET, buffer, true]);
       }
-    } else if (isProps(mode)) {
+    } else if (isProps$1(mode)) {
       if (buffer || (!field && mode === MODE_PROP_SET)) {
         scope.push([mode, propName, buffer]);
         mode = MODE_PROP_APPEND;
@@ -912,7 +956,7 @@ function build(statics) {
         mode = MODE_PROP_SET;
         propName = buffer;
         buffer = '';
-      }  else if (char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
+      }  else if (char === '/' && (!isProps$1(mode) || statics[i][j + 1] === '>')) {
         commit();
         if (mode === MODE_TAGNAME) {
           scope = scope.parent;
@@ -1084,4 +1128,3 @@ const oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReucer as useReducer, useState };
-//# sourceMappingURL=oops.es6m.js.map

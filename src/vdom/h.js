@@ -50,6 +50,15 @@ const parseStyleText = cached(cssText => {
   return res
 })
 
+function isProps(key) {
+  return (
+    key === 'href' ||
+    key === 'value' ||
+    key === 'checked' ||
+    key === 'disabled'
+  )
+}
+
 function separateProps(props) {
   const data = {}
   if (props) {
@@ -64,6 +73,11 @@ function separateProps(props) {
         data.style = typeof value === 'string'
           ? parseStyleText(value)
           : value
+      } else if (isProps(key)) {
+        if (!data.props) {
+          data.props = {}
+        }
+        data.props[key] = value
       } else if (key === 'hook') {
         data.hook = value
       } else if (key === 'on' || key === 'dataset' || key === 'attrs') {

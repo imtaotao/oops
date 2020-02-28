@@ -1,4 +1,5 @@
 import classModule from './class.js'
+import propsModule from './props.js'
 import attributesModule from './attributes.js'
 import eventListenersModule from './eventlisteners.js'
 
@@ -6,6 +7,7 @@ const cbs = {}
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post']
 const modules = [
   classModule,
+  propsModule,
   attributesModule,
   eventListenersModule,
 ]

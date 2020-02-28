@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style type="text/css">
+    .Input {
+      font-size: 1rem;
+      padding: 0.25rem;
+    }
+
+    .IconButton {
+      padding: 0.25rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .List {
+      margin: 0.5rem 0 0;
+      padding: 0;
+    }
+
+    .ListItem {
+      list-style-type: none;
+    }
+
+    .Label {
+      cursor: pointer;
+      padding: 0.25rem;
+      color: #555;
+    }
+    .Label:hover {
+      color: #000;
+    }
+
+    .IconButton {
+      padding: 0.25rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id='app'></div>
+<script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+<script type="module">
+  import { jsx, render, Fragment, useState, useCallback } from '../src/index.js'
+  
+  function App() {
+    const [items, setItems] = useState([
+      { id: 1, isComplete: true, text: "First" },
+      { id: 2, isComplete: true, text: "Second" },
+      { id: 3, isComplete: false, text: "Third" }
+    ])
+
+    function handleClick() {
+      setItems([
+        ...items,
+        {
+          id: Math.random(),
+          isComplete: false,
+          text: 1
+        }
+      ])
+    }
+
+    function removeItem(itemToRemove) {
+      setItems(items.filter(item => item !== itemToRemove))
+    }
+
+    function toggleItem(itemToToggle) {
+      const index = items.indexOf(itemToToggle);
+      setItems(
+        items
+          .slice(0, index)
+          .concat({
+            ...itemToToggle,
+            isComplete: !itemToToggle.isComplete
+          })
+          .concat(items.slice(index + 1))
+      );
+    }
+
+    return jsx`
+    <div>
+      <h1>List</h1>
+      <input type="text" />
+      <button
+        className="IconButton"
+        onClick=${handleClick}
+      >
+        <span role="img" aria-label="Add item">
+          ➕
+        </span>
+      </button>
+      <ul className="List">
+        ${items.map(item => {
+          return jsx`
+            <li className="ListItem">
+              <button className="IconButton" onClick=${() => removeItem(item)}>
+                🗑
+              </button>
+              <label className="Label">
+                <input
+                  className="Input ${item.isComplete}"
+                  checked=${item.isComplete}
+                  onChange=${() => toggleItem(item)}
+                  type="checkbox"
+                />${" "}
+                ${item.text} - ${item.isComplete}
+              </label>
+            </li>
+          `
+        }
+        )}
+      </ul>
+    </>
+    `
+  }
+
+  render(App, app)
+</script>
+</body>
+</html>

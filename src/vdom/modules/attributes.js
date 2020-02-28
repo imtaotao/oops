@@ -25,9 +25,7 @@ function updateAttrs(oldVnode, vnode) {
         } else if (cur === false) {
           elm.removeAttribute(key)
         } else {
-          if (key === 'value') {
-            elm[key] = cur
-          } else if (key.charCodeAt(0) !== xChar) {
+          if (key.charCodeAt(0) !== xChar) {
             elm.setAttribute(key, cur)
           } else if (key.charCodeAt(3) === colonChar) {
             // Assume xml namespace
@@ -45,11 +43,7 @@ function updateAttrs(oldVnode, vnode) {
     // 移除需要移除的属性
     for (const key in oldAttrs) {
       if (!(key in attrs)) {
-        if (key === 'value') {
-          delete elm[key]
-        } else {
-          elm.removeAttribute(key)
-        }
+        elm.removeAttribute(key)
       }
     }
   }
