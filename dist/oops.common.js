@@ -398,15 +398,33 @@ function createRmCb(childElm, listeners) {
 }
 
 function appendChild$1(parentElm, child) {
-  child && appendChild(parentElm, child);
+  if (isArray(child)) {
+    for (var i = 0; i < child.length; i++) {
+      appendChild$1(parentElm, child[i]);
+    }
+  } else {
+    child && appendChild(parentElm, child);
+  }
 }
 
 function insertChild(parentElm, child, before) {
-  child && insertBefore(parentElm, child, before);
+  if (isArray(child)) {
+    for (var i = 0; i < child.length; i++) {
+      insertChild(parentElm, child[i], before);
+    }
+  } else {
+    child && insertBefore(parentElm, child, before);
+  }
 }
 
 function removeChild$1(parentElm, child) {
-  child && removeChild(parentElm, child);
+  if (isArray(child)) {
+    for (var i = 0; i < child.length; i++) {
+      removeChild$1(parentElm, child[i]);
+    }
+  } else {
+    child && removeChild(parentElm, child);
+  }
 }
 
 function createElm(vnode, insertedVnodeQueue, parentElm) {
@@ -648,7 +666,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   if (isComponent(oldVnode) || isComponent(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
-        console.log(oldCh, ch);
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
       }
     } else if (isDef(ch)) {
@@ -721,6 +738,7 @@ function patch(oldVnode, vnode$1, parentElm) {
   return vnode$1;
 }
 
+var i$1 = 0;
 var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
@@ -802,6 +820,7 @@ function () {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
+    this.id = ++i$1;
   }
 
   _createClass(Component, [{
@@ -934,7 +953,10 @@ function () {
     }
   }, {
     key: "update",
-    value: function update(oldVnode, vnode) {}
+    value: function update(oldVnode, vnode) {
+      this.vnode = vnode;
+      this.createVnodeByCtor(true);
+    }
   }, {
     key: "destroy",
     value: function destroy(vnode) {
@@ -1337,7 +1359,7 @@ function useMemo(create, deps) {
   return component.useMemo(create, deps);
 }
 
-function useReucer(reducer, initialArg, init) {
+function useReducer(reducer, initialArg, init) {
   var component = resolveTargetComponent();
 
   var _component$setState = component.setState(typeof init === 'function' ? init(initialArg) : initialArg),
@@ -1355,7 +1377,7 @@ function useState(initialState) {
     return typeof newValue === 'function' ? newValue(oldValue) : newValue;
   };
 
-  return useReucer(update, initialState);
+  return useReducer(update, initialState);
 }
 
 function useEffect(effect, deps) {
@@ -1408,7 +1430,7 @@ var oops = {
   useState: useState,
   useEffect: useEffect,
   useContext: useContext,
-  useReducer: useReucer,
+  useReducer: useReducer,
   useCallback: useCallback,
   createContext: createContext
 };
@@ -1424,5 +1446,6 @@ exports.useCallback = useCallback;
 exports.useContext = useContext;
 exports.useEffect = useEffect;
 exports.useMemo = useMemo;
-exports.useReducer = useReucer;
+exports.useReducer = useReducer;
 exports.useState = useState;
+//# sourceMappingURL=oops.common.js.map

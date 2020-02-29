@@ -91,16 +91,14 @@
 
       const removeItem = useCallback(
         itemToRemove => {
-          console.log(items, items.filter(item => item !== itemToRemove));
           setItems(items.filter(item => item !== itemToRemove))
         },
         [items]
       );
-
+      
       const toggleItem = useCallback(
         itemToToggle => {
           const index = items.indexOf(itemToToggle);
-
           setItems(
             items
               .slice(0, index)
@@ -115,7 +113,7 @@
       );
 
       return jsx`
-        <div>
+        <>
           <h1>List</h1>
           <input
             type="text"
@@ -136,23 +134,13 @@
           </button>
           <ul className="List">
             ${items.map(item => {
-              console.clear()
-              console.log(items)
               return jsx`
-                <li className="ListItem">
-                  <button className="IconButton" onClick=${() => removeItem(item)}>
-                    🗑
-                  </button>
-                  <label className="Label">
-                    <input
-                      className="Input"
-                      checked=${item.isComplete}
-                      onChange=${() => toggleItem(item)}
-                      type="checkbox"
-                    />${" "}
-                    ${item.text}
-                  </label>
-                </li>
+                <${ListItem}
+                  key=${item.id}
+                  item=${item}
+                  removeItem=${removeItem}
+                  toggleItem=${toggleItem}
+                />
               `
             }
             )}
@@ -169,7 +157,7 @@
       const handleToggle = useCallback(() => {
         toggleItem(item);
       }, [item, toggleItem]);
-    
+
       return jsx`
         <li className="ListItem">
           <button className="IconButton" onClick=${handleDelete}>
@@ -296,7 +284,7 @@
 
     function InspectableElements() {
       return jsx`
-        <div>
+        <>
           <${SimpleValues} />
           <${ObjectProps} />
           <${UnserializableProps} />
@@ -307,7 +295,7 @@
 
     function App() {
       return jsx`
-        <div>
+        <>
           <${List} />
           <${InspectableElements} />
         </>

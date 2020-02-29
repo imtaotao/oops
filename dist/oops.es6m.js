@@ -288,13 +288,31 @@ function createRmCb(childElm, listeners) {
   }
 }
 function appendChild$1(parentElm, child) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      appendChild$1(parentElm, child[i]);
+    }
+  } else {
     child && appendChild(parentElm, child);
+  }
 }
 function insertChild(parentElm, child, before) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      insertChild(parentElm, child[i], before);
+    }
+  } else {
     child && insertBefore(parentElm, child, before);
+  }
 }
 function removeChild$1(parentElm, child) {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      removeChild$1(parentElm, child[i]);
+    }
+  } else {
     child && removeChild(parentElm, child);
+  }
 }
 function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (createComponent(vnode, parentElm)) {
@@ -491,7 +509,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   if ((isComponent(oldVnode) || isComponent(vnode))) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
-        console.log(oldCh, ch);
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
       }
     } else if (isDef(ch)) {
@@ -551,6 +568,7 @@ function patch(oldVnode, vnode$1, parentElm) {
   return vnode$1
 }
 
+let i = 0;
 const RE_RENDER_LIMIT = 25;
 const Target = {
   component: undefined,
@@ -606,6 +624,7 @@ class Component {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
+    this.id = ++i;
   }
   setState(partialState) {
     const key = this.cursor++;
@@ -702,6 +721,8 @@ class Component {
     this.createVnodeByCtor(false);
   }
   update(oldVnode, vnode) {
+    this.vnode = vnode;
+    this.createVnodeByCtor(true);
   }
   destroy(vnode) {
     for (const key in this.effects) {
@@ -1054,7 +1075,7 @@ function useMemo(create, deps) {
   return component.useMemo(create, deps)
 }
 
-function useReucer(reducer, initialArg, init) {
+function useReducer(reducer, initialArg, init) {
   const component = resolveTargetComponent();
   const [state, key] = component.setState(
     typeof init === 'function'
@@ -1070,7 +1091,7 @@ function useState(initialState) {
       ? newValue(oldValue)
       : newValue
   };
-  return useReucer(update, initialState)
+  return useReducer(update, initialState)
 }
 
 function useEffect(effect, deps) {
@@ -1121,10 +1142,11 @@ const oops = {
   useState,
   useEffect,
   useContext,
-  useReducer: useReucer,
+  useReducer,
   useCallback,
   createContext,
 };
 
 export default oops;
-export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReucer as useReducer, useState };
+export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReducer, useState };
+//# sourceMappingURL=oops.es6m.js.map

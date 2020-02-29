@@ -41,34 +41,34 @@ function createRmCb(childElm, listeners) {
 
 // 对 array 会做处理，因为组件可能会 return null，所以 child 可能没有
 export function appendChild(parentElm, child) {
-  // if (isArray(child)) {
-  //   for (let i = 0; i < child.length; i++) {
-  //     appendChild(parentElm, child[i])
-  //   }
-  // } else {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      appendChild(parentElm, child[i])
+    }
+  } else {
     child && api.appendChild(parentElm, child)
-  // }
+  }
 }
 
 function insertChild(parentElm, child, before) {
-  // if (isArray(child)) {
-  //   for (let i = 0; i < child.length; i++) {
-  //     // 依次插入，没得问题
-  //     insertChild(parentElm, child[i], before)
-  //   }
-  // } else {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      // 依次插入，没得问题
+      insertChild(parentElm, child[i], before)
+    }
+  } else {
     child && api.insertBefore(parentElm, child, before)
-  // }
+  }
 }
 
 function removeChild(parentElm, child) {
-  // if (isArray(child)) {
-  //   for (let i = 0; i < child.length; i++) {
-  //     removeChild(parentElm, child[i])
-  //   }
-  // } else {
+  if (isArray(child)) {
+    for (let i = 0; i < child.length; i++) {
+      removeChild(parentElm, child[i])
+    }
+  } else {
     child && api.removeChild(parentElm, child)
-  // }
+  }
 }
 
 export function createElm(vnode, insertedVnodeQueue, parentElm) {
@@ -299,7 +299,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     // 如果新旧节点都有子元素，则 diff children
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
-        console.log(oldCh, ch)
         updateChildren(elm, oldCh, ch, insertedVnodeQueue)
       }
     } else if (isDef(ch)) {
