@@ -1044,19 +1044,24 @@ function jsx(statics, ...fields) {
 function memo(component, areEqual) {
 }
 
-function render(vnode, app) {
+function render(vnode, app, callback) {
   if (!app) {
-    throw new Error('You must have a root dom element')
+    throw new Error('Target container is not a DOM element.')
   } else {
     if (typeof vnode === 'function') {
       vnode = h(vnode, undefined);
     }
     if (isVnode(vnode) || isPrimitive(vnode)) {
-      const elm = patch(undefined, vnode, app).elm;
+      const elm = patch(undefined, vnode, app).elm || null;
       if (vnode.tag !== FRAGMENTS_TYPE) {
         elm && appendChild(app, elm);
       }
+      callback && callback(elm);
+      return vnode.componentInstance
+        ? vnode.componentInstance
+        : vnode
     }
+    return null
   }
 }
 
