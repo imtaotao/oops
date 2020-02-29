@@ -1,6 +1,6 @@
 {
   "name": "@rustle/oops",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "A tiny hooks library",
   "main": "dist/oops.common.js",
   "module": "dist/oops.oops.esm.js",
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
+    "@babel/plugin-transform-react-jsx": "^7.8.3",
     "babel-loader": "^8.0.6",
     "babel-plugin-istanbul": "^5.2.0",
     "chokidar": "^3.3.1",

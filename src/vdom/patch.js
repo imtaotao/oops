@@ -81,7 +81,9 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (isDef(tag)) {
     let elm
     if (tag === FRAGMENTS_TYPE) {
-      elm = vnode.elm = parentElm
+      // 如果发生是 fragment，只需要在 patch 的时候，把 parentElm 作为 elm 参与 path
+      // 并不需要吧 vnode.elm 设置为 parentElm，意思是如果当前 vnode 为 fragment，他没有 elm
+      elm = parentElm
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? api.createElementNS(data.ns, tag)
@@ -276,11 +278,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let ch = vnode.children
   let oldCh = oldVnode.children
   let elm = vnode.elm = oldVnode.elm
-
-  // 如果 vnode 是 fragments
-  if (vnode.tag === FRAGMENTS_TYPE) {
-    // elm = api.parentNode(elm[0])
-  }
 
   // 调用 update 钩子
   if (isDef(vnode.data)) {

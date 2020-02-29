@@ -1,5 +1,5 @@
 /*!
- * oops.js v0.0.2
+ * oops.js v0.0.1
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
@@ -322,7 +322,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (isDef(tag)) {
     let elm;
     if (tag === FRAGMENTS_TYPE) {
-      elm = vnode.elm = parentElm;
+      elm = parentElm;
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? createElementNS(data.ns, tag)
@@ -496,7 +496,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let ch = vnode.children;
   let oldCh = oldVnode.children;
   let elm = vnode.elm = oldVnode.elm;
-  if (vnode.tag === FRAGMENTS_TYPE) ;
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
       cbs.update[i](oldVnode, vnode);
@@ -568,7 +567,6 @@ function patch(oldVnode, vnode$1, parentElm) {
   return vnode$1
 }
 
-let i = 0;
 const RE_RENDER_LIMIT = 25;
 const Target = {
   component: undefined,
@@ -624,7 +622,6 @@ class Component {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
-    this.id = ++i;
   }
   setState(partialState) {
     const key = this.cursor++;
@@ -1149,4 +1146,3 @@ const oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReducer, useState };
-//# sourceMappingURL=oops.es6m.js.map

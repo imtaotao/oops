@@ -1,7 +1,6 @@
 import patch from './patch.js'
 import { isDef, isArray, isUndef } from './is.js'
 
-let i = 0
 const RE_RENDER_LIMIT = 25
 
 // 由于组件总是在最后 return vnode，所以不需要一个队列保存父子组件的关系
@@ -67,7 +66,6 @@ export class Component {
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
-    this.id = ++i
   }
 
   // 添加不重复的 state

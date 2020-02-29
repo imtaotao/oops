@@ -1,5 +1,5 @@
 /*!
- * oops.js v0.0.2
+ * oops.js v0.0.1
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
@@ -436,7 +436,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
     var elm;
 
     if (tag === FRAGMENTS_TYPE) {
-      elm = vnode.elm = parentElm;
+      elm = parentElm;
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns) ? createElementNS(data.ns, tag) : createElement(tag);
     }
@@ -645,8 +645,6 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   var oldCh = oldVnode.children;
   var elm = vnode.elm = oldVnode.elm;
 
-  if (vnode.tag === FRAGMENTS_TYPE) ;
-
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
       cbs.update[i](oldVnode, vnode);
@@ -734,7 +732,6 @@ function patch(oldVnode, vnode$1, parentElm) {
   return vnode$1;
 }
 
-var i$1 = 0;
 var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
@@ -816,7 +813,6 @@ function () {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
-    this.id = ++i$1;
   }
 
   _createClass(Component, [{
@@ -1433,4 +1429,3 @@ var oops = {
 
 export default oops;
 export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReducer, useState };
-//# sourceMappingURL=oops.esm.js.map

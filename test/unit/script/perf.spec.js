@@ -3,7 +3,7 @@ import { genVNodeTree } from '../../../src/jsx/index.js'
 const h = (tag, props, ...children) => ({ tag, props, children })
 const html = (statics, ...fields) => genVNodeTree(h, statics, fields)
 
-describe('performance', () => {
+describe('jsx performance', () => {
 	it('creation', () => {
 		const results = []
 		const Foo = ({ name }) => html`<div class="foo">${name}</div>`
