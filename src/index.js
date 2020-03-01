@@ -8,7 +8,7 @@ import useEffect from './hooks/use-effect.js'
 import useContext from './hooks/use-context.js'
 import useReducer from './hooks/use-reducer.js'
 import useCallback from './hooks/use-callback.js'
-import createContext from './api/create-context.js'
+import { createContext } from './api/context.js'
 import { FRAGMENTS_TYPE as Fragment } from './api/types.js'
 
 const oops = {

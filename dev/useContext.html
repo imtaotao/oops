@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>useContext</title>
+
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+
+  <!-- Don't use this in production: -->
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fre"></script>
+
+  <style type="text/css">
+    
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import * as oops from '../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    const { useCallback, useState, createContext, useContext } = React;
+    // const { useCallback, useState, render, createContext, useContext } = oops
+    // ReactDOM.render = oops.render
+    // React.createElement = oops.h
+
+    const themes = {
+      light: {
+        foreground: "#000000",
+        background: "#eeeeee"
+      },
+      dark: {
+        foreground: "#ffffff",
+        background: "#222222"
+      }
+    };
+
+    const ThemeContext = createContext(themes.light);
+
+    function App() {
+      return (
+        <ThemeContext.Provider value={themes.dark}>
+          <Toolbar />
+        </ThemeContext.Provider>
+      );
+    }
+
+    function Toolbar(props) {
+      return (
+        <div>
+          <ThemedButton />
+        </div>
+      );
+    }
+
+    function ThemedButton() {
+      const theme = useContext(ThemeContext);
+
+      // console.log(theme);
+      return (
+        <button style={{ background: theme.background, color: theme.foreground }}>
+          I am styled by theme context!
+        </button>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>

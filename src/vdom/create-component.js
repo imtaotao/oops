@@ -59,6 +59,7 @@ export class Component {
     this.preProps = {}
     this.vnode = vnode
     this.Ctor = vnode.tag
+    this.dependencies = null // context 依赖
     this.parentElm = parentElm // 父级 dom 元素
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode

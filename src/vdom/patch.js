@@ -124,9 +124,7 @@ function createComponent(vnode, parentElm) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode, parentElm)
     }
-    if (isDef(vnode.componentInstance)) {
-      return true
-    }
+    return isDef(vnode.componentInstance)
   }
   return false
 }
