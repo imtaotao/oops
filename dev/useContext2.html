@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>useContext</title>
+
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+
+  <!-- Don't use this in production: -->
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fre"></script>
+
+  <style type="text/css">
+    
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useCallback, useState, createContext, useContext } = React;
+    const Context = React.createContext();
+
+    class Parent extends React.Component {
+      shouldComponentUpdate() {
+        return false;
+      }
+      render() {
+        console.log('Parent render');
+        return <Child />;
+      }
+    }
+
+    const Child2 = React.memo(function Child2(props) {
+      console.log(props);
+      return <div>{props.index}</div>
+    }, () => true)
+
+    class Child extends React.Component {
+      render() {
+        console.log('Child render');
+        return (
+          <Context.Consumer>
+            {({ index, changeIndex }) => {
+              console.log('Child Consumer render');
+              return (
+                <React.Fragment>
+                  <button onClick={changeIndex}>{index} +</button>
+                  <Child2 index={index} />
+                </React.Fragment>
+              ) 
+            }}
+          </Context.Consumer>
+        );
+      }
+    }
+
+    class Ancestor extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          index: 1
+        };
+        this.changeIndex = this.changeIndex.bind(this);
+      }
+      changeIndex() {
+        this.setState(preState => {
+          return {
+            index: preState.index + 1
+          };
+        });
+      }
+      render() {
+        console.log('Ancestor render');
+        return (
+          <Context.Provider
+            value={{
+              index: this.state.index,
+              changeIndex: this.changeIndex
+            }}
+          >
+            <Parent />
+          </Context.Provider>
+        );
+      }
+    }
+
+    ReactDOM.render(<Ancestor />, document.getElementById("root"));
+  </script>
+</body>
+</html>

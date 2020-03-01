@@ -174,14 +174,14 @@ export class Component {
     this.createVnodeByCtor(true)
   }
 
-  forceUpdate() {
+  forceUpdate(preventChildUpdate) {
     this.createVnodeByCtor(false)
   }
 
-  // 更新当前组件节点
+  // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
     this.vnode = vnode
-    this.createVnodeByCtor(true)
+    this.createVnodeByCtor(false)
   }
 
   destroy(vnode) {

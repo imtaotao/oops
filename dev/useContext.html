@@ -60,7 +60,7 @@
     function ThemedButton() {
       const theme = useContext(ThemeContext);
 
-      // console.log(theme);
+      console.log(ThemeContext.Provider);
       return (
         <button style={{ background: theme.background, color: theme.foreground }}>
           I am styled by theme context!
