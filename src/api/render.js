@@ -23,7 +23,6 @@ export default function render(vnode, app, callback) {
         ? vnode.componentInstance
         : vnode
     }
-
     return null
   }
 }

@@ -1,7 +1,7 @@
 import vnode from './vnode.js'
-import { FRAGMENTS_TYPE } from '../api/types.js'
 import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
+import { FRAGMENTS_TYPE, PROVIDER_TYPE, CONTEXT_TYPE } from '../api/types.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -120,18 +120,20 @@ function installHooks(data) {
   return data
 }
 
-export default function h(tag, props, ...children) {
-  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
-  children = children.flat(Infinity)
-  // fragments
-  if (tag === '') {
-    tag = FRAGMENTS_TYPE
+function inspectedElemntType(tag, props, children) {
+  if (typeof tag === 'object') {
+    switch (tag.$$typeof) {
+      case PROVIDER_TYPE:
+        console.log(props)
+        break
+      case CONTEXT_TYPE:
+        break
+    }
   }
+  return { tag, props, children }
+}
 
-  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-  ? separateProps(props)
-  : installHooks(props)
-
+function genVNode(tag, data, children) {
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitive(children[i])) {
@@ -143,4 +145,25 @@ export default function h(tag, props, ...children) {
     addNS(data, children, tag)
   }
   return vnode(tag, data, children, undefined, undefined)
+}
+
+export default function h(tag, props, ...children) {
+  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
+  children = children.flat(Infinity)
+
+  if (tag === '') {
+    tag = FRAGMENTS_TYPE
+  }
+
+  // 在此针对普通的 node，组件和内置组件做区分
+  const res = inspectedElemntType(tag, props, children)
+
+  tag = res.tag
+  props = res.props
+  children = res.children
+
+  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
+  ? separateProps(props)
+  : installHooks(props)
+  return genVNode(tag, data, children)
 }

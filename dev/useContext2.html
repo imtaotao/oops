@@ -20,7 +20,12 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useCallback, useState, createContext, useContext } = React;
-    const Context = React.createContext();
+    const Context = React.createContext({
+      index: 'xx'
+    });
+
+    console.log(Context);
+    console.log(Context.Consumer);
 
     class Parent extends React.Component {
       shouldComponentUpdate() {
@@ -33,9 +38,16 @@
     }
 
     const Child2 = React.memo(function Child2(props) {
-      console.log(props);
-      return <div>{props.index}</div>
-    }, () => true)
+      console.log('child2 render');
+      return (
+        <Context.Consumer>
+          {({ index }) => {
+            console.log('child2 consumer render');
+            return <div>{props.index}</div>
+          }}
+        </Context.Consumer>
+      )
+    }, () => false)
 
     class Child extends React.Component {
       render() {
@@ -74,14 +86,17 @@
       render() {
         console.log('Ancestor render');
         return (
-          <Context.Provider
-            value={{
-              index: this.state.index,
-              changeIndex: this.changeIndex
-            }}
-          >
-            <Parent />
-          </Context.Provider>
+          <React.Fragment>
+            <Context.Provider
+              value={{
+                index: this.state.index,
+                changeIndex: this.changeIndex
+              }}
+            >
+              <Parent />
+            </Context.Provider>
+            <Child/>
+          </React.Fragment>
         );
       }
     }

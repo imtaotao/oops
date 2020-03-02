@@ -23,8 +23,8 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    const { useCallback, useState, createContext, useContext } = React;
-    // const { useCallback, useState, render, createContext, useContext } = oops
+    const { Fragment, useCallback, useState, createContext, useContext } = React;
+    // const { Fragment, useCallback, useState, render, createContext, useContext } = oops
     // ReactDOM.render = oops.render
     // React.createElement = oops.h
 
@@ -43,9 +43,11 @@
 
     function App() {
       return (
-        <ThemeContext.Provider value={themes.dark}>
-          <Toolbar />
-        </ThemeContext.Provider>
+        <Fragment>
+          <ThemeContext.Provider value={themes.dark}>
+            <Toolbar />
+          </ThemeContext.Provider>
+        </Fragment>
       );
     }
 
@@ -60,7 +62,6 @@
     function ThemedButton() {
       const theme = useContext(ThemeContext);
 
-      console.log(ThemeContext.Provider);
       return (
         <button style={{ background: theme.background, color: theme.foreground }}>
           I am styled by theme context!

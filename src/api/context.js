@@ -1,12 +1,31 @@
+// context 的问题
+// 1. 取值范围
+//    在 <Context.Provider> 下的组件中的子组件，用到 context 的值是 provider 中 value 提供的值，但 provider 可能嵌套
+//    所以，要有一个队列保存每一个 provider 的值，每个 provider 的 vnode 创建完成后都要返回到上一个 provider 的值，
+//    vnode 中用到的 context.currentValue 都是在 init 生命周期中调用构造函数得到的，所以在每个组件 init 生命周期后要 pop 当前 provider 的值
+// 
+// 2. 更新模式
+//    当 <Context.Provider> 更新后，只有 provider 下用到的组件（Consumer 和 useContext）需要更新，其他用到的地方不用更新，
+//    其实按照道理来说，只要父组件更新，子组件也要跟新，但是子组件可以被 memo 方法阻断更新，这将导致 Consumer 不会被更新，
+//    所以得对所有的 Consumer 进行订阅，这样就需要对每个 provider 创建一个依赖列表，记录所有子节点中的 Consumer，然后进行更新
+//    这样带来的问题是，如果没有被 memo 方法阻断子组件的更新将会导致 Consumer 被更新两次，为了保证 Consumer 组件只被更新一次，可能需要做成异步批量更新
+//    异步更新可能会导致与 react 的行为不一致
+// 
+// 3. react 的做法
+//    provider 更新时，知道更新的是哪个 context，然后从 provider 节点往下找，每个 fiber 节点有个 context 依赖列表，
+//    如果在这个列表中找到了当前更新的 context，则当前 fiber 节点是需要更新的。这样就是 只有 provider 下的 Consumer 更新，即使被阻断更新了，react 也会
+//    重新给被阻断的 fiber 节点一个过期时间，强制更新。
+//    如果使用 snabbdom，可以在阻断更新的地方判断是真正更新还是 context 变化引起的更新，如果是 context 引起的更新，则不判断 memo 导致的阻断。与 react 给
+//    fiber 节点一个过期时间跳过阻断是同样的道理。这样就可以解决上述所有的问题
+
+
 // defaultValue: T,
 // calculateChangedBits: ?(a: T, b: T) => number,
-export const CONTEXT_TYPE = Symbol('context')
-export const PROVIDER_TYPE = Symbol('provider')
+import { CONTEXT_TYPE, PROVIDER_TYPE } from './types.js'
+
 export const MAX_SIGNED_31_BIT_INT = 1073741823
 
 let isDisallowedContextRead = false
-let lastContextDependency = null
-let lastContextWithAllBitsObserved = null
 
 export function enterDisallowedContextRead() {
   isDisallowedContextRead = true
@@ -14,12 +33,6 @@ export function enterDisallowedContextRead() {
 
 export function exitDisallowedContextRead() {
   isDisallowedContextRead = false
-}
-
-export function resetContextDependencies() {
-  isDisallowedContextRead = false
-  lastContextDependency = null
-  lastContextWithAllBitsObserved = null
 }
 
 export function calculateChangedBits(context, newValue, oldValue) {
@@ -43,7 +56,7 @@ export function calculateChangedBits(context, newValue, oldValue) {
   }
 }
 
-// 读取 context
+// 读取 context，这个方法给 Consumer 和 useContext 使用
 export function readContext(currentlyComponent, context, observedBits) {
   if (isDisallowedContextRead) {
     console.error(
@@ -54,40 +67,25 @@ export function readContext(currentlyComponent, context, observedBits) {
     )
   }
 
-  if (lastContextWithAllBitsObserved === context) {
-    // 不用做什么，我们已经在这种情况下观察到了一切
-  } else if (observedBits === false || observedBits === 0) {
-    // 不要观察任何更新
+  let resolvedObservedBits
+  if (
+    typeof observedBits !== 'number' ||
+    observedBits === MAX_SIGNED_31_BIT_INT
+  ) {
+    resolvedObservedBits = MAX_SIGNED_31_BIT_INT
   } else {
-    let resolvedObservedBits
-
-    if (
-      typeof observedBits !== 'number' ||
-      observedBits === MAX_SIGNED_31_BIT_INT
-    ) {
-      // 观察所有的更新
-      lastContextWithAllBitsObserved = context
-      resolvedObservedBits = MAX_SIGNED_31_BIT_INT
-    } else {
-      resolvedObservedBits = observedBits
-    }
-
-    const contextItem = {
-      context: context,
-      observedBits: resolvedObservedBits,
-      next: null,
-    }
-
-    // 创建一个依赖的 list
-    if (lastContextDependency === null) {
-      lastContextDependency = contextItem
-      currentlyComponent.dependencies = {
-        context: contextItem,
-      }
-    } else {
-      // 添加新的 context
-      lastContextDependency = lastContextDependency.next = contextItem
-    }
+    resolvedObservedBits = observedBits
+  }
+  
+  const item = {
+    component: currentlyComponent,
+    observedBits: resolvedObservedBits,
+  }
+  
+  if (context._dependencies === null) {
+    context._dependencies = [item]
+  } else {
+    context._dependencies.push(item)
   }
   return context._currentValue
 }
@@ -100,10 +98,11 @@ export function createContext(defaultValue, calculateChangedBits) {
       throw new Error('createContext: Expected the optional second argument to be a function.')
     }
   }
+
   const context = {
     $$typeof: CONTEXT_TYPE,
+    _dependencies: null, // 收集用到的依赖组件，Consumer 和 useContext
     _currentValue: defaultValue,
-    // _currentValue2: defaultValue, // 暂时只有一个环境
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
     Consumer: null,
@@ -114,6 +113,47 @@ export function createContext(defaultValue, calculateChangedBits) {
     _context: context,
   }
 
-  context.Consumer = context
+  const Consumer = {
+    $$typeof: CONTEXT_TYPE,
+    _context: context,
+    _calculateChangedBits: context._calculateChangedBits,
+  }
+
+  // 代理
+  Object.defineProperties(Consumer, {
+    Provider: {
+      get() {
+        console.error(
+          'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Provider> instead?',
+        )
+        return context.Provider
+      },
+      set(_Provider) {
+        context.Provider = _Provider
+      },
+    },
+
+    _currentValue: {
+      get() {
+        return context._currentValue
+      },
+      set(_currentValue) {
+        context._currentValue = _currentValue
+      },
+    },
+
+    Consumer: {
+      get() {
+        console.error(
+          false,
+          'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Consumer> instead?',
+        )
+        return context.Consumer
+      },
+    },
+  })
+  context.Consumer = Consumer
   return context
 }

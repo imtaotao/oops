@@ -7,6 +7,5 @@ export default function useReducer(reducer, initialArg, init) {
       ? init(initialArg)
       : initialArg
   )
-    
   return [state, value => component.useReducer(value, key, reducer)]
 }
