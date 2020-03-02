@@ -31,12 +31,15 @@ function emptyNodeAt(elm) {
   return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
+function nextSibling(elm) {
+  // 如果是 fragment，返回 list 中最后一个的 nextSibling
+  return api.nextSibling(isArray(elm) ? elm[elm.length - 1] : elm)
+}
+
 function realVnode(vnode) {
-  // 如果组件没有 elm，代表组件返回的是一个 fragment 或者 null
+  // 如果是组件而且组件返回的是一个 fragment
   if (isComponentAndChildIsFragment(vnode)) {
-    const componentRootVnode = vnode.componentInstance.oldRootVnode
-    // 如果没有 rootVnode，代表返回的是 null
-    return componentRootVnode || vnode
+    return vnode.componentInstance.oldRootVnode
   }
   return vnode
 }
@@ -108,6 +111,7 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
   }
   
   const { tag, data, children } = vnode
+
   if (isDef(tag)) {
     let elm
     if (tag === FRAGMENTS_TYPE) {
@@ -252,7 +256,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
       patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, parentElm)
-      insertChild(parentElm, oldStartVnode.elm, api.nextSibling(oldEndVnode.elm))
+      insertChild(parentElm, vnodeElm(oldStartVnode), nextSibling(vnodeElm(oldEndVnode)))
       oldStartVnode = oldCh[++oldStartIdx]
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
@@ -387,7 +391,7 @@ export default function patch(oldVnode, vnode, parentElm) {
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parent !== null) {
-        insertChild(parent, vnode.elm, api.nextSibling(oldVnode.elm))
+        insertChild(parent, vnodeElm(vnode), nextSibling(vnodeElm(oldVnode)))
         // 删除旧的元素
         removeVnodes(parent, [oldVnode], 0, 0)
       }

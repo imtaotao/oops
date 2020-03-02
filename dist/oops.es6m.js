@@ -15,6 +15,10 @@ function vnode(tag, data, children, text, elm) {
   }
 }
 
+const CONTEXT_TYPE = Symbol.for('oops.context');
+const PROVIDER_TYPE = Symbol.for('oops.provider');
+const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
+
 const isArray = Array.isArray;
 const emptyNode = vnode('', {}, [], undefined, undefined);
 function isDef(v) {
@@ -33,7 +37,11 @@ function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
 function isComponentAndChildIsFragment(vnode) {
-  return isComponent(vnode) && vnode.elm === undefined
+  return (
+    isComponent(vnode) &&
+    vnode.componentInstance.oldRootVnode &&
+    vnode.componentInstance.oldRootVnode.tag === FRAGMENTS_TYPE
+  )
 }
 function isFilterVnode(vnode) {
   return (
@@ -364,10 +372,6 @@ for (let i = 0; i < hooks.length; i++) {
   }
 }
 
-const CONTEXT_TYPE = Symbol.for('oops.context');
-const PROVIDER_TYPE = Symbol.for('oops.provider');
-const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
-
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch;
   for (let i = beginIdx; i <= endIdx; ++i) {
@@ -383,10 +387,12 @@ function emptyNodeAt(elm) {
   const tagName$1 = tagName(elm);
   return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm)
 }
+function nextSibling$1(elm) {
+  return nextSibling(isArray(elm) ? elm[elm.length - 1] : elm)
+}
 function realVnode(vnode) {
   if (isComponentAndChildIsFragment(vnode)) {
-    const componentRootVnode = vnode.componentInstance.oldRootVnode;
-    return componentRootVnode || vnode
+    return vnode.componentInstance.oldRootVnode
   }
   return vnode
 }
@@ -572,7 +578,7 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldStartVnode, newEndVnode)) {
       patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, parentElm);
-      insertChild(parentElm, oldStartVnode.elm, nextSibling(oldEndVnode.elm));
+      insertChild(parentElm, vnodeElm(oldStartVnode), nextSibling$1(vnodeElm(oldEndVnode)));
       oldStartVnode = oldCh[++oldStartIdx];
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldEndVnode, newStartVnode)) {
@@ -679,7 +685,7 @@ function patch(oldVnode, vnode$1, parentElm) {
       parent = parentNode(oldVnode.elm);
       createElm(vnode$1, insertedVnodeQueue, parentElm);
       if (parent !== null) {
-        insertChild(parent, vnode$1.elm, nextSibling(oldVnode.elm));
+        insertChild(parent, vnodeElm(vnode$1), nextSibling$1(vnodeElm(oldVnode)));
         removeVnodes(parent, [oldVnode], 0, 0);
       }
     }
