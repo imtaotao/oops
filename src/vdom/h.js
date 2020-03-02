@@ -1,6 +1,6 @@
 import vnode from './vnode.js'
-import { isDef, isPrimitive, isUndef } from './is.js'
 import componentVNodeHooks from './component-hooks.js'
+import { isDef, isPrimitive, isUndef, isFilterVnode } from './is.js'
 import { FRAGMENTS_TYPE, PROVIDER_TYPE, CONTEXT_TYPE } from '../api/types.js'
 
 function cached(fn) {
@@ -142,11 +142,15 @@ function inspectedElemntType(tag, props, children) {
   return { tag, props, children }
 }
 
-function genVNode(tag, data, children) {
+export function genVnode(tag, data, children) {
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitive(children[i])) {
         children[i] = vnode(undefined, undefined, undefined, children[i], undefined)
+      } else if (isFilterVnode(children[i])) {
+        // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
+        children.splice(i, 1)
+        i--
       }
     }
   }
@@ -174,5 +178,6 @@ export default function h(tag, props, ...children) {
   const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
     ? separateProps(props)
     : installHooks(props)
-  return genVNode(tag, data, children)
+
+  return genVnode(tag, data, children)
 }

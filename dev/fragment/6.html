@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragment</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+
+  <!-- Don't use this in production: -->
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fre"></script>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    // const { Fragment, useState } = React
+    const { Fragment, useState } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
+
+    function One({ index }) {
+      return (
+        [
+          'one',
+          <div>one component</div>,
+          index,
+        ]
+      )
+    }
+
+    function Two({ index }) {
+      return (
+        <Fragment>
+          two
+          <div>two component</div>
+          { index }
+        </Fragment>
+      )
+    }
+
+    function App() {
+      const [index, setIndex] = useState(0)
+      const change = index % 2 === 0
+      return (
+        <Fragment>
+          { index }
+          <div onClick={e => setIndex(index + 1)}>点击</div>
+          {
+            change
+              ? <One index={index}/>
+              : <Two index={index}/>
+          }
+        </Fragment>
+      )
+    }
+
+    ReactDOM.render(<App />, document.getElementById('app'))
+  </script>
+</body>
+</html>

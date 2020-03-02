@@ -32,9 +32,11 @@ function emptyNodeAt(elm) {
 }
 
 function realVnode(vnode) {
-  // 如果组件没有 elm，代表组件返回的肯定是一个 fragment
+  // 如果组件没有 elm，代表组件返回的是一个 fragment 或者 null
   if (isComponentAndChildIsFragment(vnode)) {
-    return vnode.componentInstance.oldRootVnode
+    const componentRootVnode = vnode.componentInstance.oldRootVnode
+    // 如果没有 rootVnode，代表返回的是 null
+    return componentRootVnode || vnode
   }
   return vnode
 }
@@ -72,7 +74,7 @@ export function appendChild(parentElm, child) {
 // 因为如果是数组代表都是 fragment，对他们的 children 肯定进行了 patch
 // patch 之后就是一样的
 function insertChild(parentElm, child, before) {
-  const beforeIsFragment = Array.isArray(before)
+  const beforeIsFragment = isArray(before)
   if (isArray(child)) {
     // 依次插入，没得问题
     for (let i = 0; i < child.length; i++) {
@@ -281,7 +283,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   }
   if (oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx) {
     if (oldStartIdx > oldEndIdx) {
-      before = vnodeElm(newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1])
+      before = newCh[newEndIdx+1] == null ? null : vnodeElm(newCh[newEndIdx+1])
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
     } else {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)

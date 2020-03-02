@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragment</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+
+  <!-- Don't use this in production: -->
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fre"></script>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    // const { Fragment, useState } = React
+    const { Fragment, useState } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
+
+    function App() {
+      const [i, setI] = useState(0)
+      const change = i % 2 === 0
+      return (
+        <div>
+          <div onClick={e => setI(i + 1)}>btn</div>
+          {change ? (
+            <Fragment>
+              <h3>Reset your password</h3>
+              <p>
+                To finish resetting your password, enter your new password
+                here and hit the "Reset" button.
+              </p>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <h3>Hi chentao!</h3>
+              <p>Thanks for joining!</p>
+              <p>
+                Just one more step - please pick a password for your account:
+              </p>
+            </Fragment>
+          )}
+        </div>
+      )
+    }
+
+    ReactDOM.render(<App />, document.getElementById('app'))
+  </script>
+</body>
+</html>

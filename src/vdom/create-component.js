@@ -1,4 +1,5 @@
 import patch from './patch.js'
+import { genVnode } from './h.js'
 import { FRAGMENTS_TYPE } from '../api/types.js'
 import { isDef, isArray, isUndef } from './is.js'
 
@@ -153,6 +154,10 @@ export class Component {
           'This usually means a return statement is missing.' +
           'Or, to render nothing, return null.'
         )
+      }
+      // 如果是 return 的一个数组，用 fragment 包裹起来
+      if (isArray(this.updateVnode)) {
+        this.updateVnode = genVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
       }
       if (isSync) {
         this.syncPatch()

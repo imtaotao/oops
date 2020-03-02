@@ -15,8 +15,6 @@ function vnode(tag, data, children, text, elm) {
   }
 }
 
-const FRAGMENTS_TYPE = Symbol('fragments');
-
 const isArray = Array.isArray;
 const emptyNode = vnode('', {}, [], undefined, undefined);
 function isDef(v) {
@@ -34,12 +32,21 @@ function isComponent(vnode) {
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
-function isPrimitive(v) {
+function isComponentAndChildIsFragment(vnode) {
+  return isComponent(vnode) && vnode.elm === undefined
+}
+function isFilterVnode(vnode) {
   return (
-    typeof v === 'string' ||
-    typeof v === 'number' ||
-    typeof v === 'boolean' ||
-    typeof v === 'symbol'
+    vnode === null ||
+    typeof vnode === 'boolean' ||
+    typeof vnode === 'undefined'
+  )
+}
+function isPrimitive(vnode) {
+  return (
+    typeof vnode === 'string' ||
+    typeof vnode === 'number' ||
+    typeof vnode === 'symbol'
   )
 }
 
@@ -125,6 +132,98 @@ function updateProps(oldVnode, vnode) {
 var propsModule = {
   create: updateProps,
   update: updateProps,
+};
+
+const raf = (typeof window !== 'undefined' && (window.requestAnimationFrame).bind(window)) || setTimeout;
+const nextFrame = function(fn) {
+  raf(function() {
+    raf(fn);
+  });
+};
+var reflowForced = false;
+function setNextFrame(obj, prop, val) {
+  nextFrame(function() {
+    obj[prop] = val;
+  });
+}
+function updateStyle(oldVnode, vnode) {
+  let cur, name, elm = vnode.elm,
+      oldStyle = oldVnode.data.style,
+      style = vnode.data.style;
+  if (!oldStyle && !style) return
+  if (oldStyle === style) return
+  oldStyle = oldStyle || {};
+  style = style || {};
+  const oldHasDel = 'delayed' in oldStyle;
+  for (name in oldStyle) {
+    if (!style[name]) {
+      if (name[0] === '-' && name[1] === '-') {
+        elm.style.removeProperty(name);
+      } else {
+        elm.style[name] = '';
+      }
+    }
+  }
+  for (name in style) {
+    cur = style[name];
+    if (name === 'delayed' && style.delayed) {
+      for (let name2 in style.delayed) {
+        cur = style.delayed[name2];
+        if (!oldHasDel || cur !== oldStyle.delayed[name2]) {
+          setNextFrame(elm.style, name2, cur);
+        }
+      }
+    } else if (name !== 'remove' && cur !== oldStyle[name]) {
+      if (name[0] === '-' && name[1] === '-') {
+        elm.style.setProperty(name, cur);
+      } else {
+        elm.style[name] = cur;
+      }
+    }
+  }
+}
+function applyDestroyStyle(vnode) {
+  let style, name, elm = vnode.elm, s = vnode.data.style;
+  if (!s || !(style = s.destroy)) return
+  for (name in style) {
+    elm.style[name] = style[name];
+  }
+}
+function applyRemoveStyle(vnode, rm) {
+  const s = vnode.data.style;
+  if (!s || !s.remove) {
+    rm();
+    return
+  }
+  if(!reflowForced) {
+    getComputedStyle(document.body).transform;
+    reflowForced = true;
+  }
+  let name, elm = vnode.elm, i = 0, compStyle,
+      style = s.remove, amount = 0, applied = [];
+  for (name in style) {
+    applied.push(name);
+    elm.style[name] = style[name];
+  }
+  compStyle = getComputedStyle(elm);
+  const props = compStyle['transition-property'].split(', ');
+  for (; i < props.length; ++i) {
+    if(applied.indexOf(props[i]) !== -1) amount++;
+  }
+  elm.addEventListener('transitionend', function (ev) {
+    if (ev.target === elm) --amount;
+    if (amount === 0) rm();
+  });
+}
+function forceReflow() {
+  reflowForced = false;
+}
+var styleModule = {
+  pre: forceReflow,
+  create: updateStyle,
+  update: updateStyle,
+  destroy: applyDestroyStyle,
+  remove: applyRemoveStyle,
 };
 
 const xChar = 120;
@@ -252,6 +351,7 @@ const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
 const modules = [
   classModule,
   propsModule,
+  styleModule,
   attributesModule,
   eventListenersModule,
 ];
@@ -263,6 +363,10 @@ for (let i = 0; i < hooks.length; i++) {
     }
   }
 }
+
+const CONTEXT_TYPE = Symbol.for('oops.context');
+const PROVIDER_TYPE = Symbol.for('oops.provider');
+const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch;
@@ -279,10 +383,24 @@ function emptyNodeAt(elm) {
   const tagName$1 = tagName(elm);
   return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm)
 }
-function createRmCb(childElm, listeners) {
+function realVnode(vnode) {
+  if (isComponentAndChildIsFragment(vnode)) {
+    const componentRootVnode = vnode.componentInstance.oldRootVnode;
+    return componentRootVnode || vnode
+  }
+  return vnode
+}
+function vnodeElm(vnode) {
+  vnode = realVnode(vnode);
+  return vnode.tag === FRAGMENTS_TYPE
+    ? vnode.children.map(vnodeElm)
+    : vnode.elm
+}
+function createRmCb(childVnode, listeners) {
+  const childElm = vnodeElm(childVnode);
   return function remove() {
     if (--listeners === 0) {
-      const parent = parentNode(childElm);
+      const parent = isArray(childElm)? null : parentNode(childElm);
       removeChild$1(parent, childElm);
     }
   }
@@ -297,9 +415,11 @@ function appendChild$1(parentElm, child) {
   }
 }
 function insertChild(parentElm, child, before) {
+  const beforeIsFragment = isArray(before);
   if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
-      insertChild(parentElm, child[i], before);
+      const currentBefore = beforeIsFragment ? before[i] : before;
+      insertChild(parentElm, child[i], currentBefore);
     }
   } else {
     child && insertBefore(parentElm, child, before);
@@ -311,12 +431,17 @@ function removeChild$1(parentElm, child) {
       removeChild$1(parentElm, child[i]);
     }
   } else {
-    child && removeChild(parentElm, child);
+    if (child) {
+      if (!parentElm) {
+        parentElm = parentNode(child);
+      }
+      removeChild(parentElm, child);
+    }
   }
 }
 function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (createComponent(vnode, parentElm)) {
-    return vnode.elm
+    return vnodeElm(vnode)
   }
   const { tag, data, children } = vnode;
   if (isDef(tag)) {
@@ -342,7 +467,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
   } else {
     vnode.elm = createTextNode(vnode.text);
   }
-  return vnode.elm
+  return vnodeElm(vnode)
 }
 function invokeCreateHooks(vnode, insertedVnodeQueue) {
   let i;
@@ -361,9 +486,7 @@ function createComponent(vnode, parentElm) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode, parentElm);
     }
-    if (isDef(vnode.componentInstance)) {
-      return true
-    }
+    return isDef(vnode.componentInstance)
   }
   return false
 }
@@ -403,7 +526,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
       if (isDef(ch.tag)) {
         invokeDestroyHook(ch);
         listeners = cbs.remove.length + 1;
-        rm = createRmCb(ch.elm, listeners);
+        rm = createRmCb(ch, listeners);
         for (i = 0; i < cbs.remove.length; ++i) {
           cbs.remove[i](ch, rm);
         }
@@ -440,21 +563,21 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
     } else if (newEndVnode == null) {
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldStartVnode, newStartVnode)) {
-      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue);
+      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, parentElm);
       oldStartVnode = oldCh[++oldStartIdx];
       newStartVnode = newCh[++newStartIdx];
     } else if (sameVnode(oldEndVnode, newEndVnode)) {
-      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue);
+      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, parentElm);
       oldEndVnode = oldCh[--oldEndIdx];
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldStartVnode, newEndVnode)) {
-      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue);
+      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, parentElm);
       insertChild(parentElm, oldStartVnode.elm, nextSibling(oldEndVnode.elm));
       oldStartVnode = oldCh[++oldStartIdx];
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldEndVnode, newStartVnode)) {
-      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue);
-      insertChild(parentElm, oldEndVnode.elm, oldStartVnode.elm);
+      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, parentElm);
+      insertChild(parentElm, vnodeElm(oldEndVnode), vnodeElm(oldStartVnode));
       oldEndVnode = oldCh[--oldEndIdx];
       newStartVnode = newCh[++newStartIdx];
     } else {
@@ -463,16 +586,16 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key];
       if (isUndef(idxInOld)) {
-        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm);
+        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode));
         newStartVnode = newCh[++newStartIdx];
       } else {
         elmToMove = oldCh[idxInOld];
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm);
+          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode));
         } else {
-          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue);
+          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue, parentElm);
           oldCh[idxInOld] = undefined;
-          insertChild(parentElm, elmToMove.elm, oldStartVnode.elm);
+          insertChild(parentElm, vnodeElm(elmToMove), vnodeElm(oldStartVnode));
         }
         newStartVnode = newCh[++newStartIdx];
       }
@@ -480,14 +603,14 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   }
   if (oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx) {
     if (oldStartIdx > oldEndIdx) {
-      before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm;
+      before = newCh[newEndIdx+1] == null ? null : vnodeElm(newCh[newEndIdx+1]);
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
     }
   }
 }
-function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
+function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
   let i, hook;
   if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
     i(oldVnode, vnode);
@@ -498,14 +621,17 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let elm = vnode.elm = oldVnode.elm;
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
-      cbs.update[i](oldVnode, vnode);
+      cbs.update[i](oldVnode, vnode, parentElm);
     }
     i = vnode.data.hook;
     if (isDef(i) && isDef(i = i.update)) {
-      i(oldVnode, vnode);
+      i(oldVnode, vnode, parentElm);
     }
   }
   if ((isComponent(oldVnode) || isComponent(vnode))) ; else if (isUndef(vnode.text)) {
+    if (vnode.tag === FRAGMENTS_TYPE) {
+      elm = parentElm;
+    }
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -548,7 +674,7 @@ function patch(oldVnode, vnode$1, parentElm) {
       oldVnode = emptyNodeAt(oldVnode);
     }
     if (sameVnode(oldVnode, vnode$1)) {
-      patchVnode(oldVnode, vnode$1, insertedVnodeQueue);
+      patchVnode(oldVnode, vnode$1, insertedVnodeQueue, parentElm);
     } else {
       parent = parentNode(oldVnode.elm);
       createElm(vnode$1, insertedVnodeQueue, parentElm);
@@ -615,6 +741,7 @@ class Component {
     this.preProps = {};
     this.vnode = vnode;
     this.Ctor = vnode.tag;
+    this.dependencies = null;
     this.parentElm = parentElm;
     this.numberOfReRenders = 0;
     this.updateVnode = undefined;
@@ -671,7 +798,7 @@ class Component {
     if (!this.updateVnode) {
       enqueueTask(() => {
         if (this.updateVnode !== null) {
-          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode);
+          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm);
           this.vnode.elm = this.oldRootVnode.elm;
           this.updateVnode = undefined;
           updateEffect(this.effects);
@@ -696,6 +823,9 @@ class Component {
           'Or, to render nothing, return null.'
         )
       }
+      if (isArray(this.updateVnode)) {
+        this.updateVnode = genVnode(FRAGMENTS_TYPE, {}, this.updateVnode);
+      }
       if (isSync) {
         this.syncPatch();
       }
@@ -717,9 +847,13 @@ class Component {
   forceUpdate() {
     this.createVnodeByCtor(false);
   }
-  update(oldVnode, vnode) {
+  update(oldVnode, vnode, parentElm) {
     this.vnode = vnode;
-    this.createVnodeByCtor(true);
+    this.parentElm = parentElm;
+    this.createVnodeByCtor(false);
+  }
+  remove(vnode, rm) {
+    rm();
   }
   destroy(vnode) {
     for (const key in this.effects) {
@@ -747,9 +881,13 @@ const componentVNodeHooks = {
     const component = vnode.componentInstance = oldVnode.componentInstance;
     component.vnode = vnode;
   },
-  update(oldVnode, vnode) {
+  update(oldVnode, vnode, parentElm) {
     const component = vnode.componentInstance;
-    component.update(oldVnode, vnode);
+    component.update(oldVnode, vnode, parentElm);
+  },
+  remove(vnode, rm) {
+    const component = vnode.componentInstance;
+    component.remove(vnode, rm);
   },
   destroy(vnode) {
     vnode.componentInstance.destroy(vnode);
@@ -863,18 +1001,33 @@ function installHooks(data) {
   }
   return data
 }
-function h(tag, props, ...children) {
-  children = children.flat(Infinity);
-  if (tag === '') {
-    tag = FRAGMENTS_TYPE;
+function inspectedElemntType(tag, props, children) {
+  if (typeof tag === 'object') {
+    switch (tag.$$typeof) {
+      case PROVIDER_TYPE:
+        if (typeof tag !== 'function') {
+          const context = tag._context;
+          function ContextProvider({ value, children }) {
+            context._contextStack.push(value);
+            return vnode(FRAGMENTS_TYPE, {}, children, undefined, undefined)
+          }
+          ContextProvider.$$typeof = tag.$$typeof;
+          ContextProvider._context = tag._context;
+          tag = ContextProvider;
+        }
+        break
+    }
   }
-  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-  ? separateProps(props)
-  : installHooks(props);
+  return { tag, props, children }
+}
+function genVnode(tag, data, children) {
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitive(children[i])) {
         children[i] = vnode(undefined, undefined, undefined, children[i], undefined);
+      } else if (isFilterVnode(children[i])) {
+        children.splice(i, 1);
+        i--;
       }
     }
   }
@@ -882,6 +1035,20 @@ function h(tag, props, ...children) {
     addNS(data, children, tag);
   }
   return vnode(tag, data, children, undefined, undefined)
+}
+function h(tag, props, ...children) {
+  children = children.flat(Infinity);
+  if (tag === '') {
+    tag = FRAGMENTS_TYPE;
+  }
+  const res = inspectedElemntType(tag, props, children);
+  tag = res.tag;
+  props = res.props;
+  children = res.children;
+  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
+    ? separateProps(props)
+    : installHooks(props);
+  return genVnode(tag, data, children)
 }
 
 const MODE_SLASH = 0;
@@ -1101,15 +1268,46 @@ function useEffect(effect, deps) {
   return component.useEffect(effect, deps)
 }
 
-function useContext(contextValue) {
+const MAX_SIGNED_31_BIT_INT = 1073741823;
+function readContext(currentlyComponent, context, observedBits) {
+  let resolvedObservedBits;
+  if (
+    typeof observedBits !== 'number' ||
+    observedBits === MAX_SIGNED_31_BIT_INT
+  ) {
+    resolvedObservedBits = MAX_SIGNED_31_BIT_INT;
+  } else {
+    resolvedObservedBits = observedBits;
+  }
+  const item = {
+    component: currentlyComponent,
+    observedBits: resolvedObservedBits,
+  };
+  if (context._dependencies === null) {
+    context._dependencies = [item];
+  } else {
+    context._dependencies.push(item);
+  }
+  return context._currentValue
 }
-
-function useCallback(callback, deps) {
-  return useMemo(() => callback, deps)
+class ContextStack {
+  constructor(context, defaultValue) {
+    this.context = context;
+    this.valueStack = [defaultValue];
+  }
+  push(value) {
+    this.valueStack.push(value);
+    this.context._currentValue = value;
+  }
+  pop() {
+    this.context._currentValue = this.valueStack.shift();
+  }
+  reset() {
+    const defaultValue = this.valueStack[0];
+    this.context._currentValue = defaultValue;
+    this.valueStack = [defaultValue];
+  }
 }
-
-const CONTEXT_TYPE = Symbol('context');
-const PROVIDER_TYPE = Symbol('provider');
 function createContext(defaultValue, calculateChangedBits) {
   if (calculateChangedBits === undefined) {
     calculateChangedBits = null;
@@ -1120,8 +1318,8 @@ function createContext(defaultValue, calculateChangedBits) {
   }
   const context = {
     $$typeof: CONTEXT_TYPE,
+    _dependencies: null,
     _currentValue: defaultValue,
-    _currentValue2: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
     Consumer: null,
@@ -1130,8 +1328,55 @@ function createContext(defaultValue, calculateChangedBits) {
     $$typeof: PROVIDER_TYPE,
     _context: context,
   };
-  context.Consumer = context;
+  const Consumer = {
+    $$typeof: CONTEXT_TYPE,
+    _context: context,
+    _calculateChangedBits: context._calculateChangedBits,
+  };
+  Object.defineProperties(Consumer, {
+    Provider: {
+      get() {
+        console.error(
+          'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Provider> instead?',
+        );
+        return context.Provider
+      },
+      set(_Provider) {
+        context.Provider = _Provider;
+      },
+    },
+    _currentValue: {
+      get() {
+        return context._currentValue
+      },
+      set(_currentValue) {
+        context._currentValue = _currentValue;
+      },
+    },
+    Consumer: {
+      get() {
+        console.error(
+          false,
+          'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Consumer> instead?',
+        );
+        return context.Consumer
+      },
+    },
+  });
+  context.Consumer = Consumer;
+  context._contextStack = new ContextStack(context, defaultValue);
   return context
+}
+
+function useContext(context, observedBits) {
+  const component = resolveTargetComponent();
+  return readContext(component, context, observedBits)
+}
+
+function useCallback(callback, deps) {
+  return useMemo(() => callback, deps)
 }
 
 const oops = {

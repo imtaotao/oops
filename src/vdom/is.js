@@ -27,11 +27,18 @@ export function isComponentAndChildIsFragment(vnode) {
   return isComponent(vnode) && vnode.elm === undefined
 }
 
-export function isPrimitive(v) {
+export function isFilterVnode(vnode) {
   return (
-    typeof v === 'string' ||
-    typeof v === 'number' ||
-    typeof v === 'boolean' ||
-    typeof v === 'symbol'
+    vnode === null ||
+    typeof vnode === 'boolean' ||
+    typeof vnode === 'undefined'
+  )
+}
+
+export function isPrimitive(vnode) {
+  return (
+    typeof vnode === 'string' ||
+    typeof vnode === 'number' ||
+    typeof vnode === 'symbol'
   )
 }
