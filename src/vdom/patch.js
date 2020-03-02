@@ -31,12 +31,6 @@ function emptyNodeAt(elm) {
   return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
-function getVnodeOrFragmentChildElm(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE
-    ? vnode.children.map(getVnodeOrFragmentChildElm)
-    : vnode.elm
-}
-
 function realVnode(vnode) {
   // 如果组件没有 elm，代表组件返回的肯定是一个 fragment
   if (isComponentAndChildIsFragment(vnode)) {
@@ -45,8 +39,15 @@ function realVnode(vnode) {
   return vnode
 }
 
+function vnodeElm(vnode) {
+  vnode = realVnode(vnode)
+  return vnode.tag === FRAGMENTS_TYPE
+    ? vnode.children.map(vnodeElm)
+    : vnode.elm
+}
+
 function createRmCb(childVnode, listeners) {
-  const childElm = getVnodeOrFragmentChildElm(realVnode(childVnode))
+  const childElm = vnodeElm(childVnode)
 
   return function remove() {
     if (--listeners === 0) {
@@ -71,13 +72,12 @@ export function appendChild(parentElm, child) {
 // 因为如果是数组代表都是 fragment，对他们的 children 肯定进行了 patch
 // patch 之后就是一样的
 function insertChild(parentElm, child, before) {
-  console.log(parentElm)
-  debugger
-  console.log(child, before)
+  const beforeIsFragment = Array.isArray(before)
   if (isArray(child)) {
+    // 依次插入，没得问题
     for (let i = 0; i < child.length; i++) {
-      // 依次插入，没得问题
-      insertChild(parentElm, child[i], before)
+      const currentBefore = beforeIsFragment ? before[i] : before
+      insertChild(parentElm, child[i], currentBefore)
     }
   } else {
     child && api.insertBefore(parentElm, child, before)
@@ -102,7 +102,7 @@ function removeChild(parentElm, child) {
 export function createElm(vnode, insertedVnodeQueue, parentElm) {
   // 如果是一个组件则没必要往下走
   if (createComponent(vnode, parentElm)) {
-    return getVnodeOrFragmentChildElm(realVnode(vnode))
+    return vnodeElm(vnode)
   }
   
   const { tag, data, children } = vnode
@@ -131,8 +131,7 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
   } else {
     vnode.elm = api.createTextNode(vnode.text)
   }
-  console.log(vnode, getVnodeOrFragmentChildElm(vnode))
-  return getVnodeOrFragmentChildElm(vnode)
+  return vnodeElm(vnode)
 }
 
 function invokeCreateHooks(vnode, insertedVnodeQueue) {
@@ -256,7 +255,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
       patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, parentElm)
-      insertChild(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+      insertChild(parentElm, vnodeElm(oldEndVnode), vnodeElm(oldStartVnode))
       oldEndVnode = oldCh[--oldEndIdx]
       newStartVnode = newCh[++newStartIdx]
     } else {
@@ -265,16 +264,16 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key]
       if (isUndef(idxInOld)) { // New element
-        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
+        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode))
         newStartVnode = newCh[++newStartIdx]
       } else {
         elmToMove = oldCh[idxInOld]
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
+          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode))
         } else {
           patchVnode(elmToMove, newStartVnode, insertedVnodeQueue, parentElm)
           oldCh[idxInOld] = undefined
-          insertChild(parentElm, elmToMove.elm, oldStartVnode.elm)
+          insertChild(parentElm, vnodeElm(elmToMove), vnodeElm(oldStartVnode))
         }
         newStartVnode = newCh[++newStartIdx]
       }
@@ -282,7 +281,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   }
   if (oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx) {
     if (oldStartIdx > oldEndIdx) {
-      before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm
+      before = vnodeElm(newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1])
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
     } else {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)

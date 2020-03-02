@@ -53,10 +53,10 @@
   <body>
     <div id="root"></div>
     <script type="text/babel">
-      const { Fragment, useCallback, useState } = React;
-      // const { Fragment, useCallback, useState, render } = oops
-      // ReactDOM.render = oops.render
-      // React.createElement = oops.h
+      // const { Fragment, useCallback, useState } = React;
+      const { Fragment, useCallback, useState, render } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
 
       function List(props) {
         const [newItemText, setNewItemText] = useState("");

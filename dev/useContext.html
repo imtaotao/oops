@@ -44,15 +44,15 @@
     function App() {
       const [a, seta] = useState(0)
       setTimeout(() => {
-        if (i) return
+        // if (i) return
         i = true
         seta(a + 1)
-      }, 3500)
+      }, 1000)
       return (
         <Fragment>
           { a }
           <ThemeContext.Provider value={themes.dark}>
-            <Toolbar />
+            <Toolbar a={a}/>
           </ThemeContext.Provider>
           <ThemedButton/>
         </Fragment>
@@ -62,18 +62,18 @@
     function Toolbar(props) {
       return (
         <div>
-          <ThemedButton />
+          <ThemedButton a={props.a} />
         </div>
       );
     }
 
-    function ThemedButton() {
+    function ThemedButton(props) {
       const theme = useContext(ThemeContext);
 
-      // console.log(theme);
+      console.log(theme);
       return (
         <button style={{ background: theme.background, color: theme.foreground }}>
-          I am styled by theme context!
+          I am styled by theme context! { props.a }
         </button>
       );
     }
