@@ -67,6 +67,9 @@ export function appendChild(parentElm, child) {
   }
 }
 
+// child 和 before 如果都是数组的话，肯定是一样的
+// 因为如果是数组代表都是 fragment，对他们的 children 肯定进行了 patch
+// patch 之后就是一样的
 function insertChild(parentElm, child, before) {
   console.log(parentElm)
   debugger
