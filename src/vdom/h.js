@@ -124,7 +124,16 @@ function inspectedElemntType(tag, props, children) {
   if (typeof tag === 'object') {
     switch (tag.$$typeof) {
       case PROVIDER_TYPE:
-        console.log(props)
+        if (typeof tag !== 'function') {
+          const context = tag._context
+          function ContextProvider({ value, children }) {
+            context._contextStack.push(value)
+            return vnode(FRAGMENTS_TYPE, {}, children, undefined, undefined)
+          }
+          ContextProvider.$$typeof = tag.$$typeof
+          ContextProvider._context = tag._context
+          tag = ContextProvider
+        }
         break
       case CONTEXT_TYPE:
         break
@@ -163,7 +172,7 @@ export default function h(tag, props, ...children) {
   children = res.children
 
   const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-  ? separateProps(props)
-  : installHooks(props)
+    ? separateProps(props)
+    : installHooks(props)
   return genVNode(tag, data, children)
 }

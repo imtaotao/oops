@@ -23,6 +23,10 @@ export function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
 
+export function isComponentAndChildIsFragment(vnode) {
+  return isComponent(vnode) && vnode.elm === undefined
+}
+
 export function isPrimitive(v) {
   return (
     typeof v === 'string' ||

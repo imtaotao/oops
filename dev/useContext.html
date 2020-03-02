@@ -10,7 +10,6 @@
 
   <!-- Don't use this in production: -->
   <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fre"></script>
 
   <style type="text/css">
     
@@ -23,10 +22,10 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    const { Fragment, useCallback, useState, createContext, useContext } = React;
-    // const { Fragment, useCallback, useState, render, createContext, useContext } = oops
-    // ReactDOM.render = oops.render
-    // React.createElement = oops.h
+    // const { Fragment, useCallback, useState, createContext, useContext } = React;
+    const { Fragment, useCallback, useState, render, createContext, useContext } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
 
     const themes = {
       light: {
@@ -41,12 +40,21 @@
 
     const ThemeContext = createContext(themes.light);
 
+    let i = false
     function App() {
+      const [a, seta] = useState(0)
+      setTimeout(() => {
+        if (i) return
+        i = true
+        seta(a + 1)
+      }, 3500)
       return (
         <Fragment>
+          { a }
           <ThemeContext.Provider value={themes.dark}>
             <Toolbar />
           </ThemeContext.Provider>
+          <ThemedButton/>
         </Fragment>
       );
     }
@@ -62,6 +70,7 @@
     function ThemedButton() {
       const theme = useContext(ThemeContext);
 
+      // console.log(theme);
       return (
         <button style={{ background: theme.background, color: theme.foreground }}>
           I am styled by theme context!

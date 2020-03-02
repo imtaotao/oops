@@ -1,4 +1,5 @@
 import patch from './patch.js'
+import { FRAGMENTS_TYPE } from '../api/types.js'
 import { isDef, isArray, isUndef } from './is.js'
 
 const RE_RENDER_LIMIT = 25
@@ -127,7 +128,7 @@ export class Component {
       // 异步的 patch 减少对 dom 的操作
       enqueueTask(() => {
         if (this.updateVnode !== null) {
-          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
+          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm)
           this.vnode.elm = this.oldRootVnode.elm
           this.updateVnode = undefined
           updateEffect(this.effects)
@@ -174,14 +175,20 @@ export class Component {
     this.createVnodeByCtor(true)
   }
 
-  forceUpdate(preventChildUpdate) {
+  forceUpdate() {
     this.createVnodeByCtor(false)
   }
 
   // 更新当前组件节点，同步更新
-  update(oldVnode, vnode) {
+  update(oldVnode, vnode, parentElm) {
     this.vnode = vnode
+    this.parentElm = parentElm
     this.createVnodeByCtor(false)
+  }
+
+  remove(vnode, rm) {
+    // 删除
+    rm()
   }
 
   destroy(vnode) {

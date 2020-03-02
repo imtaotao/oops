@@ -21,9 +21,14 @@ const componentVNodeHooks = {
     component.vnode = vnode
   },
 
-  update(oldVnode, vnode) {
+  update(oldVnode, vnode, parentElm) {
     const component = vnode.componentInstance
-    component.update(oldVnode, vnode)
+    component.update(oldVnode, vnode, parentElm)
+  },
+
+  remove(vnode, rm) {
+    const component = vnode.componentInstance
+    component.remove(vnode, rm)
   },
 
   destroy(vnode) {

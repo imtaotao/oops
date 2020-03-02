@@ -2,7 +2,7 @@
 // 1. 取值范围
 //    在 <Context.Provider> 下的组件中的子组件，用到 context 的值是 provider 中 value 提供的值，但 provider 可能嵌套
 //    所以，要有一个队列保存每一个 provider 的值，每个 provider 的 vnode 创建完成后都要返回到上一个 provider 的值，
-//    vnode 中用到的 context.currentValue 都是在 init 生命周期中调用构造函数得到的，所以在每个组件 init 生命周期后要 pop 当前 provider 的值
+//    vnode 中用到的 context.currentValue 都是在 init 生命周期中调用 component 函数得到的，所以在每个组件 init 生命周期后要 pop 当前 provider 的值
 // 
 // 2. 更新模式
 //    当 <Context.Provider> 更新后，只有 provider 下用到的组件（Consumer 和 useContext）需要更新，其他用到的地方不用更新，
@@ -90,6 +90,28 @@ export function readContext(currentlyComponent, context, observedBits) {
   return context._currentValue
 }
 
+class ContextStack {
+  constructor(context, defaultValue) {
+    this.context = context
+    this.valueStack = [defaultValue]
+  }
+
+  push(value) {
+    this.valueStack.push(value)
+    this.context._currentValue = value
+  }
+
+  pop() {
+    this.context._currentValue = this.valueStack.shift()
+  }
+
+  reset() {
+    const defaultValue = this.valueStack[0]
+    this.context._currentValue = defaultValue
+    this.valueStack = [defaultValue]
+  }
+}
+
 export function createContext(defaultValue, calculateChangedBits) {
   if (calculateChangedBits === undefined) {
     calculateChangedBits = null
@@ -101,7 +123,7 @@ export function createContext(defaultValue, calculateChangedBits) {
 
   const context = {
     $$typeof: CONTEXT_TYPE,
-    _dependencies: null, // 收集用到的依赖组件，Consumer 和 useContext
+    _dependencies: null,
     _currentValue: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
@@ -155,5 +177,6 @@ export function createContext(defaultValue, calculateChangedBits) {
     },
   })
   context.Consumer = Consumer
+  context._contextStack = new ContextStack(context, defaultValue)
   return context
 }
