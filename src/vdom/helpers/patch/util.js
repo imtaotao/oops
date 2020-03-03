@@ -163,7 +163,6 @@ export function createComponent(vnode, parentElm) {
   return false
 }
 
-
 export function invokeCreateHooks(vnode, insertedVnodeQueue) {
   let i
   for (i = 0; i < cbs.create.length; i++) {

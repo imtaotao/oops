@@ -27,10 +27,10 @@ export function render(vnode, app, callback) {
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app)
       const elm = vnodeElm(vnode) || null
+
       if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
         elm && appendChild(app, elm)
       }
-
       if (typeof callback === 'function') {
         callback(elm)
       }
