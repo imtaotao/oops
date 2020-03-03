@@ -86,9 +86,7 @@ export function removeChild(parentElm, child) {
     }
   } else {
     if (child) {
-      if (!parentElm) {
-        parentElm = api.parentNode(child)
-      }
+      parentElm = parentElm || api.parentNode(child)
       api.removeChild(parentElm, child)
     }
   }
@@ -96,10 +94,10 @@ export function removeChild(parentElm, child) {
 
 export function insertChild(parentElm, child, before) {
   if (isArray(child)) {
-    let len = 0
+    let i = 0
     child = child.flat(Infinity)
-    while(len++ > child.length - 1) {
-      insertChild(parentElm, child[len], before)
+    while(i++ < child.length - 1) {
+      insertChild(parentElm, child[i], before)
     }
   } else {
     if (child) {
