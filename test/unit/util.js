@@ -14,12 +14,13 @@ export function asyncRender(vnode, app) {
   if (!app) {
     app = document.createElement('div')
   }
+
+  const geml = elm =>
+    Array.isArray(elm)
+      ? geml(elm[0])
+      : elm
+
   return new Promise(resolve => {
-    render(vnode, app, elm => {
-      elm = Array.isArray(elm)
-        ? elm[0]
-        : elm
-      resolve(elm)
-    })
+    render(vnode, app, elm => resolve(geml(elm)))
   })
 }
