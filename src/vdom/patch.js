@@ -31,9 +31,22 @@ function emptyNodeAt(elm) {
   return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
+function fragmentsLastElement(elms) {
+  const elm = elms[elms.length - 1]
+  return isArray(elm)
+    ? fragmentsLastElement(elm)
+    : elm
+}
+
 function nextSibling(elm) {
   // 如果是 fragment，返回 list 中最后一个的 nextSibling
-  return api.nextSibling(isArray(elm) ? elm[elm.length - 1] : elm)
+  return (
+    api.nextSibling(
+      isArray(elm)
+        ? fragmentsLastElement(elm)
+        : elm
+    )
+  )
 }
 
 function realVnode(vnode) {

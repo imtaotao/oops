@@ -387,8 +387,20 @@ function emptyNodeAt(elm) {
   const tagName$1 = tagName(elm);
   return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm)
 }
+function fragmentsLastElement(elms) {
+  const elm = elms[elms.length - 1];
+  return isArray(elm)
+    ? fragmentsLastElement(elm)
+    : elm
+}
 function nextSibling$1(elm) {
-  return nextSibling(isArray(elm) ? elm[elm.length - 1] : elm)
+  return (
+    nextSibling(
+      isArray(elm)
+        ? fragmentsLastElement(elm)
+        : elm
+    )
+  )
 }
 function realVnode(vnode) {
   if (isComponentAndChildIsFragment(vnode)) {
