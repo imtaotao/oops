@@ -1,7 +1,7 @@
-import jsx from './jsx/index.js'
-import memo from './api/memo.js'
-import h from './vdom/h/index.js'
-import render from './api/render.js'
+import { h } from './vdom/h.js'
+import { jsx } from './jsx/index.js'
+import { memo} from './api/memo.js'
+import { render } from './api/render.js'
 import { createContext } from './api/context.js'
 import { FRAGMENTS_TYPE as Fragment } from './api/nodeSymbols.js'
 import {

@@ -1,15 +1,14 @@
 import {
-  CONTEXT_TYPE,
-  PROVIDER_TYPE,
-  FRAGMENTS_TYPE,
-} from '../../api/nodeSymbols.js'
-import {
   flatten,
   formatVnode,
   installHooks,
   separateProps,
-} from '../helpers/h.js'
-import createVnode from './vnode.js'
+} from './helpers/h.js'
+import {
+  CONTEXT_TYPE,
+  PROVIDER_TYPE,
+  FRAGMENTS_TYPE,
+} from '../api/nodeSymbols.js'
 
 function inspectedElemntType(tag, props, children) {
   if (typeof tag === 'object') {
@@ -33,8 +32,14 @@ function inspectedElemntType(tag, props, children) {
   return { tag, props, children }
 }
 
+export function createVnode(tag, data, children, text, elm) {
+  const componentInstance = undefined
+  const key = data ? data.key : undefined
 
-export default function h(tag, props, ...children) {
+  return { tag, data, children, key, elm, text, componentInstance }
+}
+
+export function h(tag, props, ...children) {
   // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
   children = flatten(children)
   if (tag === '') tag = FRAGMENTS_TYPE

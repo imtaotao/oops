@@ -1,8 +1,8 @@
-import patch from '../patch/index.js'
-import createVnode from '../h/vnode.js'
+import { patch } from '../patch.js'
+import { createVnode } from '../h.js'
 import { formatVnode } from '../helpers/h.js'
-import { isPrimitiveVnode } from '../patch/is.js'
 import { isUndef, isArray } from '../../shared.js'
+import { isPrimitiveVnode } from '../helpers/patch/is.js'
 import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
 import {
   equalDeps,

@@ -1,6 +1,6 @@
+import { Component } from './create.js'
 import { isUndef } from '../../shared.js'
-import { isComponent } from '../patch/is.js'
-import { Component } from './createComponent.js'
+import { isComponent } from '../helpers/patch/is.js'
 
 function createComponentInstanceForVnode(vnode, parentElm) {
   if (isUndef(vnode.componentInstance)) {
@@ -9,7 +9,7 @@ function createComponentInstanceForVnode(vnode, parentElm) {
   }
 }
 
-const componentVNodeHooks = {
+export const componentVNodeHooks = {
   init(vnode, parentElm) {
     if (isComponent(vnode)) {
       createComponentInstanceForVnode(vnode, parentElm)
@@ -41,5 +41,3 @@ const componentVNodeHooks = {
     vnode.componentInstance.destroy(vnode)
   }
 }
-
-export default componentVNodeHooks

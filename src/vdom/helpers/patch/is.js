@@ -1,7 +1,7 @@
-import vnode from '../h/vnode.js'
-import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
+import { createVnode } from '../../h.js'
+import { FRAGMENTS_TYPE } from '../../../api/nodeSymbols.js'
 
-export const emptyNode = vnode('', {}, [], undefined, undefined)
+export const emptyNode = createVnode('', {}, [], undefined, undefined)
 
 export function isVnode(vnode) {
   return vnode.tag !== undefined

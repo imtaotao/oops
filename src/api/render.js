@@ -1,19 +1,18 @@
-import h from '../vdom/h/index.js'
 import { isArray } from '../shared.js'
-import createVnode from '../vdom/h/vnode.js'
+import { patch } from '../vdom/patch.js'
+import { h, createVnode } from '../vdom/h.js'
 import { formatVnode } from '../vdom/helpers/h.js'
 import { FRAGMENTS_TYPE } from './nodeSymbols.js'
-import { appendChild } from '../vdom/patch/domApi.js'
-import patch, { vnodeElm } from '../vdom/patch/index.js'
+import { vnodeElm } from '../vdom/helpers/patch/util.js'
+import { appendChild } from '../vdom/helpers/patch/domApi.js'
 import {
   isVnode,
   isFragment,
   isPrimitiveVnode,
   isComponentAndChildIsFragment,
-} from '../vdom/patch/is.js'
+} from '../vdom/helpers/patch/is.js'
 
-
-export default function render(vnode, app, callback) {
+export function render(vnode, app, callback) {
   if (!app) {
     throw new Error('Target container is not a DOM element.')
   } else {

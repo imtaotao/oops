@@ -1,7 +1,7 @@
-import createVnode from '../h/vnode.js'
+import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
-import componentVNodeHooks from '../component/registerHooks.js'
-import { isPrimitiveVnode, isFilterVnode } from '../patch/is.js'
+import { componentVNodeHooks } from '../component/hooks.js'
+import { isPrimitiveVnode, isFilterVnode } from './patch/is.js'
 
 function cached(fn) {
   const cache = Object.create(null)

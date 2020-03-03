@@ -1,4 +1,4 @@
-import h from '../vdom/h/index.js'
+import { h } from '../vdom/h.js'
 import { build, evaluate } from './parse.js'
 
 const CACHE = new Map()
@@ -15,6 +15,6 @@ export function genVNodeTree(h, statics, fields) {
   return result.length > 1 ? result : result[0]
 }
 
-export default function jsx(statics, ...fields) {
+export function jsx(statics, ...fields) {
   return genVNodeTree(h, statics, fields)
 }

@@ -1,3 +1,3 @@
-export default function memo(component, areEqual) {
+export function memo(component, areEqual) {
 
 }

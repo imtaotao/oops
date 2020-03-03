@@ -1,10 +1,10 @@
-import classModule from './class.js'
-import propsModule from './props.js'
-import styleModule from './style.js'
-import attributesModule from './attributes.js'
-import eventListenersModule from './eventlisteners.js'
+import { classModule } from './class.js'
+import { propsModule } from './props.js'
+import { styleModule } from './style.js'
+import { attributesModule } from './attributes.js'
+import { eventListenersModule } from './eventlisteners.js'
 
-const cbs = {}
+export const cbs = {}
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post']
 const modules = [
   classModule,
@@ -22,5 +22,3 @@ for (let i = 0; i < hooks.length; i++) {
     }
   }
 }
-
-export default cbs

@@ -99,7 +99,7 @@ function forceReflow() {
   reflowForced = false
 }
 
-export default {
+export const styleModule = {
   pre: forceReflow,
   create: updateStyle,
   update: updateStyle,

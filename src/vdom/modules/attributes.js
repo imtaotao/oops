@@ -49,7 +49,7 @@ function updateAttrs(oldVnode, vnode) {
   }
 }
 
-export default {
+export const attributesModule = {
   create: updateAttrs,
   update: updateAttrs,
 }
