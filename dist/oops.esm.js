@@ -81,7 +81,7 @@ function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance");
 }
 
-var isArray$1 = Array.isArray;
+var isArray = Array.isArray;
 function isDef(v) {
   return v !== undefined;
 }
@@ -505,14 +505,14 @@ function emptyNodeAt(elm) {
 }
 function findLastElm(elms) {
   var elm = elms[elms.length - 1];
-  return isArray$1(elm) ? findLastElm(elm) : elm;
+  return isArray(elm) ? findLastElm(elm) : elm;
 }
 function findFirstElm(elms) {
   var elm = elms[0];
-  return isArray$1(elm) ? findFirstElm(elm) : elm;
+  return isArray(elm) ? findFirstElm(elm) : elm;
 }
 function nextSibling$1(elm) {
-  return nextSibling(isArray$1(elm) ? findLastElm(elm) : elm);
+  return nextSibling(isArray(elm) ? findLastElm(elm) : elm);
 }
 function realVnode(vnode) {
   return isComponentAndChildIsFragment(vnode) ? vnode.componentInstance.oldRootVnode : vnode;
@@ -525,13 +525,13 @@ function createRmCb(childVnode, listeners) {
   var childElm = vnodeElm(childVnode);
   return function remove() {
     if (--listeners === 0) {
-      var parent = isArray$1(childElm) ? null : parentNode(childElm);
+      var parent = isArray(childElm) ? null : parentNode(childElm);
       removeChild$1(parent, childElm);
     }
   };
 }
 function appendChild$1(parentElm, child) {
-  if (isArray$1(child)) {
+  if (isArray(child)) {
     for (var i = 0; i < child.length; i++) {
       appendChild$1(parentElm, child[i]);
     }
@@ -540,7 +540,7 @@ function appendChild$1(parentElm, child) {
   }
 }
 function removeChild$1(parentElm, child) {
-  if (isArray$1(child)) {
+  if (isArray(child)) {
     for (var i = 0; i < child.length; i++) {
       removeChild$1(parentElm, child[i]);
     }
@@ -555,7 +555,7 @@ function removeChild$1(parentElm, child) {
   }
 }
 function insertChild(parentElm, child, before) {
-  if (isArray$1(child)) {
+  if (isArray(child)) {
     var len = 0;
     child = child.flat(Infinity);
 
@@ -564,7 +564,7 @@ function insertChild(parentElm, child, before) {
     }
   } else {
     if (child) {
-      if (isArray$1(before)) {
+      if (isArray(before)) {
         before = findFirstElm(before);
       }
 
@@ -590,7 +590,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
       elm = vnode.elm = isDef(data) && isDef(data.ns) ? createElementNS(data.ns, tag) : createElement(tag);
     }
 
-    if (isArray$1(children)) {
+    if (isArray(children)) {
       for (var i = 0; i < children.length; i++) {
         var chVNode = children[i];
 
@@ -835,7 +835,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
 }
 
 function patch(oldVnode, vnode, parentElm) {
-  if (isArray$1(vnode)) {
+  if (isArray(vnode)) {
     throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
   }
 
@@ -1055,7 +1055,7 @@ function () {
           throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
         }
 
-        if (isArray$1(this.updateVnode)) {
+        if (isArray(this.updateVnode)) {
           this.updateVnode = formatVnode(FRAGMENTS_TYPE, {}, this.updateVnode);
         } else if (isPrimitiveVnode(this.updateVnode)) {
           this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined);
@@ -1615,7 +1615,7 @@ function render(vnode, app, callback) {
   } else {
     if (typeof vnode === 'function') {
       vnode = h(vnode, undefined);
-    } else if (isArray$1(vnode)) {
+    } else if (isArray(vnode)) {
       vnode = formatVnode(FRAGMENTS_TYPE, {}, vnode);
     } else if (isPrimitiveVnode(vnode)) {
       vnode = createVnode(undefined, undefined, undefined, vnode, undefined);

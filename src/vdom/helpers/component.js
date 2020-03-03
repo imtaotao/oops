@@ -1,4 +1,4 @@
-import { isDef } from '../../shared.js'
+import { isDef, isArray } from '../../shared.js'
 
 export function mergeProps({data, children}) {
   const res = { children }
