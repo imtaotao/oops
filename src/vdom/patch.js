@@ -218,12 +218,16 @@ export function patch(oldVnode, vnode, parentElm) {
     if (sameVnode(oldVnode, vnode)) {
       patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm)
     } else {
+      // 先获取 sibling，因为 fragment 的问题会导致 parentElm 已经被插入新的元素
+      // 如果后面取会导致取的是错的
+      const nextSiblingElm = nextSibling(vnodeElm(oldVnode))
+
       // 创建元素
       createElm(vnode, insertedVnodeQueue, parentElm)
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
       if (parentElm !== null) {
-        insertChild(parentElm, vnodeElm(vnode), nextSibling(vnodeElm(oldVnode)))
+        insertChild(parentElm, vnodeElm(vnode), nextSiblingElm)
         // 删除旧的元素
         removeVnodes(parentElm, [oldVnode], 0, 0)
       }

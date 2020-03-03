@@ -550,21 +550,17 @@ function removeChild$1(parentElm, child) {
     }
   } else {
     if (child) {
-      if (!parentElm) {
-        parentElm = parentNode(child);
-      }
-
+      parentElm = parentElm || parentNode(child);
       removeChild(parentElm, child);
     }
   }
 }
 function insertChild(parentElm, child, before) {
   if (isArray(child)) {
-    var len = 0;
     child = child.flat(Infinity);
 
-    while (len++ > child.length - 1) {
-      insertChild(parentElm, child[len], before);
+    for (var i = 0; i < child.length; i++) {
+      insertChild(parentElm, child[i], before);
     }
   } else {
     if (child) {
@@ -859,10 +855,11 @@ function patch(oldVnode, vnode, parentElm) {
     if (sameVnode(oldVnode, vnode)) {
       patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm);
     } else {
+      var nextSiblingElm = nextSibling$1(vnodeElm(oldVnode));
       createElm(vnode, insertedVnodeQueue, parentElm);
 
       if (parentElm !== null) {
-        insertChild(parentElm, vnodeElm(vnode), nextSibling$1(vnodeElm(oldVnode)));
+        insertChild(parentElm, vnodeElm(vnode), nextSiblingElm);
         removeVnodes(parentElm, [oldVnode], 0, 0);
       }
     }

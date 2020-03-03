@@ -94,9 +94,8 @@ export function removeChild(parentElm, child) {
 
 export function insertChild(parentElm, child, before) {
   if (isArray(child)) {
-    let i = 0
     child = child.flat(Infinity)
-    while(i++ < child.length - 1) {
+    for (let i = 0; i < child.length; i++) {
       insertChild(parentElm, child[i], before)
     }
   } else {
