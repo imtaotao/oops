@@ -1,6 +1,6 @@
 import { asyncRender, toRender } from '../util.js'
 import { h, jsx, Fragment } from '../../../src/index.js'
-import { FRAGMENTS_TYPE } from '../../../src/api/types.js'
+import { FRAGMENTS_TYPE } from '../../../src/api/nodeSymbols.js'
 
 function div(children = []) {
   children = children.map(

@@ -1628,45 +1628,6 @@ function render(vnode, app, callback) {
   }
 }
 
-function resolveTargetComponent() {
-  if (Target.component === undefined) {
-    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.');
-  }
-
-  return Target.component;
-}
-
-function useMemo(create, deps) {
-  var component = resolveTargetComponent();
-  return component.useMemo(create, deps);
-}
-
-function useReducer(reducer, initialArg, init) {
-  var component = resolveTargetComponent();
-
-  var _component$setState = component.setState(typeof init === 'function' ? init(initialArg) : initialArg),
-      _component$setState2 = _slicedToArray(_component$setState, 2),
-      state = _component$setState2[0],
-      key = _component$setState2[1];
-
-  return [state, function (value) {
-    return component.useReducer(value, key, reducer);
-  }];
-}
-
-function useState(initialState) {
-  var update = function update(oldValue, newValue) {
-    return typeof newValue === 'function' ? newValue(oldValue) : newValue;
-  };
-
-  return useReducer(update, initialState);
-}
-
-function useEffect(effect, deps) {
-  var component = resolveTargetComponent();
-  return component.useEffect(effect, deps);
-}
-
 var MAX_SIGNED_31_BIT_INT = 1073741823;
 function readContext(currentlyComponent, context, observedBits) {
 
@@ -1781,15 +1742,49 @@ function createContext(defaultValue, calculateChangedBits) {
   return context;
 }
 
-function useContext(context, observedBits) {
-  var component = resolveTargetComponent();
-  return readContext(component, context, observedBits);
+function resolveTargetComponent() {
+  if (Target.component === undefined) {
+    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.');
+  }
+
+  return Target.component;
 }
 
+function useEffect(effect, deps) {
+  var component = resolveTargetComponent();
+  return component.useEffect(effect, deps);
+}
+function useMemo(create, deps) {
+  var component = resolveTargetComponent();
+  return component.useMemo(create, deps);
+}
 function useCallback(callback, deps) {
   return useMemo(function () {
     return callback;
   }, deps);
+}
+function useContext(context, observedBits) {
+  var component = resolveTargetComponent();
+  return readContext(component, context, observedBits);
+}
+function useState(initialState) {
+  var update = function update(oldValue, newValue) {
+    return typeof newValue === 'function' ? newValue(oldValue) : newValue;
+  };
+
+  return useReducer(update, initialState);
+}
+function useReducer(reducer, initialArg, init) {
+  var component = resolveTargetComponent();
+
+  var _component$setState = component.setState(typeof init === 'function' ? init(initialArg) : initialArg),
+      _component$setState2 = _slicedToArray(_component$setState, 2),
+      state = _component$setState2[0],
+      key = _component$setState2[1];
+
+  return [state, function (value) {
+    return component.useReducer(value, key, reducer);
+  }];
 }
 
 var oops = {

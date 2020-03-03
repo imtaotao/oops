@@ -1,8 +1,8 @@
-import patch from './patch.js'
-import { genVnode } from './h.js'
-import createVnode from './vnode.js'
-import { FRAGMENTS_TYPE } from '../api/types.js'
-import { isDef, isArray, isUndef, isPrimitive } from './is.js'
+import patch from '../patch/index.js'
+import { genVnode } from '../h/index.js'
+import createVnode from '../h/vnode.js'
+import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
+import { isDef, isArray, isUndef, isPrimitive } from '../patch/is.js'
 
 const RE_RENDER_LIMIT = 25
 

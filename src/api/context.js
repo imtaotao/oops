@@ -21,7 +21,7 @@
 
 // defaultValue: T,
 // calculateChangedBits: ?(a: T, b: T) => number,
-import { CONTEXT_TYPE, PROVIDER_TYPE } from './types.js'
+import { CONTEXT_TYPE, PROVIDER_TYPE } from './nodeSymbols.js'
 
 export const MAX_SIGNED_31_BIT_INT = 1073741823
 

@@ -1,4 +1,4 @@
-import h from '../vdom/h.js'
+import h from '../vdom/h/index.js'
 import { build, evaluate } from './parse.js'
 
 const CACHE = new Map()

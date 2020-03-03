@@ -1293,42 +1293,6 @@ function render(vnode, app, callback) {
   }
 }
 
-function resolveTargetComponent() {
-  if (Target.component === undefined) {
-    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.')
-  }
-  return Target.component
-}
-
-function useMemo(create, deps) {
-  const component = resolveTargetComponent();
-  return component.useMemo(create, deps)
-}
-
-function useReducer(reducer, initialArg, init) {
-  const component = resolveTargetComponent();
-  const [state, key] = component.setState(
-    typeof init === 'function'
-      ? init(initialArg)
-      : initialArg
-  );
-  return [state, value => component.useReducer(value, key, reducer)]
-}
-
-function useState(initialState) {
-  const update = (oldValue, newValue) => {
-    return typeof newValue === 'function'
-      ? newValue(oldValue)
-      : newValue
-  };
-  return useReducer(update, initialState)
-}
-
-function useEffect(effect, deps) {
-  const component = resolveTargetComponent();
-  return component.useEffect(effect, deps)
-}
-
 const MAX_SIGNED_31_BIT_INT = 1073741823;
 function readContext(currentlyComponent, context, observedBits) {
   let resolvedObservedBits;
@@ -1431,13 +1395,43 @@ function createContext(defaultValue, calculateChangedBits) {
   return context
 }
 
+function resolveTargetComponent() {
+  if (Target.component === undefined) {
+    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.')
+  }
+  return Target.component
+}
+function useEffect(effect, deps) {
+  const component = resolveTargetComponent();
+  return component.useEffect(effect, deps)
+}
+function useMemo(create, deps) {
+  const component = resolveTargetComponent();
+  return component.useMemo(create, deps)
+}
+function useCallback(callback, deps) {
+  return useMemo(() => callback, deps)
+}
 function useContext(context, observedBits) {
   const component = resolveTargetComponent();
   return readContext(component, context, observedBits)
 }
-
-function useCallback(callback, deps) {
-  return useMemo(() => callback, deps)
+function useState(initialState) {
+  const update = (oldValue, newValue) => {
+    return typeof newValue === 'function'
+      ? newValue(oldValue)
+      : newValue
+  };
+  return useReducer(update, initialState)
+}
+function useReducer(reducer, initialArg, init) {
+  const component = resolveTargetComponent();
+  const [state, key] = component.setState(
+    typeof init === 'function'
+      ? init(initialArg)
+      : initialArg
+  );
+  return [state, value => component.useReducer(value, key, reducer)]
 }
 
 const oops = {

@@ -1,7 +1,7 @@
 import vnode from './vnode.js'
-import componentVNodeHooks from './component-hooks.js'
-import { isDef, isPrimitive, isUndef, isFilterVnode } from './is.js'
-import { FRAGMENTS_TYPE, PROVIDER_TYPE, CONTEXT_TYPE } from '../api/types.js'
+import componentVNodeHooks from '../component/registerHooks.js'
+import { isDef, isPrimitive, isUndef, isFilterVnode } from '../patch/is.js'
+import { FRAGMENTS_TYPE, PROVIDER_TYPE, CONTEXT_TYPE } from '../../api/nodeSymbols.js'
 
 function cached(fn) {
   const cache = Object.create(null)

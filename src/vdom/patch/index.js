@@ -10,9 +10,9 @@ import {
   sameVnode,
   emptyNode,
 } from './is.js'
-import * as api from './dom-api.js'
-import createVnode from './vnode.js'
-import cbs from './modules/index.js'
+import * as api from './domApi.js'
+import createVnode from '../h/vnode.js'
+import cbs from '../modules/index.js'
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch

@@ -1,5 +1,5 @@
-import vnode from './vnode.js'
-import { FRAGMENTS_TYPE } from '../api/types.js'
+import vnode from '../h/vnode.js'
+import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
 
 export const isArray = Array.isArray
 export const emptyNode = vnode('', {}, [], undefined, undefined)
