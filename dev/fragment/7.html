@@ -38,7 +38,7 @@
       })
 
       return condition ? (
-        <Stateful key="a" />
+        [<Stateful key="a" />]
       ) : (
         <Fragment>
           <Stateful key="a" />
@@ -52,11 +52,11 @@
     ;(async () => {
       // console.log(ops)
 
-      await sleep(3000)
+      await sleep(2000)
       await changeValue(true)
       // console.log(ops)
 
-      await sleep(3000)
+      await sleep(2000)
       await changeValue(false)
       // console.log(ops)
     })()

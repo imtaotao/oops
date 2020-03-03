@@ -31,10 +31,17 @@ function emptyNodeAt(elm) {
   return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
-function fragmentsLastElement(elms) {
+function fragmentLastElement(elms) {
   const elm = elms[elms.length - 1]
   return isArray(elm)
-    ? fragmentsLastElement(elm)
+    ? fragmentLastElement(elm)
+    : elm
+}
+
+function fragmentFirstElement(elms) {
+  const elm = elms[0]
+  return isArray(elm)
+    ? fragmentFirstElement(elm)
     : elm
 }
 
@@ -43,7 +50,7 @@ function nextSibling(elm) {
   return (
     api.nextSibling(
       isArray(elm)
-        ? fragmentsLastElement(elm)
+        ? fragmentLastElement(elm)
         : elm
     )
   )
@@ -86,20 +93,21 @@ export function appendChild(parentElm, child) {
   }
 }
 
-// child 和 before 如果都是数组的话，肯定是一样的
-// 因为如果是数组代表都是 fragment，对他们的 children 肯定进行了 patch
-// patch 之后就是一样的
 function insertChild(parentElm, child, before) {
-  console.log(parentElm, child, before)
-  const beforeIsFragment = isArray(before)
   if (isArray(child)) {
-    // 依次插入，没得问题
-    for (let i = 0; i < child.length; i++) {
-      const currentBefore = beforeIsFragment ? before[i] : before
-      insertChild(parentElm, child[i], currentBefore)
+    let len = 0
+    child = child.flat(Infinity)
+    while(len++ > child.length - 1) {
+      insertChild(parentElm, child[len], before)
     }
   } else {
-    child && api.insertBefore(parentElm, child, before)
+    if (child) {
+      // 插入到旧 fragment 的最前面
+      if (isArray(before)) {
+        before = fragmentFirstElement(before)
+      }
+      api.insertBefore(parentElm, child, before)
+    }
   }
 }
 
