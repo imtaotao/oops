@@ -197,7 +197,7 @@ export class Component {
   }
 
   remove(vnode, rm) {
-    // 删除
+    // 删除，可以在这里做动画的处理
     rm()
   }
 

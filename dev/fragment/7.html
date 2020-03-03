@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragment dev test</title>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    const { jsx, Fragment, useState, render } = oops
+
+    function asyncRender(vnode, app) {
+      if (!app) {
+        app = document.createElement('div')
+      }
+      return new Promise(resolve => {
+        render(vnode, app, elm => {
+          elm = Array.isArray(elm)
+            ? elm[0]
+            : elm
+          resolve(elm)
+        })
+      })
+    }
+
+    async function App() {
+      const e = await asyncRender(jsx`
+        <>
+          <div>text1</div>
+        </>
+      `)
+      console.log(e, 'taotao')
+    }
+    App()
+  </script>
+</body>
+</html>

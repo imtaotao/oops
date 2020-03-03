@@ -3,7 +3,7 @@ import { genVNodeTree } from '../../../src/jsx/index.js'
 const h = (tag, props, ...children) => ({ tag, props, children })
 const html = (statics, ...fields) => genVNodeTree(h, statics, fields)
 
-describe('JSX', () => {
+describe('JSX parse', () => {
   it('empty', () => {
     expect(html``).toEqual(undefined)
   })

@@ -408,12 +408,6 @@ function realVnode(vnode) {
   }
   return vnode
 }
-function vnodeElm(vnode) {
-  vnode = realVnode(vnode);
-  return vnode.tag === FRAGMENTS_TYPE
-    ? vnode.children.map(vnodeElm)
-    : vnode.elm
-}
 function createRmCb(childVnode, listeners) {
   const childElm = vnodeElm(childVnode);
   return function remove() {
@@ -422,6 +416,12 @@ function createRmCb(childVnode, listeners) {
       removeChild$1(parent, childElm);
     }
   }
+}
+function vnodeElm(vnode) {
+  vnode = realVnode(vnode);
+  return vnode.tag === FRAGMENTS_TYPE
+    ? vnode.children.map(vnodeElm)
+    : vnode.elm
 }
 function appendChild$1(parentElm, child) {
   if (isArray(child)) {
@@ -1234,18 +1234,27 @@ function render(vnode, app, callback) {
   } else {
     if (typeof vnode === 'function') {
       vnode = h(vnode, undefined);
+    } else if (isArray(vnode)) {
+      vnode = genVnode(FRAGMENTS_TYPE, {}, vnode);
+    } else if (isPrimitive(vnode)) {
+      vnode = vnode$1(undefined, undefined, undefined, vnode, undefined);
     }
-    if (isVnode(vnode) || isPrimitive(vnode)) {
-      const elm = patch(undefined, vnode, app).elm || null;
+    if (isVnode(vnode)) {
+      vnode = patch(undefined, vnode, app);
+      const elm = vnodeElm(vnode) || null;
       if (vnode.tag !== FRAGMENTS_TYPE) {
         elm && appendChild(app, elm);
       }
-      callback && callback(elm);
-      return vnode.componentInstance
-        ? vnode.componentInstance
-        : vnode
+      if (typeof callback === 'function') {
+        callback(elm);
+      }
+      return vnode
+    } else {
+      if (typeof callback === 'function') {
+        callback(null);
+      }
+      return null
     }
-    return null
   }
 }
 

@@ -57,13 +57,6 @@ function realVnode(vnode) {
   return vnode
 }
 
-function vnodeElm(vnode) {
-  vnode = realVnode(vnode)
-  return vnode.tag === FRAGMENTS_TYPE
-    ? vnode.children.map(vnodeElm)
-    : vnode.elm
-}
-
 function createRmCb(childVnode, listeners) {
   const childElm = vnodeElm(childVnode)
 
@@ -73,6 +66,13 @@ function createRmCb(childVnode, listeners) {
       removeChild(parent, childElm)
     }
   }
+}
+
+export function vnodeElm(vnode) {
+  vnode = realVnode(vnode)
+  return vnode.tag === FRAGMENTS_TYPE
+    ? vnode.children.map(vnodeElm)
+    : vnode.elm
 }
 
 // 对 array 会做处理，因为组件可能会 return null，所以 child 可能没有
