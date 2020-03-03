@@ -1,9 +1,16 @@
+import h from '../vdom/h/index.js'
+import { isArray } from '../shared.js'
 import createVnode from '../vdom/h/vnode.js'
-import h, { genVnode } from '../vdom/h/index.js'
+import { formatVnode } from '../vdom/helpers/h.js'
 import { FRAGMENTS_TYPE } from './nodeSymbols.js'
 import { appendChild } from '../vdom/patch/domApi.js'
 import patch, { vnodeElm } from '../vdom/patch/index.js'
-import { isVnode, isPrimitive, isArray, isFragment, isComponentAndChildIsFragment } from '../vdom/patch/is.js'
+import {
+  isVnode,
+  isFragment,
+  isPrimitiveVnode,
+  isComponentAndChildIsFragment,
+} from '../vdom/patch/is.js'
 
 
 export default function render(vnode, app, callback) {
@@ -13,8 +20,8 @@ export default function render(vnode, app, callback) {
     if (typeof vnode === 'function') {
       vnode = h(vnode, undefined)
     } else if (isArray(vnode)) {
-      vnode = genVnode(FRAGMENTS_TYPE, {}, vnode)
-    } else if (isPrimitive(vnode)) {
+      vnode = formatVnode(FRAGMENTS_TYPE, {}, vnode)
+    } else if (isPrimitiveVnode(vnode)) {
       vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
     }
 

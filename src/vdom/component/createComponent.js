@@ -1,59 +1,21 @@
 import patch from '../patch/index.js'
-import { genVnode } from '../h/index.js'
 import createVnode from '../h/vnode.js'
+import { formatVnode } from '../helpers/h.js'
+import { isPrimitiveVnode } from '../patch/is.js'
+import { isUndef, isArray } from '../../shared.js'
 import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
-import { isDef, isArray, isUndef, isPrimitive } from '../patch/is.js'
+import {
+  equalDeps,
+  mergeProps,
+  enqueueTask,
+  updateEffect,
+} from '../helpers/component.js'
 
 const RE_RENDER_LIMIT = 25
 
 // 由于组件总是在最后 return vnode，所以不需要一个队列保存父子组件的关系
 export const Target = {
   component: undefined,
-}
-
-function mergeProps({data, children}) {
-  const res = { children }
-  for (const key in data) {
-    if (key !== 'hook') {
-      res[key] = data[key]
-    }
-  }
-  return res
-}
-
-function enqueueTask(callback) {
-  const channel = new MessageChannel()
-  channel.port1.onmessage = callback
-  channel.port2.postMessage(undefined)
-}
-
-// 对比依赖
-function equalDeps(a, b) {
-  if (isArray(a) && isArray(b)) {
-    if (a.length === 0 && b.length === 0) return true
-    if (a.length !== b.length) return false
-    return !b.some((v, i) => v !== a[i])
-  }
-  return false
-}
-
-function callEffectCallback(create, destroy, effect) {
-  if (typeof destroy === 'function') destroy()
-  const cleanup = create()
-  if (isDef(cleanup) && typeof cleanup !== 'function') {
-    throw new Error('An effect function must not return anything besides a function, which is used for clean-up.')
-  }
-  effect.destroy = cleanup
-}
-
-function updateEffect(effects) {
-  for (const key in effects) {
-    const { deps, prevDeps, create, destroy } = effects[key]
-    // 如果依赖不相等才调用
-    if (!equalDeps(deps, prevDeps)) {
-      callEffectCallback(create, destroy, effects[key])
-    }
-  }
 }
 
 export class Component {
@@ -158,8 +120,8 @@ export class Component {
       }
       // 如果是 return 的一个数组，用 fragment 包裹起来
       if (isArray(this.updateVnode)) {
-        this.updateVnode = genVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
-      } else if (isPrimitive(this.updateVnode)) {
+        this.updateVnode = formatVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
+      } else if (isPrimitiveVnode(this.updateVnode)) {
         // 如果 return 一个 string 或者 number
         this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined)
       }

@@ -1,5 +1,6 @@
+import { isUndef } from '../../shared.js'
+import { isComponent } from '../patch/is.js'
 import { Component } from './createComponent.js'
-import { isComponent, isUndef } from '../patch/is.js'
 
 function createComponentInstanceForVnode(vnode, parentElm) {
   if (isUndef(vnode.componentInstance)) {

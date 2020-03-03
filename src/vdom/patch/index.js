@@ -1,18 +1,20 @@
 import {
+  sameVnode,
+  emptyNode,
+  isVnode,
+  isFragment,
+  isComponent,
+  isPrimitiveVnode,
+  isComponentAndChildIsFragment ,
+} from './is.js'
+import {
   isDef,
   isUndef,
   isArray,
-  isVnode,
-  isFragment,
-  isPrimitive,
-  isComponent,
-  isComponentAndChildIsFragment ,
-  sameVnode,
-  emptyNode,
-} from './is.js'
+} from '../../shared.js'
 import * as api from './domApi.js'
-import createVnode from '../h/vnode.js'
 import cbs from '../modules/index.js'
+import createVnode from '../h/vnode.js'
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch
@@ -152,7 +154,7 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
           appendChild(elm, createElm(chVNode, insertedVnodeQueue, elm))
         }
       }
-    } else if (isPrimitive(vnode.text)) {
+    } else if (isPrimitiveVnode(vnode.text)) {
       api.appendChild(elm, api.createTextNode(vnode.text))
     }
     invokeCreateHooks(vnode, insertedVnodeQueue)

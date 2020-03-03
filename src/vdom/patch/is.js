@@ -1,16 +1,7 @@
 import vnode from '../h/vnode.js'
 import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
 
-export const isArray = Array.isArray
 export const emptyNode = vnode('', {}, [], undefined, undefined)
-
-export function isDef(v) {
-  return v !== undefined
-}
-
-export function isUndef(v) {
-  return v === undefined
-}
 
 export function isVnode(vnode) {
   return vnode.tag !== undefined
@@ -43,7 +34,7 @@ export function isFilterVnode(vnode) {
   )
 }
 
-export function isPrimitive(vnode) {
+export function isPrimitiveVnode(vnode) {
   return (
     typeof vnode === 'string' ||
     typeof vnode === 'number' ||
