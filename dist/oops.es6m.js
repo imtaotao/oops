@@ -381,21 +381,17 @@ function emptyNodeAt(elm) {
   const tagName$1 = tagName(elm);
   return createVnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm)
 }
-function findLastElm(elms) {
+function lastElm(elms) {
   const elm = elms[elms.length - 1];
-  return isArray(elm)
-    ? findLastElm(elm)
-    : elm
+  return isArray(elm) ? lastElm(elm) : elm
 }
-function findFirstElm(elms) {
+function firstElm(elms) {
   const elm = elms[0];
-  return isArray(elm)
-    ? findFirstElm(elm)
-    : elm
+  return isArray(elm) ? firstElm(elm) : elm
 }
 function nextSibling$1(elm) {
   return (
-    nextSibling(isArray(elm) ? findLastElm(elm) : elm)
+    nextSibling(isArray(elm) ? lastElm(elm) : elm)
   )
 }
 function realVnode(vnode) {
@@ -451,7 +447,7 @@ function insertChild(parentElm, child, before) {
   } else {
     if (child) {
       if (isArray(before)) {
-        before = findFirstElm(before);
+        before = firstElm(before);
       }
       insertBefore(parentElm, child, before);
     }

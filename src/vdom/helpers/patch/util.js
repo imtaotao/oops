@@ -26,24 +26,20 @@ export function emptyNodeAt(elm) {
   return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
 }
 
-export function findLastElm(elms) {
+export function lastElm(elms) {
   const elm = elms[elms.length - 1]
-  return isArray(elm)
-    ? findLastElm(elm)
-    : elm
+  return isArray(elm) ? lastElm(elm) : elm
 }
 
-export function findFirstElm(elms) {
+export function firstElm(elms) {
   const elm = elms[0]
-  return isArray(elm)
-    ? findFirstElm(elm)
-    : elm
+  return isArray(elm) ? firstElm(elm) : elm
 }
 
 // 如果是 fragment，返回 list 中最后一个的 nextSibling
 export function nextSibling(elm) {
   return (
-    api.nextSibling(isArray(elm) ? findLastElm(elm) : elm)
+    api.nextSibling(isArray(elm) ? lastElm(elm) : elm)
   )
 }
 
@@ -109,7 +105,7 @@ export function insertChild(parentElm, child, before) {
     if (child) {
       // 插入到旧 fragment 的最前面
       if (isArray(before)) {
-        before = findFirstElm(before)
+        before = firstElm(before)
       }
       api.insertBefore(parentElm, child, before)
     }
