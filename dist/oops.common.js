@@ -1599,7 +1599,7 @@ var getCache = function getCache(statics) {
   return tpl;
 };
 
-function genVNodeTree(h, statics, fields) {
+function createVNodeTree(h, statics, fields) {
   var result = evaluate(h, getCache(statics), fields, []);
   return result.length > 1 ? result : result[0];
 }
@@ -1608,7 +1608,7 @@ function jsx(statics) {
     fields[_key - 1] = arguments[_key];
   }
 
-  return genVNodeTree(h, statics, fields);
+  return createVNodeTree(h, statics, fields);
 }
 
 function memo(component, areEqual) {}

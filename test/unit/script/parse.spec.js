@@ -1,7 +1,7 @@
-import { genVNodeTree } from '../../../src/jsx/index.js'
+import { createVNodeTree } from '../../../src/jsx/index.js'
 
 const h = (tag, props, ...children) => ({ tag, props, children })
-const html = (statics, ...fields) => genVNodeTree(h, statics, fields)
+const html = (statics, ...fields) => createVNodeTree(h, statics, fields)
 
 describe('JSX parse', () => {
   it('empty', () => {
