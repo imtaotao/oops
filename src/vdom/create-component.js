@@ -1,7 +1,8 @@
 import patch from './patch.js'
 import { genVnode } from './h.js'
+import createVnode from './vnode.js'
 import { FRAGMENTS_TYPE } from '../api/types.js'
-import { isDef, isArray, isUndef } from './is.js'
+import { isDef, isArray, isUndef, isPrimitive } from './is.js'
 
 const RE_RENDER_LIMIT = 25
 
@@ -158,7 +159,11 @@ export class Component {
       // 如果是 return 的一个数组，用 fragment 包裹起来
       if (isArray(this.updateVnode)) {
         this.updateVnode = genVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
+      } else if (isPrimitive(this.updateVnode)) {
+        // 如果 return 一个 string 或者 number
+        this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined)
       }
+    
       if (isSync) {
         this.syncPatch()
       }

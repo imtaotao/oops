@@ -381,11 +381,6 @@ export default function patch(oldVnode, vnode, parentElm) {
     cbs.pre[i]()
   }
   
-  // 如果是 jsx`aaa` 这种语法
-  if (isPrimitive(vnode)) {
-    vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
-  }
-
   if (isUndef(oldVnode)) {
     createElm(vnode, insertedVnodeQueue, parentElm)
   } else {

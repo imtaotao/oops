@@ -82,7 +82,7 @@
     throw new TypeError("Invalid attempt to destructure non-iterable instance");
   }
 
-  function vnode(tag, data, children, text, elm) {
+  function vnode$1(tag, data, children, text, elm) {
     return {
       tag: tag,
       elm: elm,
@@ -99,7 +99,7 @@
   var FRAGMENTS_TYPE = Symbol["for"]('oops.fragments');
 
   var isArray = Array.isArray;
-  var emptyNode = vnode('', {}, [], undefined, undefined);
+  var emptyNode = vnode$1('', {}, [], undefined, undefined);
   function isDef(v) {
     return v !== undefined;
   }
@@ -511,7 +511,7 @@
 
   function emptyNodeAt(elm) {
     var tagName$1 = tagName(elm);
-    return vnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm);
+    return vnode$1(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm);
   }
 
   function fragmentsLastElement(elms) {
@@ -851,8 +851,8 @@
     }
   }
 
-  function patch(oldVnode, vnode$1, parentElm) {
-    if (isArray(vnode$1)) {
+  function patch(oldVnode, vnode, parentElm) {
+    if (isArray(vnode)) {
       throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
     }
 
@@ -862,25 +862,21 @@
       cbs.pre[i]();
     }
 
-    if (isPrimitive(vnode$1)) {
-      vnode$1 = vnode(undefined, undefined, undefined, vnode$1, undefined);
-    }
-
     if (isUndef(oldVnode)) {
-      createElm(vnode$1, insertedVnodeQueue, parentElm);
+      createElm(vnode, insertedVnodeQueue, parentElm);
     } else {
       if (!isVnode(oldVnode)) {
         oldVnode = emptyNodeAt(oldVnode);
       }
 
-      if (sameVnode(oldVnode, vnode$1)) {
-        patchVnode(oldVnode, vnode$1, insertedVnodeQueue, parentElm);
+      if (sameVnode(oldVnode, vnode)) {
+        patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm);
       } else {
         parent = parentNode(oldVnode.elm);
-        createElm(vnode$1, insertedVnodeQueue, parentElm);
+        createElm(vnode, insertedVnodeQueue, parentElm);
 
         if (parent !== null) {
-          insertChild(parent, vnodeElm(vnode$1), nextSibling$1(vnodeElm(oldVnode)));
+          insertChild(parent, vnodeElm(vnode), nextSibling$1(vnodeElm(oldVnode)));
           removeVnodes(parent, [oldVnode], 0, 0);
         }
       }
@@ -894,7 +890,7 @@
       cbs.post[_i2]();
     }
 
-    return vnode$1;
+    return vnode;
   }
 
   var RE_RENDER_LIMIT = 25;
@@ -1084,6 +1080,8 @@
 
           if (isArray(this.updateVnode)) {
             this.updateVnode = genVnode(FRAGMENTS_TYPE, {}, this.updateVnode);
+          } else if (isPrimitive(this.updateVnode)) {
+            this.updateVnode = vnode$1(undefined, undefined, undefined, vnode, undefined);
           }
 
           if (isSync) {
@@ -1300,7 +1298,7 @@
 
               context._contextStack.push(value);
 
-              return vnode(FRAGMENTS_TYPE, {}, children, undefined, undefined);
+              return vnode$1(FRAGMENTS_TYPE, {}, children, undefined, undefined);
             };
 
             var context = tag._context;
@@ -1324,7 +1322,7 @@
     if (children.length > 0) {
       for (var i = 0; i < children.length; i++) {
         if (isPrimitive(children[i])) {
-          children[i] = vnode(undefined, undefined, undefined, children[i], undefined);
+          children[i] = vnode$1(undefined, undefined, undefined, children[i], undefined);
         } else if (isFilterVnode(children[i])) {
           children.splice(i, 1);
           i--;
@@ -1336,7 +1334,7 @@
       addNS(data, children, tag);
     }
 
-    return vnode(tag, data, children, undefined, undefined);
+    return vnode$1(tag, data, children, undefined, undefined);
   }
   function h(tag, props) {
     for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
