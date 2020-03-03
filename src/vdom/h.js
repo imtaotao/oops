@@ -112,6 +112,22 @@ function addNS(data, children, tag) {
   }
 }
 
+// 对数组做扁平化处理
+function flatten(array, result = []) {
+  for (const value of array) {
+    if(
+      value !== null &&
+      typeof value === 'object' &&
+      typeof value[Symbol.iterator] === 'function'
+    ) {
+      flatten(value, result)
+    } else {
+      result.push(value)
+    }
+  }
+  return result
+}
+
 function installHooks(data) {
   const hook = (data || (data = {})).hook || (data.hook = {})
   for (const name in componentVNodeHooks) {
@@ -162,7 +178,8 @@ export function genVnode(tag, data, children) {
 
 export default function h(tag, props, ...children) {
   // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
-  children = children.flat(Infinity)
+  // children = children.flat(Infinity)
+  children = flatten(children)
 
   if (tag === '') {
     tag = FRAGMENTS_TYPE

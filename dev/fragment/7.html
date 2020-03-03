@@ -13,51 +13,53 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    const { jsx, Fragment, useState, render } = oops
+    const { jsx, Fragment, useState, useEffect, render } = oops
+    const React = { createElement: oops.h }
+    
+    const ops = []
 
-    function _render(vnode, app) {
-      if (!app) {
-        app = document.createElement('div')
-      }
+    function sleep(t) {
+      return new Promise(resolve => setTimeout(resolve, t))
+    }
 
-      const geml = elm =>
-        Array.isArray(elm)
-          ? geml(elm[0])
-          : elm
+    function Stateful() {
+      return <div>Hello</div>
+    }
+    Stateful._componentDidUpdate = function(oldVnode, vnode) {
+      // console.log(oldVnode, vnode)
+      ops.push('Update Stateful')
+    }
 
-      return new Promise(resolve => {
-        render(vnode, app, elm => resolve(geml(elm)))
+    function Foo({ set }) {
+      const [condition, setCondition] = useState(false)
+      set(value => {
+        setCondition(value)
+        return sleep(0)
       })
+
+      return condition ? (
+        <Stateful key="a" />
+      ) : (
+        <Fragment>
+          <Stateful key="a" />
+          <div key="b">World</div>
+        </Fragment>
+      );
     }
 
-    async function App() {
-      let e = await _render(jsx`
-        <>
-          <>
-            <div>text1</div>
-          </>
-          <span>text2</span>
-          <>
-            <>
-              <>
-                ${null}
-                <p />
-              </>
-              ${false}
-            </>
-          </>
-        </>,
-      `)
-      console.log(e);
-      let parent = e.parentNode;
-      // expect(parent.childNodes[0].tagName).toBe('DIV')
-      // expect(parent.childNodes[1].tagName).toBe('SPAN')
-      // expect(parent.childNodes[2].tagName).toBe('P')
-      console.log(parent.childNodes[0].tagName)
-      console.log(parent.childNodes[1].tagName)
-      console.log(parent.childNodes[2].tagName)
-    }
-    App()
+    let changeValue
+    const node1 = render(<Foo set={fn => changeValue = fn} />, app)
+    ;(async () => {
+      // console.log(ops)
+
+      await sleep(3000)
+      await changeValue(true)
+      // console.log(ops)
+
+      await sleep(3000)
+      await changeValue(false)
+      // console.log(ops)
+    })()
   </script>
 </body>
 </html>

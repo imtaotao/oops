@@ -3,6 +3,7 @@ import {
   isUndef,
   isArray,
   isVnode,
+  isFragment,
   isPrimitive,
   isComponent,
   isComponentAndChildIsFragment ,
@@ -12,7 +13,6 @@ import {
 import * as api from './dom-api.js'
 import createVnode from './vnode.js'
 import cbs from './modules/index.js'
-import { FRAGMENTS_TYPE } from '../api/types.js'
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   let map = {}, key, ch
@@ -70,7 +70,7 @@ function createRmCb(childVnode, listeners) {
 
 export function vnodeElm(vnode) {
   vnode = realVnode(vnode)
-  return vnode.tag === FRAGMENTS_TYPE
+  return isFragment(vnode)
     ? vnode.children.map(vnodeElm)
     : vnode.elm
 }
@@ -90,6 +90,7 @@ export function appendChild(parentElm, child) {
 // 因为如果是数组代表都是 fragment，对他们的 children 肯定进行了 patch
 // patch 之后就是一样的
 function insertChild(parentElm, child, before) {
+  console.log(parentElm, child, before)
   const beforeIsFragment = isArray(before)
   if (isArray(child)) {
     // 依次插入，没得问题
@@ -127,7 +128,7 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
 
   if (isDef(tag)) {
     let elm
-    if (tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       // 如果发生是 fragment，只需要在 patch 的时候，把 parentElm 作为 elm 参与 path
       // 并不需要吧 vnode.elm 设置为 parentElm，意思是如果当前 vnode 为 fragment，他没有 elm
       elm = parentElm
@@ -322,8 +323,9 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
   // 在 update 钩子里面，自己自己会diff
   let ch = vnode.children
   let oldCh = oldVnode.children
+  // 只有是相同新旧节点才能 patchVnode，所以如果 vnode 和 oldVnode 都是 fragment，那 elm 其实都是 undefined，都需要取 parentElm
   let elm = vnode.elm = oldVnode.elm
-
+  
   // 调用 update 钩子
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
@@ -339,7 +341,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
     // 如果是组件或者内置组件，则不用管，diff patch 会在组件内部进行
   } else if (isUndef(vnode.text)) {
     // 如果是 fragment
-    if (vnode.tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       elm = parentElm
     }
     // 如果新旧节点都有子元素，则 diff children
@@ -394,14 +396,13 @@ export default function patch(oldVnode, vnode, parentElm) {
       patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm)
     } else {
       // 创建元素
-      parent = api.parentNode(oldVnode.elm)
       createElm(vnode, insertedVnodeQueue, parentElm)
 
       // 如果 parent 在，代表在视图中，就可以插入到视图中去
-      if (parent !== null) {
-        insertChild(parent, vnodeElm(vnode), nextSibling(vnodeElm(oldVnode)))
+      if (parentElm !== null) {
+        insertChild(parentElm, vnodeElm(vnode), nextSibling(vnodeElm(oldVnode)))
         // 删除旧的元素
-        removeVnodes(parent, [oldVnode], 0, 0)
+        removeVnodes(parentElm, [oldVnode], 0, 0)
       }
     }
   }

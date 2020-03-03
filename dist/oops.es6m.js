@@ -36,11 +36,13 @@ function isComponent(vnode) {
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
+function isFragment(vnode) {
+  return vnode && vnode.tag === FRAGMENTS_TYPE
+}
 function isComponentAndChildIsFragment(vnode) {
   return (
     isComponent(vnode) &&
-    vnode.componentInstance.oldRootVnode &&
-    vnode.componentInstance.oldRootVnode.tag === FRAGMENTS_TYPE
+    isFragment(vnode.componentInstance.oldRootVnode)
   )
 }
 function isFilterVnode(vnode) {
@@ -419,7 +421,7 @@ function createRmCb(childVnode, listeners) {
 }
 function vnodeElm(vnode) {
   vnode = realVnode(vnode);
-  return vnode.tag === FRAGMENTS_TYPE
+  return isFragment(vnode)
     ? vnode.children.map(vnodeElm)
     : vnode.elm
 }
@@ -464,7 +466,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
   const { tag, data, children } = vnode;
   if (isDef(tag)) {
     let elm;
-    if (tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       elm = parentElm;
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
@@ -647,7 +649,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
     }
   }
   if ((isComponent(oldVnode) || isComponent(vnode))) ; else if (isUndef(vnode.text)) {
-    if (vnode.tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       elm = parentElm;
     }
     if (isDef(oldCh) && isDef(ch)) {
@@ -1011,6 +1013,20 @@ function addNS(data, children, tag) {
     }
   }
 }
+function flatten(array, result = []) {
+  for (const value of array) {
+    if(
+      value !== null &&
+      typeof value === 'object' &&
+      typeof value[Symbol.iterator] === 'function'
+    ) {
+      flatten(value, result);
+    } else {
+      result.push(value);
+    }
+  }
+  return result
+}
 function installHooks(data) {
   const hook = (data || (data = {})).hook || (data.hook = {});
   for (const name in componentVNodeHooks) {
@@ -1054,7 +1070,7 @@ function genVnode(tag, data, children) {
   return vnode$1(tag, data, children, undefined, undefined)
 }
 function h(tag, props, ...children) {
-  children = children.flat(Infinity);
+  children = flatten(children);
   if (tag === '') {
     tag = FRAGMENTS_TYPE;
   }
@@ -1242,7 +1258,7 @@ function render(vnode, app, callback) {
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app);
       const elm = vnodeElm(vnode) || null;
-      if (vnode.tag !== FRAGMENTS_TYPE) {
+      if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
         elm && appendChild(app, elm);
       }
       if (typeof callback === 'function') {

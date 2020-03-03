@@ -114,8 +114,11 @@ function isComponent(vnode) {
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag;
 }
+function isFragment(vnode) {
+  return vnode && vnode.tag === FRAGMENTS_TYPE;
+}
 function isComponentAndChildIsFragment(vnode) {
-  return isComponent(vnode) && vnode.componentInstance.oldRootVnode && vnode.componentInstance.oldRootVnode.tag === FRAGMENTS_TYPE;
+  return isComponent(vnode) && isFragment(vnode.componentInstance.oldRootVnode);
 }
 function isFilterVnode(vnode) {
   return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
@@ -543,7 +546,7 @@ function createRmCb(childVnode, listeners) {
 
 function vnodeElm(vnode) {
   vnode = realVnode(vnode);
-  return vnode.tag === FRAGMENTS_TYPE ? vnode.children.map(vnodeElm) : vnode.elm;
+  return isFragment(vnode) ? vnode.children.map(vnodeElm) : vnode.elm;
 }
 function appendChild$1(parentElm, child) {
   if (isArray(child)) {
@@ -596,7 +599,7 @@ function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (isDef(tag)) {
     var elm;
 
-    if (tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       elm = parentElm;
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns) ? createElementNS(data.ns, tag) : createElement(tag);
@@ -817,7 +820,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
   }
 
   if (isComponent(oldVnode) || isComponent(vnode)) ; else if (isUndef(vnode.text)) {
-    if (vnode.tag === FRAGMENTS_TYPE) {
+    if (isFragment(vnode)) {
       elm = parentElm;
     }
 
@@ -1275,6 +1278,40 @@ function addNS(data, children, tag) {
   }
 }
 
+function flatten(array) {
+  var result = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = array[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var value = _step.value;
+
+      if (value !== null && _typeof(value) === 'object' && typeof value[Symbol.iterator] === 'function') {
+        flatten(value, result);
+      } else {
+        result.push(value);
+      }
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+        _iterator["return"]();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+}
+
 function installHooks(data) {
   var hook = (data || (data = {})).hook || (data.hook = {});
 
@@ -1339,7 +1376,7 @@ function h(tag, props) {
     children[_key - 2] = arguments[_key];
   }
 
-  children = children.flat(Infinity);
+  children = flatten(children);
 
   if (tag === '') {
     tag = FRAGMENTS_TYPE;
@@ -1552,7 +1589,7 @@ function render(vnode, app, callback) {
       vnode = patch(undefined, vnode, app);
       var elm = vnodeElm(vnode) || null;
 
-      if (vnode.tag !== FRAGMENTS_TYPE) {
+      if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
         elm && appendChild(app, elm);
       }
 

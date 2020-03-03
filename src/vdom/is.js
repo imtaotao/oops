@@ -24,11 +24,14 @@ export function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
 
+export function isFragment(vnode) {
+  return vnode && vnode.tag === FRAGMENTS_TYPE
+}
+
 export function isComponentAndChildIsFragment(vnode) {
   return (
     isComponent(vnode) &&
-    vnode.componentInstance.oldRootVnode &&
-    vnode.componentInstance.oldRootVnode.tag === FRAGMENTS_TYPE
+    isFragment(vnode.componentInstance.oldRootVnode)
   )
 }
 

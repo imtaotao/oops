@@ -3,7 +3,7 @@ import createVnode from '../vdom/vnode.js'
 import { FRAGMENTS_TYPE } from './types.js'
 import { appendChild } from '../vdom/dom-api.js'
 import patch, { vnodeElm } from '../vdom/patch.js'
-import { isVnode, isPrimitive, isArray } from '../vdom/is.js'
+import { isVnode, isPrimitive, isArray, isFragment, isComponentAndChildIsFragment } from '../vdom/is.js'
 
 
 export default function render(vnode, app, callback) {
@@ -21,7 +21,7 @@ export default function render(vnode, app, callback) {
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app)
       const elm = vnodeElm(vnode) || null
-      if (vnode.tag !== FRAGMENTS_TYPE) {
+      if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
         elm && appendChild(app, elm)
       }
 

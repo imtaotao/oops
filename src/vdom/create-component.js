@@ -196,6 +196,14 @@ export class Component {
     this.createVnodeByCtor(false)
   }
 
+  // 已更新
+  postpatch(oldVnode, vnode) {
+    // 专门补写个测试用例的，测试的时候需要
+    if(typeof this.Ctor._componentDidUpdate === 'function') {
+      this.Ctor._componentDidUpdate(oldVnode, vnode)
+    }
+  }
+
   remove(vnode, rm) {
     // 删除，可以在这里做动画的处理
     rm()

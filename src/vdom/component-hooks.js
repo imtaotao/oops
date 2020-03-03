@@ -26,6 +26,11 @@ const componentVNodeHooks = {
     component.update(oldVnode, vnode, parentElm)
   },
 
+  postpatch(oldVnode, vnode) {
+    const component = vnode.componentInstance
+    component.postpatch(oldVnode, vnode)
+  },
+
   remove(vnode, rm) {
     const component = vnode.componentInstance
     component.remove(vnode, rm)
