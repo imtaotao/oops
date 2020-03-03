@@ -50,15 +50,6 @@ const parseStyleText = cached(cssText => {
   return res
 })
 
-function isProps(key) {
-  return (
-    key === 'href' ||
-    key === 'value' ||
-    key === 'checked' ||
-    key === 'disabled'
-  )
-}
-
 function addNS(data, children, tag) {
   data.ns ='http://www.w3.org/2000/svg'
   if (tag !== 'foreignObject' && isDef(children)) {
@@ -69,6 +60,15 @@ function addNS(data, children, tag) {
       }
     }
   }
+}
+
+function isProps(key) {
+  return (
+    key === 'href' ||
+    key === 'value' ||
+    key === 'checked' ||
+    key === 'disabled'
+  )
 }
 
 function dealWithDataValue(data, key, value) {
@@ -123,6 +123,40 @@ function dealWithDataValue(data, key, value) {
   }
 }
 
+export function separateProps(props) {
+  const data = {}
+  if (props) {
+    for (let key in props) {
+      let value = props[key]
+      if (
+        key === 'on' ||
+        key === 'attrs' ||
+        key === 'class' ||
+        key === 'style' ||
+        key === 'dataset'
+      ) {
+        // 不用改
+      } else if (key === 'className') {
+        key = 'class'
+      } else if (isProps(key)) {
+        value = [key, value]
+        key = 'props'
+      } else if (key.startsWith('on')) {
+        value = [key, value]
+        key = 'event'
+      } else if (key.startsWith('data-')) {
+        value = [key, value]
+        key = 'singleDataset'
+      } else {
+        value = [key, value]
+        key = 'singleAttr'
+      }
+      dealWithDataValue(data, key, value)
+    }
+  }
+  return data
+}
+
 // 对数组做扁平化处理
 export function flatten(array, result = []) {
   for (const value of array) {
@@ -143,33 +177,6 @@ export function installHooks(data) {
   const hook = (data || (data = {})).hook || (data.hook = {})
   for (const name in componentVNodeHooks) {
     hook[name] = componentVNodeHooks[name]
-  }
-  return data
-}
-
-export function separateProps(props) {
-  const data = {}
-  if (props) {
-    for (const key in props) {
-      const value = props[key]
-      if (key === 'class' || key === 'className') {
-        dealWithDataValue(data, 'class', value)
-      } else if (key === 'style') {
-        dealWithDataValue(data, 'style', value)
-      } else if (isProps(key)) {
-        dealWithDataValue(data, 'props', [key, value])
-      } else if (key === 'hook') {
-        dealWithDataValue(data, 'hook', value)
-      } else if (key === 'on' || key === 'dataset' || key === 'attrs') {
-        dealWithDataValue(data, key, value)
-      } else if (key.startsWith('on')) {
-        dealWithDataValue(data, 'event', [key, value])
-      } else if (key.startsWith('data-')) {
-        dealWithDataValue(data, 'singleDataset', [key, value])
-      } else {
-        dealWithDataValue(data, 'singleAttr', [key, value])
-      }
-    }
   }
   return data
 }

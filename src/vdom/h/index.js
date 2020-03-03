@@ -37,21 +37,19 @@ function inspectedElemntType(tag, props, children) {
 export default function h(tag, props, ...children) {
   // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
   children = flatten(children)
-
-  if (tag === '') {
-    tag = FRAGMENTS_TYPE
-  }
+  if (tag === '') tag = FRAGMENTS_TYPE
 
   // 在此针对普通的 node，组件和内置组件做区分
-  const res = inspectedElemntType(tag, props, children)
+  const {
+    tag: _tag,
+    props: _props,
+    children: _children,
+  } = inspectedElemntType(tag, props, children)
 
-  tag = res.tag
-  props = res.props
-  children = res.children
+  const data =
+    typeof _tag === 'string' || _tag === FRAGMENTS_TYPE
+      ? separateProps(_props)
+      : installHooks(_props)
 
-  const data = typeof tag === 'string' || tag === FRAGMENTS_TYPE
-    ? separateProps(props)
-    : installHooks(props)
-
-  return formatVnode(tag, data, children)
+  return formatVnode(_tag, data, _children)
 }

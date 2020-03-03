@@ -1,11 +1,6 @@
 export default function vnode(tag, data, children, text, elm) {
-  return {
-    tag,
-    elm,
-    data,
-    text,
-    children,
-    componentInstance: undefined, // 组件实例
-    key: data === undefined ? undefined : data.key,
-  }
+  const componentInstance = undefined
+  const key = data ? data.key : undefined
+
+  return { tag, data, children, key, elm, text, componentInstance }
 }
