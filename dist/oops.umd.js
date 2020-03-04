@@ -451,9 +451,6 @@
   function nextSibling(node) {
     return node.nextSibling;
   }
-  function tagName(elm) {
-    return elm.tagName;
-  }
   function setTextContent(node, text) {
     node.textContent = text;
   }
@@ -482,6 +479,21 @@
     return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
   }
 
+  var classList = ['add', 'remove'];
+  var style = ['setProperty', 'removeProperty'];
+  var namespaces = ['setAttribute', 'setAttributeNS', 'removeAttribute', 'addEventListener', 'removeEventListener'];
+
+  var empty = function empty(key) {
+    if (key === 'key') return;
+    console.error('Cannot operate on fragment element.');
+  };
+
+  var installMethods = function installMethods(obj, methods) {
+    methods.forEach(function (name) {
+      return obj[name] = empty;
+    });
+  };
+
   var FragmentNode =
   /*#__PURE__*/
   function () {
@@ -491,6 +503,11 @@
       this._children = [];
       this.parentNode = null;
       this._isFragmentNode = true;
+      this.style = {};
+      this.classList = {};
+      installMethods(this, namespaces);
+      installMethods(this.style, style);
+      installMethods(this.classList, classList);
     }
 
     _createClass(FragmentNode, [{
@@ -520,7 +537,7 @@
 
         if (this.parentNode) {
           if (child._isFragmentNode) {
-            child.removeInParent(this.parentNode);
+            child.removeSelfInParent(this.parentNode);
           } else {
             removeChild(this.realParentNode(), child);
           }
@@ -539,7 +556,7 @@
 
         if (this.parentNode) {
           if (newNode._isFragmentNode) {
-            newNode.insertBeforeInParent(this.parentNode, referenceNode);
+            newNode.insertBeforeSelfInParent(this.parentNode, referenceNode);
           } else {
             if (referenceNode && referenceNode._isFragmentNode) {
               referenceNode = referenceNode.first;
@@ -550,8 +567,8 @@
         }
       }
     }, {
-      key: "appendInParent",
-      value: function appendInParent(parentNode) {
+      key: "appendSelfInParent",
+      value: function appendSelfInParent(parentNode) {
         this.parentNode = parentNode;
 
         if (parentNode._isFragmentNode) {
@@ -565,8 +582,8 @@
         }
       }
     }, {
-      key: "removeInParent",
-      value: function removeInParent(parentNode) {
+      key: "removeSelfInParent",
+      value: function removeSelfInParent(parentNode) {
         var nodes = this.nodes;
 
         for (var i = 0; i < nodes.length; i++) {
@@ -576,8 +593,8 @@
         this.parentNode = null;
       }
     }, {
-      key: "insertBeforeInParent",
-      value: function insertBeforeInParent(parentNode, referenceNode) {
+      key: "insertBeforeSelfInParent",
+      value: function insertBeforeSelfInParent(parentNode, referenceNode) {
         this.parentNode = parentNode;
 
         if (parentNode._isFragmentNode) {
@@ -654,15 +671,6 @@
 
     return map;
   }
-  function emptyNodeAt(elm) {
-    var tagName$1 = tagName(elm);
-
-    if (typeof tagName$1 === 'string') {
-      tagName$1 = tagName$1.toLowerCase();
-    }
-
-    return createVnode(tagName$1, {}, [], undefined, elm);
-  }
   function invokeCreateHooks(vnode, insertedVnodeQueue) {
     var i;
 
@@ -709,6 +717,18 @@
       }
     };
   }
+  function formatPatchRootVnode(vnode) {
+    if (isPrimitiveVnode(vnode)) {
+      vnode = createVnode(undefined, undefined, undefined, vnode, undefined);
+    }
+
+    if (isArray(vnode)) {
+      vnode = createFragmentVnode(vnode);
+      console.error('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
+    }
+
+    return vnode;
+  }
   function nextSibling$1(node) {
     return node._isFragmentNode ? node.nextSibling : nextSibling(node);
   }
@@ -720,7 +740,7 @@
       node.appendChild(child);
     } else {
       if (child._isFragmentNode) {
-        child.appendInParent(node);
+        child.appendSelfInParent(node);
       } else {
         appendChild(node, child);
       }
@@ -731,7 +751,7 @@
       node.removeChild(child);
     } else {
       if (child._isFragmentNode) {
-        child.removeInParent(node);
+        child.removeSelfInParent(node);
       } else {
         removeChild(node, child);
       }
@@ -742,7 +762,7 @@
       parentNode.insertBefore(newNode, referenceNode);
     } else {
       if (newNode._isFragmentNode) {
-        newNode.insertBeforeInParent(parentNode, referenceNode);
+        newNode.insertBeforeSelfInParent(parentNode, referenceNode);
       } else {
         if (referenceNode && referenceNode._isFragmentNode) {
           referenceNode = referenceNode.first;
@@ -970,10 +990,6 @@
   }
 
   function patch(oldVnode, vnode) {
-    if (isArray(vnode)) {
-      throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
-    }
-
     var insertedVnodeQueue = [];
 
     for (var i = 0; i < cbs.pre.length; i++) {
@@ -983,10 +999,6 @@
     if (isUndef(oldVnode)) {
       createElm(vnode, insertedVnodeQueue);
     } else {
-      if (!isVnode(oldVnode)) {
-        oldVnode = emptyNodeAt(oldVnode);
-      }
-
       if (sameVnode(oldVnode, vnode)) {
         patchVnode(oldVnode, vnode, insertedVnodeQueue);
       } else {
@@ -1143,6 +1155,35 @@
         }
       }
     }, {
+      key: "createVnodeByCtor",
+      value: function createVnodeByCtor(isSync) {
+        this.numberOfReRenders++;
+        this.inspectReRender();
+
+        try {
+          if (!isSync) {
+            this.patch();
+          }
+
+          Target.component = this;
+          this.props = mergeProps(this.vnode);
+          this.updateVnode = formatPatchRootVnode(this.Ctor(this.props));
+
+          if (isUndef(this.updateVnode)) {
+            throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
+          }
+
+          if (isSync) {
+            this.syncPatch();
+          }
+        } finally {
+          this.cursor = 0;
+          this.updateQueue = 0;
+          this.numberOfReRenders = 0;
+          Target.component = undefined;
+        }
+      }
+    }, {
       key: "syncPatch",
       value: function syncPatch() {
         var _this = this;
@@ -1170,41 +1211,6 @@
               updateEffect(_this2.effects);
             }
           });
-        }
-      }
-    }, {
-      key: "createVnodeByCtor",
-      value: function createVnodeByCtor(isSync) {
-        this.numberOfReRenders++;
-        this.inspectReRender();
-
-        try {
-          if (!isSync) {
-            this.patch();
-          }
-
-          Target.component = this;
-          this.props = mergeProps(this.vnode);
-          this.updateVnode = this.Ctor.call(this, this.props);
-
-          if (isUndef(this.updateVnode)) {
-            throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
-          }
-
-          if (isArray(this.updateVnode)) {
-            this.updateVnode = formatVnode(FRAGMENTS_TYPE, {}, this.updateVnode);
-          } else if (isPrimitiveVnode(this.updateVnode)) {
-            this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined);
-          }
-
-          if (isSync) {
-            this.syncPatch();
-          }
-        } finally {
-          this.cursor = 0;
-          this.updateQueue = 0;
-          this.numberOfReRenders = 0;
-          Target.component = undefined;
         }
       }
     }, {
@@ -1537,6 +1543,9 @@
       component: component
     };
   }
+  function createFragmentVnode(children) {
+    return formatVnode(FRAGMENTS_TYPE, {}, children);
+  }
   function h(tag, props) {
     for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       children[_key - 2] = arguments[_key];
@@ -1738,16 +1747,8 @@
   function memo(component, areEqual) {}
 
   function render(vnode, app, callback) {
-    if (!app) {
-      throw new Error('Target container is not a DOM element.');
-    } else {
-      if (typeof vnode === 'function') {
-        vnode = h(vnode, undefined);
-      } else if (isArray(vnode)) {
-        vnode = formatVnode(FRAGMENTS_TYPE, {}, vnode);
-      } else if (isPrimitiveVnode(vnode)) {
-        vnode = createVnode(undefined, undefined, undefined, vnode, undefined);
-      }
+    if (app) {
+      vnode = formatPatchRootVnode(vnode);
 
       if (isVnode(vnode)) {
         vnode = patch(undefined, vnode);
@@ -1760,12 +1761,10 @@
 
         return vnode;
       } else {
-        if (typeof callback === 'function') {
-          callback(null);
-        }
-
-        return null;
+        throw new Error('The first parameter of the render function should be vnode.');
       }
+    } else {
+      throw new Error('Target container is not a DOM element.');
     }
   }
 

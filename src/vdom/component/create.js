@@ -1,9 +1,6 @@
 import { patch } from '../patch.js'
-import { createVnode } from '../h.js'
-import { formatVnode } from '../helpers/h.js'
-import { isUndef, isArray } from '../../shared.js'
-import { FRAGMENTS_TYPE } from '../../api/symbols.js'
-import { isPrimitiveVnode } from '../helpers/patch/is.js'
+import { isUndef } from '../../shared.js'
+import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import {
   equalDeps,
   mergeProps,
@@ -74,6 +71,34 @@ export class Component {
     }
   }
 
+  createVnodeByCtor(isSync) {
+    this.numberOfReRenders++
+    this.inspectReRender()
+    try {
+      if (!isSync) {
+        this.patch()
+      }
+      Target.component = this
+      this.props = mergeProps(this.vnode)
+      this.updateVnode = formatPatchRootVnode(this.Ctor(this.props))
+      if (isUndef(this.updateVnode)) {
+        throw new Error(
+          'Nothing was returned from render.' +
+          'This usually means a return statement is missing.' +
+          'Or, to render nothing, return null.'
+        )
+      }
+      if (isSync) {
+        this.syncPatch()
+      }
+    } finally {
+      this.cursor = 0
+      this.updateQueue = 0
+      this.numberOfReRenders = 0
+      Target.component = undefined
+    }
+  }
+
   syncPatch() {
     // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
     if (this.updateVnode !== null) {
@@ -97,41 +122,6 @@ export class Component {
           updateEffect(this.effects)
         }
       })
-    }
-  }
-
-  createVnodeByCtor(isSync) {
-    this.numberOfReRenders++
-    this.inspectReRender()
-    try {
-      if (!isSync) {
-        this.patch()
-      }
-      Target.component = this
-      this.props = mergeProps(this.vnode)
-      this.updateVnode = this.Ctor.call(this, this.props)
-      if (isUndef(this.updateVnode)) {
-        throw new Error(
-          'Nothing was returned from render.' +
-          'This usually means a return statement is missing.' +
-          'Or, to render nothing, return null.'
-        )
-      }
-
-      if (isArray(this.updateVnode)) {
-        this.updateVnode = formatVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
-      } else if (isPrimitiveVnode(this.updateVnode)) {
-        this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined)
-      }
-    
-      if (isSync) {
-        this.syncPatch()
-      }
-    } finally {
-      this.cursor = 0
-      this.updateQueue = 0
-      this.numberOfReRenders = 0
-      Target.component = undefined
     }
   }
 

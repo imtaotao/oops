@@ -1,8 +1,8 @@
 import * as api from './domApi.js'
-import { createVnode } from '../../h.js'
 import { cbs } from '../../modules/index.js'
 import { FragmentNode } from './fragment.js'
 import { isDef, isArray } from '../../../shared.js'
+import { createVnode, createFragmentVnode } from '../../h.js'
 import {
   emptyNode,
   isFragment,
@@ -74,6 +74,17 @@ export function createRmCb(childElm, listeners) {
   }
 }
 
+export function formatPatchRootVnode(vnode) {
+  if (isPrimitiveVnode(vnode)) {
+    vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
+  }
+  if (isArray(vnode)) {
+    vnode = createFragmentVnode(vnode)
+    console.error('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
+  }
+  return vnode
+}
+
 // 如果是 fragment，返回 list 中最后一个的 nextSibling
 export function nextSibling(node) {
   return node._isFragmentNode
@@ -92,7 +103,7 @@ export function appendChild(node, child) {
     node.appendChild(child)
   } else {
     if (child._isFragmentNode) {
-      child.appendInParent(node)
+      child.appendSelfInParent(node)
     } else {
       api.appendChild(node, child)
     }
@@ -104,7 +115,7 @@ export function removeChild(node, child) {
     node.removeChild(child)
   } else {
     if (child._isFragmentNode) {
-      child.removeInParent(node)
+      child.removeSelfInParent(node)
     } else {
       api.removeChild(node, child)
     }
@@ -116,7 +127,7 @@ export function insertBefore(parentNode, newNode, referenceNode) {
     parentNode.insertBefore(newNode, referenceNode)
   } else {
     if (newNode._isFragmentNode) {
-      newNode.insertBeforeInParent(parentNode, referenceNode)
+      newNode.insertBeforeSelfInParent(parentNode, referenceNode)
     } else {
       if (referenceNode && referenceNode._isFragmentNode) {
         referenceNode = referenceNode.first

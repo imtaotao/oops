@@ -180,21 +180,12 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
 }
 
 export function patch(oldVnode, vnode) {
-  if (isArray(vnode)) {
-    throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
-  }
-
   const insertedVnodeQueue = []
   for (let i = 0; i < cbs.pre.length; i++) cbs.pre[i]()
   
   if (isUndef(oldVnode)) {
     createElm(vnode, insertedVnodeQueue)
   } else {
-    // 如果 oldVnode 是一个真实的 dom
-    if (!isVnode(oldVnode)) {
-      oldVnode = emptyNodeAt(oldVnode)
-    }
-
     if (sameVnode(oldVnode, vnode)) {
       patchVnode(oldVnode, vnode, insertedVnodeQueue)
     } else {

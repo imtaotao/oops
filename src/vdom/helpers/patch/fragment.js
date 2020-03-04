@@ -1,12 +1,43 @@
 import * as api from './domApi.js'
 import { FRAGMENTS_TYPE } from '../../../api/symbols.js'
 
+const classList = [
+  'add',
+  'remove',
+]
+const style = [
+  'setProperty',
+  'removeProperty',
+]
+const namespaces = [
+  'setAttribute',
+  'setAttributeNS',
+  'removeAttribute',
+  'addEventListener',
+  'removeEventListener',
+]
+
+const empty = key => {
+  if (key === 'key') return
+  console.error('Cannot operate on fragment element.')
+}
+const installMethods = (obj, methods) => {
+  methods.forEach(name => obj[name] = empty)
+}
+
 // 创建 FragmentNode 参与整个 diff patch 的过程，在真实的 dom 节点变化中承上启下
 export class FragmentNode {
   constructor() {
     this._children = []
     this.parentNode = null
     this._isFragmentNode = true
+    
+    // 下面是兼容的方法
+    this.style = {}
+    this.classList = {}
+    installMethods(this, namespaces)
+    installMethods(this.style, style)
+    installMethods(this.classList, classList)
   }
 
   get first() {
@@ -69,7 +100,7 @@ export class FragmentNode {
     // 删除的逻辑和添加的逻辑不一样，立即从真实 dom 环境中删除
     if (this.parentNode) {
       if (child._isFragmentNode) {
-        child.removeInParent(this.parentNode)
+        child.removeSelfInParent(this.parentNode)
       } else {
         api.removeChild(this.realParentNode(), child)
       }
@@ -87,7 +118,7 @@ export class FragmentNode {
     // 插入到真实 dom 环境
     if (this.parentNode) {
       if (newNode._isFragmentNode) {
-        newNode.insertBeforeInParent(this.parentNode, referenceNode)
+        newNode.insertBeforeSelfInParent(this.parentNode, referenceNode)
       } else {
         if (referenceNode && referenceNode._isFragmentNode) {
           referenceNode = referenceNode.first
@@ -98,7 +129,7 @@ export class FragmentNode {
   }
 
   // 把 fragment 当成子元素来操作
-  appendInParent(parentNode) {
+  appendSelfInParent(parentNode) {
     // 第一次 append 的时候，parentNode 肯定是真实 dom，因为在 render 的时候，传入的是真实 dom
     this.parentNode = parentNode
 
@@ -112,7 +143,7 @@ export class FragmentNode {
     }
   }
 
-  removeInParent(parentNode) {
+  removeSelfInParent(parentNode) {
     const nodes = this.nodes
     for (let i = 0; i < nodes.length; i++) {
       parentNode._isFragmentNode
@@ -122,7 +153,7 @@ export class FragmentNode {
     this.parentNode = null
   }
 
-  insertBeforeInParent(parentNode, referenceNode) {
+  insertBeforeSelfInParent(parentNode, referenceNode) {
     this.parentNode = parentNode
     if (parentNode._isFragmentNode) {
       parentNode.insertBefore(this, referenceNode)

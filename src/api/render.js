@@ -1,23 +1,10 @@
-import { isArray } from '../shared.js'
 import { patch } from '../vdom/patch.js'
-import { h, createVnode } from '../vdom/h.js'
-import { FRAGMENTS_TYPE } from './symbols.js'
-import { formatVnode } from '../vdom/helpers/h.js'
-import { appendChild } from '../vdom/helpers/patch/util.js'
-import { isVnode, isPrimitiveVnode } from '../vdom/helpers/patch/is.js'
+import { isVnode } from '../vdom/helpers/patch/is.js'
+import { appendChild, formatPatchRootVnode } from '../vdom/helpers/patch/util.js'
 
 export function render(vnode, app, callback) {
-  if (!app) {
-    throw new Error('Target container is not a DOM element.')
-  } else {
-    if (typeof vnode === 'function') {
-      vnode = h(vnode, undefined)
-    } else if (isArray(vnode)) {
-      vnode = formatVnode(FRAGMENTS_TYPE, {}, vnode)
-    } else if (isPrimitiveVnode(vnode)) {
-      vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
-    }
-
+  if (app) {
+    vnode = formatPatchRootVnode(vnode)
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app)
       const elm = vnode.elm || null
@@ -28,10 +15,9 @@ export function render(vnode, app, callback) {
       }
       return vnode
     } else {
-      if (typeof callback === 'function') {
-        callback(null)
-      }
-      return null
+      throw new Error('The first parameter of the render function should be vnode.')
     }
+  } else {
+    throw new Error('Target container is not a DOM element.')
   }
 }

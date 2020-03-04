@@ -35,8 +35,11 @@ function inspectedElemntType(tag, props, children) {
 export function createVnode(tag, data, children, text, elm) {
   const component = undefined
   const key = data ? data.key : undefined
-
   return { tag, data, children, key, elm, text, component }
+}
+
+export function createFragmentVnode(children) {
+  return formatVnode(FRAGMENTS_TYPE, {}, children)
 }
 
 export function h(tag, props, ...children) {
