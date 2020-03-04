@@ -22,12 +22,12 @@ export class Component {
   constructor(vnode) {
     this.cursor = 0
     this.preProps = {}
-    this.vnode = vnode
+    this.vnode = vnode // 组件标签节点
     this.Ctor = vnode.tag
     this.dependencies = null // context 依赖
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode
-    this.oldRootVnode = undefined
+    this.rootVnode = undefined // 组件返回的根节点
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
@@ -77,8 +77,8 @@ export class Component {
   syncPatch() {
     // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
     if (this.updateVnode !== null) {
-      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
-      this.vnode.elm = this.oldRootVnode.elm
+      this.rootVnode = patch(this.rootVnode, this.updateVnode)
+      this.vnode.elm = this.rootVnode.elm
       this.updateVnode = undefined
       enqueueTask(() => {
         updateEffect(this.effects)
@@ -91,8 +91,8 @@ export class Component {
       // 异步的 patch 减少对 dom 的操作
       enqueueTask(() => {
         if (this.updateVnode !== null) {
-          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
-          this.vnode.elm = this.oldRootVnode.elm
+          this.rootVnode = patch(this.rootVnode, this.updateVnode)
+          this.vnode.elm = this.rootVnode.elm
           this.updateVnode = undefined
           updateEffect(this.effects)
         }
@@ -117,11 +117,10 @@ export class Component {
           'Or, to render nothing, return null.'
         )
       }
-      // 如果是 return 的一个数组，用 fragment 包裹起来
+
       if (isArray(this.updateVnode)) {
         this.updateVnode = formatVnode(FRAGMENTS_TYPE, {}, this.updateVnode)
       } else if (isPrimitiveVnode(this.updateVnode)) {
-        // 如果 return 一个 string 或者 number
         this.updateVnode = createVnode(undefined, undefined, undefined, vnode, undefined)
       }
     

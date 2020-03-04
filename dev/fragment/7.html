@@ -37,16 +37,28 @@
         return sleep(0)
       })
 
-      return condition ? (
-        <Stateful key="a" />
-      ) : (
+      return (
         <Fragment>
-          <Stateful key="a" />
           <Fragment>
-            <div key="b">World</div>
+            {
+              condition
+                ? (
+                  <Stateful key="a" />
+                )
+                : (
+                  <Fragment>
+                    <Fragment>
+                      <Stateful key="a" />
+                      <Fragment>
+                        <div key="b">World</div>
+                      </Fragment>
+                    </Fragment>
+                  </Fragment>
+                )
+            }
           </Fragment>
         </Fragment>
-      );
+      )
     }
 
     let changeValue

@@ -584,7 +584,7 @@ function createComponent(vnode) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode);
     }
-    return isDef(vnode.componentInstance)
+    return isDef(vnode.component)
   }
   return false
 }
@@ -843,7 +843,7 @@ class Component {
     this.dependencies = null;
     this.numberOfReRenders = 0;
     this.updateVnode = undefined;
-    this.oldRootVnode = undefined;
+    this.rootVnode = undefined;
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
@@ -884,8 +884,8 @@ class Component {
   }
   syncPatch() {
     if (this.updateVnode !== null) {
-      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode);
-      this.vnode.elm = this.oldRootVnode.elm;
+      this.rootVnode = patch(this.rootVnode, this.updateVnode);
+      this.vnode.elm = this.rootVnode.elm;
       this.updateVnode = undefined;
       enqueueTask(() => {
         updateEffect(this.effects);
@@ -896,8 +896,8 @@ class Component {
     if (!this.updateVnode) {
       enqueueTask(() => {
         if (this.updateVnode !== null) {
-          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode);
-          this.vnode.elm = this.oldRootVnode.elm;
+          this.rootVnode = patch(this.rootVnode, this.updateVnode);
+          this.vnode.elm = this.rootVnode.elm;
           this.updateVnode = undefined;
           updateEffect(this.effects);
         }
@@ -964,9 +964,9 @@ class Component {
 }
 
 function createComponentInstanceForVnode(vnode) {
-  if (isUndef(vnode.componentInstance)) {
-    vnode.componentInstance = new Component(vnode);
-    vnode.componentInstance.init();
+  if (isUndef(vnode.component)) {
+    vnode.component = new Component(vnode);
+    vnode.component.init();
   }
 }
 const componentVNodeHooks = {
@@ -976,23 +976,20 @@ const componentVNodeHooks = {
     }
   },
   prepatch(oldVnode, vnode) {
-    const component = vnode.componentInstance = oldVnode.componentInstance;
+    const component = vnode.component = oldVnode.component;
     component.vnode = vnode;
   },
   update(oldVnode, vnode) {
-    const component = vnode.componentInstance;
-    component.update(oldVnode, vnode);
+    vnode.component.update(oldVnode, vnode);
   },
   postpatch(oldVnode, vnode) {
-    const component = vnode.componentInstance;
-    component.postpatch(oldVnode, vnode);
+    vnode.component.postpatch(oldVnode, vnode);
   },
   remove(vnode, rm) {
-    const component = vnode.componentInstance;
-    component.remove(vnode, rm);
+    vnode.component.remove(vnode, rm);
   },
   destroy(vnode) {
-    vnode.componentInstance.destroy(vnode);
+    vnode.component.destroy(vnode);
   }
 };
 
@@ -1190,9 +1187,9 @@ function inspectedElemntType(tag, props, children) {
   return { tag, props, children }
 }
 function createVnode(tag, data, children, text, elm) {
-  const componentInstance = undefined;
+  const component = undefined;
   const key = data ? data.key : undefined;
-  return { tag, data, children, key, elm, text, componentInstance }
+  return { tag, data, children, key, elm, text, component }
 }
 function h(tag, props, ...children) {
   children = flatten(children);

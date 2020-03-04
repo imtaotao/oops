@@ -33,10 +33,10 @@ function inspectedElemntType(tag, props, children) {
 }
 
 export function createVnode(tag, data, children, text, elm) {
-  const componentInstance = undefined
+  const component = undefined
   const key = data ? data.key : undefined
 
-  return { tag, data, children, key, elm, text, componentInstance }
+  return { tag, data, children, key, elm, text, component }
 }
 
 export function h(tag, props, ...children) {

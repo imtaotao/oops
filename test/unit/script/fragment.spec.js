@@ -20,7 +20,7 @@ function text(t) {
 function getChildren(vnode) {
   const gc = vn => {
     return typeof vn.tag === 'function'
-      ? gc(vn.componentInstance.oldRootVnode)
+      ? gc(vn.component.rootVnode)
       : vn.children
   }
   const children = gc(vnode)
@@ -30,7 +30,7 @@ function getChildren(vnode) {
       return child.children.map(check)
     }
     if (typeof child.tag === 'function') {
-      return check(child.componentInstance.oldRootVnode)
+      return check(child.component.rootVnode)
     }
     if (child.tag === 'div'){
       return div()

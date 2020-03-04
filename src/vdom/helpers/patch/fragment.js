@@ -1,6 +1,7 @@
 import * as api from './domApi.js'
 import { FRAGMENTS_TYPE } from '../../../api/symbols.js'
 
+// 创建 FragmentNode 参与整个 diff patch 的过程，在真实的 dom 节点变化中承上启下
 export class FragmentNode {
   constructor() {
     this._children = []
@@ -77,7 +78,6 @@ export class FragmentNode {
 
   insertBefore(newNode, referenceNode) {
     const referenceIndex = this._children.indexOf(referenceNode)
-
     if (referenceIndex > -1) {
       this._children.splice(referenceIndex, 0, newNode)
     } else {
@@ -124,7 +124,6 @@ export class FragmentNode {
 
   insertBeforeInParent(parentNode, referenceNode) {
     this.parentNode = parentNode
-
     if (parentNode._isFragmentNode) {
       parentNode.insertBefore(this, referenceNode)
     } else {

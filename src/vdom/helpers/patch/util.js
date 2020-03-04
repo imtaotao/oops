@@ -132,7 +132,7 @@ export function createComponent(vnode) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode)
     }
-    return isDef(vnode.componentInstance)
+    return isDef(vnode.component)
   }
   return false
 }
@@ -148,7 +148,6 @@ export function createElm(vnode, insertedVnodeQueue) {
   if (isDef(tag)) {
     let elm
     if (isFragment(vnode)) {
-      // 如果是 fragment，不创建真正的元素，而是用一个数组存放子元素，并存放 parentElm 的引用，以便最终作用到真实节点上
       elm = vnode.elm = new FragmentNode()
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
