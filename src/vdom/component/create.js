@@ -19,13 +19,12 @@ export const Target = {
 }
 
 export class Component {
-  constructor(vnode, parentElm) {
+  constructor(vnode) {
     this.cursor = 0
     this.preProps = {}
     this.vnode = vnode
     this.Ctor = vnode.tag
     this.dependencies = null // context 依赖
-    this.parentElm = parentElm // 父级 dom 元素
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode
     this.oldRootVnode = undefined
@@ -78,7 +77,7 @@ export class Component {
   syncPatch() {
     // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
     if (this.updateVnode !== null) {
-      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm)
+      this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
       this.vnode.elm = this.oldRootVnode.elm
       this.updateVnode = undefined
       enqueueTask(() => {
@@ -92,7 +91,7 @@ export class Component {
       // 异步的 patch 减少对 dom 的操作
       enqueueTask(() => {
         if (this.updateVnode !== null) {
-          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm)
+          this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode)
           this.vnode.elm = this.oldRootVnode.elm
           this.updateVnode = undefined
           updateEffect(this.effects)
@@ -143,33 +142,25 @@ export class Component {
     }
   }
 
-  init() {
-    this.createVnodeByCtor(true)
-  }
-
   forceUpdate() {
     this.createVnodeByCtor(false)
   }
 
+  // 生命周期方法
+  init() {
+    this.createVnodeByCtor(true)
+  }
+
   // 更新当前组件节点，同步更新
-  update(oldVnode, vnode, parentElm) {
+  update(oldVnode, vnode) {
     this.vnode = vnode
-    this.parentElm = parentElm
     this.createVnodeByCtor(false)
   }
 
   // 已更新
-  postpatch(oldVnode, vnode) {
-    // 专门补写个测试用例的，测试的时候需要
-    if(typeof this.Ctor._componentDidUpdate === 'function') {
-      this.Ctor._componentDidUpdate(oldVnode, vnode)
-    }
-  }
+  postpatch(oldVnode, vnode) {}
 
-  remove(vnode, rm) {
-    // 删除，可以在这里做动画的处理
-    rm()
-  }
+  remove(vnode, rm) { rm() }
 
   destroy(vnode) {
     for (const key in this.effects) {

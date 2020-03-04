@@ -8,15 +8,15 @@ import {
 import {
   isVnode,
   sameVnode,
-  isFragment,
   isComponent,
 } from './helpers/patch/is.js'
 import {
   createElm,
   createRmCb,
   removeChild,
-  insertChild,
+  insertBefore,
   emptyNodeAt,
+  parentNode,
   nextSibling,
   invokeDestroyHook,
   createKeyToOldIdx,
@@ -27,7 +27,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
   for (; startIdx <= endIdx; ++startIdx) {
     const ch = vnodes[startIdx]
     if (ch != null) {
-      insertChild(parentElm, createElm(ch, insertedVnodeQueue, parentElm), before)
+      insertBefore(parentElm, createElm(ch, insertedVnodeQueue), before)
     }
   }
 }
@@ -35,7 +35,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
 function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   for (; startIdx <= endIdx; startIdx++) {
     let i, rm, listeners
-    let ch = vnodes[startIdx] // ch 有可能是组件（包括内置组件）
+    let ch = vnodes[startIdx] // ch 有可能是组件
 
     if (ch != null) {
       if (isDef(ch.tag)) {
@@ -83,21 +83,21 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
     } else if (newEndVnode == null) {
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldStartVnode, newStartVnode)) {
-      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, parentElm)
+      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
       oldStartVnode = oldCh[++oldStartIdx]
       newStartVnode = newCh[++newStartIdx]
     } else if (sameVnode(oldEndVnode, newEndVnode)) {
-      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, parentElm)
+      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
       oldEndVnode = oldCh[--oldEndIdx]
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
-      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, parentElm)
-      insertChild(parentElm, oldStartVnode.elm, nextSibling(oldEndVnode))
+      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
+      insertBefore(parentElm, oldStartVnode.elm, nextSibling(oldEndVnode.elm))
       oldStartVnode = oldCh[++oldStartIdx]
       newEndVnode = newCh[--newEndIdx]
     } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
-      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, parentElm)
-      insertChild(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
+      insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
       oldEndVnode = oldCh[--oldEndIdx]
       newStartVnode = newCh[++newStartIdx]
     } else {
@@ -106,16 +106,16 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       }
       idxInOld = oldKeyToIdx[newStartVnode.key]
       if (isUndef(idxInOld)) { // New element
-        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
+        insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         newStartVnode = newCh[++newStartIdx]
       } else {
         elmToMove = oldCh[idxInOld]
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), oldStartVnode.elm)
+          insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm)
         } else {
-          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue, parentElm)
+          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
           oldCh[idxInOld] = undefined
-          insertChild(parentElm, elmToMove.elm, oldStartVnode.elm)
+          insertBefore(parentElm, elmToMove.elm, oldStartVnode.elm)
         }
         newStartVnode = newCh[++newStartIdx]
       }
@@ -132,39 +132,27 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
 }
 
 // diff -> patch
-function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
+function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let i, hook
   // 调用 prepatch 钩子
   if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
     i(oldVnode, vnode)
   }
-
+  const elm = vnode.elm = oldVnode.elm
+  let oldCh = oldVnode.children
+  let ch = vnode.children
   if (oldVnode === vnode) return
 
-  let ch = vnode.children
-  let oldCh = oldVnode.children
-  let elm = vnode.elm = oldVnode.elm
-
-  // 如果是 fragment
-  if (isFragment(vnode)) {
-    elm.parentNode = parentElm
-  }
-  
   // 调用 update 钩子
   if (isDef(vnode.data)) {
-    for (i = 0; i < cbs.update.length; ++i) {
-      cbs.update[i](oldVnode, vnode, parentElm)
-    }
+    for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
     i = vnode.data.hook
-    if (isDef(i) && isDef(i = i.update)) {
-      i(oldVnode, vnode, parentElm)
-    }
+    if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode)
   }
 
   if ((isComponent(oldVnode) || isComponent(vnode))) {
-    // 如果是组件，则不需要对组件的 elm 进行diff，我们会在组件内部调用 update 钩子，自己会diff
+    // 如果是组件，则不需要对组件的 elm 进行diff，组件内部会调用 update 钩子 diff
   } else if (isUndef(vnode.text)) {
-    // 如果新旧节点都有子元素，则 diff children
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue)
@@ -180,49 +168,45 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
       api.setTextContent(elm, '')
     }
   } else if (oldVnode.text !== vnode.text) {
-    // 文本节点
     if (isDef(oldCh)) {
       removeVnodes(elm, oldCh, 0, oldCh.length - 1)
     }
     api.setTextContent(elm, vnode.text)
   }
 
-  // 调用 postpatch 钩子
   if (isDef(hook) && isDef(i = hook.postpatch)) {
     i(oldVnode, vnode)
   }
 }
 
-export function patch(oldVnode, vnode, parentElm) {
+export function patch(oldVnode, vnode) {
   if (isArray(vnode)) {
     throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
   }
 
   const insertedVnodeQueue = []
-  for (let i = 0; i < cbs.pre.length; i++) {
-    cbs.pre[i]()
-  }
+  for (let i = 0; i < cbs.pre.length; i++) cbs.pre[i]()
   
   if (isUndef(oldVnode)) {
-    createElm(vnode, insertedVnodeQueue, parentElm)
+    createElm(vnode, insertedVnodeQueue)
   } else {
     // 如果 oldVnode 是一个真实的 dom
     if (!isVnode(oldVnode)) {
       oldVnode = emptyNodeAt(oldVnode)
     }
 
-    // 如果是同一个 vnode，则需要 diff -> patch
     if (sameVnode(oldVnode, vnode)) {
-      patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm)
+      patchVnode(oldVnode, vnode, insertedVnodeQueue)
     } else {
-      // 创建元素
-      createElm(vnode, insertedVnodeQueue, parentElm)
+      const elm = oldVnode.elm
+      const parent = parentNode(elm)
 
-      // 如果 parent 在，代表在视图中，就可以插入到视图中去
-      if (parentElm !== null) {
-        insertChild(parentElm, vnode.elm, nextSibling(oldVnode))
-        // 删除旧的元素
-        removeVnodes(parentElm, [oldVnode], 0, 0)
+      createElm(vnode, insertedVnodeQueue)
+
+      // 如果 parent 在，代表在视图中，就可以插入到视图中去，然后删除旧的元素
+      if (parent !== null) {
+        insertBefore(parent, vnode.elm, nextSibling(elm))
+        removeVnodes(parent, [oldVnode], 0, 0)
       }
     }
   }

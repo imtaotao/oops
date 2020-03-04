@@ -22,122 +22,11 @@ export function createKeyToOldIdx(children, beginIdx, endIdx) {
 }
 
 export function emptyNodeAt(elm) {
-  const tagName = api.tagName(elm)
-  return createVnode(tagName && tagName.toLowerCase(), {}, [], undefined, elm)
-}
-
-export function lastElm(elms) {
-  const elm = elms[elms.length - 1]
-  return isArray(elm) ? lastElm(elm) : elm
-}
-
-export function firstElm(elms) {
-  const elm = elms[0]
-  return isArray(elm) ? firstElm(elm) : elm
-}
-
-// 如果是 fragment，返回 list 中最后一个的 nextSibling
-export function nextSibling(node) {
-  return node._isFragmentNode
-    ? node.nextSibling
-    : api.nextSibling(node)
-}
-
-export function createRmCb(childElm, listeners) {
-  return function remove() {
-    if (--listeners === 0) {
-      const parent = isArray(childElm)
-        ? api.parentNode(childElm[0])
-        : api.parentNode(childElm)
-      removeChild(parent, childElm)
-    }
+  let tagName = api.tagName(elm)
+  if (typeof tagName === 'string') {
+    tagName = tagName.toLowerCase()
   }
-}
-
-export function appendChild(parentElm, child) {
-  if (isArray(parentElm)) {
-    child && parentElm.push(child)
-  } else if (isArray(child)) {
-    for (let i = 0; i < child.length; i++) {
-      appendChild(parentElm, child[i])
-    }
-  } else {
-    child && api.appendChild(parentElm, child)
-  }
-}
-
-export function removeChild(parentElm, child) {
-  if (isArray(child)) {
-    for (let i = 0; i < child.length; i++) {
-      removeChild(parentElm, child[i])
-    }
-  } else {
-    child && api.removeChild(parentElm, child)
-  }
-}
-
-export function insertChild(parentElm, child, before) {
-  if (isArray(child)) {
-    console.log(child)
-    // child = child.flat(Infinity)
-    for (let i = 0; i < child.length; i++) {
-      insertChild(parentElm, child[i], before)
-    }
-  } else {
-    if (child) {
-      // 插入到旧 fragment 的最前面
-      if (isArray(before)) {
-        before = firstElm(before)
-      }
-      api.insertBefore(parentElm, child, before)
-    }
-  }
-}
-
-export function createElm(vnode, insertedVnodeQueue, parentElm) {
-  // 如果是一个组件则没必要往下走
-  if (createComponent(vnode, parentElm)) {
-    return vnode.elm
-  }
-  
-  const { tag, data, children } = vnode
-
-  if (isDef(tag)) {
-    let elm
-    if (isFragment(vnode)) {
-      // 如果是 fragment，不创建真正的元素，而是用一个数组存放子元素，并存放 parentElm 的引用，以便最终作用到真实节点上
-      elm = vnode.elm = new FragmentNode()
-    } else {
-      elm = vnode.elm = isDef(data) && isDef(data.ns)
-        ? api.createElementNS(data.ns, tag)
-        : api.createElement(tag)
-    }
-    if (isArray(children)) {
-      for (let i = 0; i < children.length; i++) {
-        const chVNode = children[i]
-        if (chVNode != null) {
-          appendChild(elm, createElm(chVNode, insertedVnodeQueue, elm))
-        }
-      }
-    } else if (isPrimitiveVnode(vnode.text)) {
-      api.appendChild(elm, api.createTextNode(vnode.text))
-    }
-    invokeCreateHooks(vnode, insertedVnodeQueue)
-  } else {
-    vnode.elm = api.createTextNode(vnode.text)
-  }
-  return vnode.elm
-}
-
-export function createComponent(vnode, parentElm) {
-  let i = vnode.data
-  if (isDef(i)) {
-    if (isDef(i = i.hook) && isDef(i = i.init)) {
-      i(vnode, parentElm)
-    }
-    return isDef(vnode.componentInstance)
-  }
-  return false
+  return createVnode(tagName, {}, [], undefined, elm)
 }
 
 export function invokeCreateHooks(vnode, insertedVnodeQueue) {
@@ -174,4 +63,111 @@ export function invokeDestroyHook(vnode) {
       }
     }
   }
+}
+
+export function createRmCb(childElm, listeners) {
+  return function remove() {
+    if (--listeners === 0) {
+      const parent = parentNode(childElm)
+      removeChild(parent, childElm)
+    }
+  }
+}
+
+// 如果是 fragment，返回 list 中最后一个的 nextSibling
+export function nextSibling(node) {
+  return node._isFragmentNode
+    ? node.nextSibling
+    : api.nextSibling(node)
+}
+
+export function parentNode(node) {
+  return node._isFragmentNode
+    ? node.parentNode
+    : api.parentNode(node)
+}
+
+export function appendChild(node, child) {
+  if (node._isFragmentNode) {
+    node.appendChild(child)
+  } else {
+    if (child._isFragmentNode) {
+      child.appendInParent(node)
+    } else {
+      api.appendChild(node, child)
+    }
+  }
+}
+
+export function removeChild(node, child) {
+  if (node._isFragmentNode) {
+    node.removeChild(child)
+  } else {
+    if (child._isFragmentNode) {
+      child.removeInParent(node)
+    } else {
+      api.removeChild(node, child)
+    }
+  }
+}
+
+export function insertBefore(parentNode, newNode, referenceNode) {
+  if (parentNode._isFragmentNode) {
+    parentNode.insertBefore(newNode, referenceNode)
+  } else {
+    if (newNode._isFragmentNode) {
+      newNode.insertBeforeInParent(parentNode, referenceNode)
+    } else {
+      if (referenceNode && referenceNode._isFragmentNode) {
+        referenceNode = referenceNode.first
+      }
+      api.insertBefore(parentNode, newNode, referenceNode)
+    }
+  }
+}
+
+export function createComponent(vnode) {
+  let i = vnode.data
+  if (isDef(i)) {
+    if (isDef(i = i.hook) && isDef(i = i.init)) {
+      i(vnode)
+    }
+    return isDef(vnode.componentInstance)
+  }
+  return false
+}
+
+export function createElm(vnode, insertedVnodeQueue) {
+  // 如果是一个组件则没必要往下走
+  if (createComponent(vnode)) {
+    return vnode.elm
+  }
+  
+  const { tag, data, children } = vnode
+
+  if (isDef(tag)) {
+    let elm
+    if (isFragment(vnode)) {
+      // 如果是 fragment，不创建真正的元素，而是用一个数组存放子元素，并存放 parentElm 的引用，以便最终作用到真实节点上
+      elm = vnode.elm = new FragmentNode()
+    } else {
+      elm = vnode.elm = isDef(data) && isDef(data.ns)
+        ? api.createElementNS(data.ns, tag)
+        : api.createElement(tag)
+    }
+    if (isArray(children)) {
+      for (let i = 0; i < children.length; i++) {
+        const chVNode = children[i]
+        if (chVNode != null) {
+          appendChild(elm, createElm(chVNode, insertedVnodeQueue))
+        }
+      }
+    } else if (isPrimitiveVnode(vnode.text)) {
+      api.appendChild(elm, api.createTextNode(vnode.text))
+    }
+    invokeCreateHooks(vnode, insertedVnodeQueue)
+  } else {
+    vnode.elm = api.createTextNode(vnode.text)
+  }
+  return vnode.elm
 }

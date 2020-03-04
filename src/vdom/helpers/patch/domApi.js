@@ -1,6 +1,7 @@
-// n.appendChild(createTextNode('' + parseInt(Math.random() * 10)))
 export function createElement(tagName) {
-  return document.createElement(tagName)
+  const node = document.createElement(tagName)
+  // node.appendChild(createTextNode('' + parseInt(Math.random() * 10)))
+  return node
 }
 
 export function createElementNS(namespaceURI, qualifiedName) {

@@ -426,7 +426,8 @@ for (var i = 0; i < hooks.length; i++) {
 }
 
 function createElement(tagName) {
-  return document.createElement(tagName);
+  var node = document.createElement(tagName);
+  return node;
 }
 function createElementNS(namespaceURI, qualifiedName) {
   return document.createElementNS(namespaceURI, qualifiedName);
@@ -473,15 +474,168 @@ function sameVnode(a, b) {
 function isFragment(vnode) {
   return vnode && vnode.tag === FRAGMENTS_TYPE;
 }
-function isComponentAndChildIsFragment(vnode) {
-  return isComponent(vnode) && isFragment(vnode.componentInstance.oldRootVnode);
-}
 function isFilterVnode(vnode) {
   return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
 }
 function isPrimitiveVnode(vnode) {
   return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
 }
+
+var FragmentNode =
+/*#__PURE__*/
+function () {
+  function FragmentNode() {
+    _classCallCheck(this, FragmentNode);
+
+    this._children = [];
+    this.parentNode = null;
+    this._isFragmentNode = true;
+  }
+
+  _createClass(FragmentNode, [{
+    key: "realParentNode",
+    value: function realParentNode() {
+      return this.parentNode._isFragmentNode ? this.parentNode.realParentNode() : this.parentNode;
+    }
+  }, {
+    key: "appendChild",
+    value: function appendChild(child) {
+      if (child) {
+        if (child._isFragmentNode) {
+          child.parentNode = this;
+        }
+
+        this._children.push(child);
+      }
+    }
+  }, {
+    key: "removeChild",
+    value: function removeChild$1(child) {
+      var index = this._children.indexOf(child);
+
+      if (index > -1) {
+        this._children.splice(index, 1);
+      }
+
+      if (this.parentNode) {
+        if (child._isFragmentNode) {
+          child.removeInParent(this.parentNode);
+        } else {
+          removeChild(this.realParentNode(), child);
+        }
+      }
+    }
+  }, {
+    key: "insertBefore",
+    value: function insertBefore$1(newNode, referenceNode) {
+      var referenceIndex = this._children.indexOf(referenceNode);
+
+      if (referenceIndex > -1) {
+        this._children.splice(referenceIndex, 0, newNode);
+      } else {
+        this._children.push(newNode);
+      }
+
+      if (this.parentNode) {
+        if (newNode._isFragmentNode) {
+          newNode.insertBeforeInParent(this.parentNode, referenceNode);
+        } else {
+          if (referenceNode && referenceNode._isFragmentNode) {
+            referenceNode = referenceNode.first;
+          }
+
+          insertBefore(this.realParentNode(), newNode, referenceNode);
+        }
+      }
+    }
+  }, {
+    key: "appendInParent",
+    value: function appendInParent(parentNode) {
+      this.parentNode = parentNode;
+
+      if (parentNode._isFragmentNode) {
+        parentNode.appendChild(this);
+      } else {
+        var nodes = this.nodes;
+
+        for (var i = 0; i < nodes.length; i++) {
+          appendChild(parentNode, nodes[i]);
+        }
+      }
+    }
+  }, {
+    key: "removeInParent",
+    value: function removeInParent(parentNode) {
+      var nodes = this.nodes;
+
+      for (var i = 0; i < nodes.length; i++) {
+        parentNode._isFragmentNode ? parentNode.removeChild(nodes[i]) : removeChild(parentNode, nodes[i]);
+      }
+
+      this.parentNode = null;
+    }
+  }, {
+    key: "insertBeforeInParent",
+    value: function insertBeforeInParent(parentNode, referenceNode) {
+      this.parentNode = parentNode;
+
+      if (parentNode._isFragmentNode) {
+        parentNode.insertBefore(this, referenceNode);
+      } else {
+        if (referenceNode && referenceNode._isFragmentNode) {
+          referenceNode = referenceNode.first;
+        }
+
+        var nodes = this.nodes;
+
+        for (var i = 0; i < nodes.length; i++) {
+          insertBefore(parentNode, nodes[i], referenceNode);
+        }
+      }
+    }
+  }, {
+    key: "first",
+    get: function get() {
+      return this.nodes[0];
+    }
+  }, {
+    key: "last",
+    get: function get() {
+      var nodes = this.nodes;
+      return nodes[nodes.length - 1];
+    }
+  }, {
+    key: "tagName",
+    get: function get() {
+      return FRAGMENTS_TYPE;
+    }
+  }, {
+    key: "nextSibling",
+    get: function get() {
+      var last = this.last;
+      return last ? nextSibling(last) : null;
+    }
+  }, {
+    key: "nodes",
+    get: function get() {
+      var ls = [];
+
+      for (var i = 0; i < this._children.length; i++) {
+        var node = this._children[i];
+
+        if (node._isFragmentNode) {
+          ls.push.apply(ls, node.nodes);
+        } else {
+          ls.push(node);
+        }
+      }
+
+      return ls;
+    }
+  }]);
+
+  return FragmentNode;
+}();
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
   var map = {},
@@ -501,122 +655,12 @@ function createKeyToOldIdx(children, beginIdx, endIdx) {
 }
 function emptyNodeAt(elm) {
   var tagName$1 = tagName(elm);
-  return createVnode(tagName$1 && tagName$1.toLowerCase(), {}, [], undefined, elm);
-}
-function lastElm(elms) {
-  var elm = elms[elms.length - 1];
-  return isArray(elm) ? lastElm(elm) : elm;
-}
-function firstElm(elms) {
-  var elm = elms[0];
-  return isArray(elm) ? firstElm(elm) : elm;
-}
-function nextSibling$1(elm) {
-  return nextSibling(isArray(elm) ? lastElm(elm) : elm);
-}
-function realVnode(vnode) {
-  return isComponentAndChildIsFragment(vnode) ? vnode.componentInstance.oldRootVnode : vnode;
-}
-function vnodeElm(vnode) {
-  vnode = realVnode(vnode);
-  return isFragment(vnode) ? vnode.children.map(vnodeElm) : vnode.elm;
-}
-function createRmCb(childVnode, listeners) {
-  var childElm = vnodeElm(childVnode);
-  return function remove() {
-    if (--listeners === 0) {
-      var parent = isArray(childElm) ? null : parentNode(childElm);
-      removeChild$1(parent, childElm);
-    }
-  };
-}
-function appendChild$1(parentElm, child) {
-  if (isArray(child)) {
-    for (var i = 0; i < child.length; i++) {
-      appendChild$1(parentElm, child[i]);
-    }
-  } else {
-    child && appendChild(parentElm, child);
-  }
-}
-function removeChild$1(parentElm, child) {
-  if (isArray(child)) {
-    for (var i = 0; i < child.length; i++) {
-      removeChild$1(parentElm, child[i]);
-    }
-  } else {
-    if (child) {
-      parentElm = parentElm || parentNode(child);
-      removeChild(parentElm, child);
-    }
-  }
-}
-function insertChild(parentElm, child, before) {
-  if (isArray(child)) {
-    child = child.flat(Infinity);
 
-    for (var i = 0; i < child.length; i++) {
-      insertChild(parentElm, child[i], before);
-    }
-  } else {
-    if (child) {
-      if (isArray(before)) {
-        before = firstElm(before);
-      }
-
-      insertBefore(parentElm, child, before);
-    }
-  }
-}
-function createElm(vnode, insertedVnodeQueue, parentElm) {
-  if (createComponent(vnode, parentElm)) {
-    return vnodeElm(vnode);
+  if (typeof tagName$1 === 'string') {
+    tagName$1 = tagName$1.toLowerCase();
   }
 
-  var tag = vnode.tag,
-      data = vnode.data,
-      children = vnode.children;
-
-  if (isDef(tag)) {
-    var elm;
-
-    if (isFragment(vnode)) {
-      elm = parentElm;
-    } else {
-      elm = vnode.elm = isDef(data) && isDef(data.ns) ? createElementNS(data.ns, tag) : createElement(tag);
-    }
-
-    if (isArray(children)) {
-      for (var i = 0; i < children.length; i++) {
-        var chVNode = children[i];
-
-        if (chVNode != null) {
-          appendChild$1(elm, createElm(chVNode, insertedVnodeQueue, elm));
-        }
-      }
-    } else if (isPrimitiveVnode(vnode.text)) {
-      appendChild(elm, createTextNode(vnode.text));
-    }
-
-    invokeCreateHooks(vnode, insertedVnodeQueue);
-  } else {
-    vnode.elm = createTextNode(vnode.text);
-  }
-
-  return vnodeElm(vnode);
-}
-function createComponent(vnode, parentElm) {
-  var i = vnode.data;
-
-  if (isDef(i)) {
-    if (isDef(i = i.hook) && isDef(i = i.init)) {
-      i(vnode, parentElm);
-    }
-
-    return isDef(vnode.componentInstance);
-  }
-
-  return false;
+  return createVnode(tagName$1, {}, [], undefined, elm);
 }
 function invokeCreateHooks(vnode, insertedVnodeQueue) {
   var i;
@@ -656,13 +700,114 @@ function invokeDestroyHook(vnode) {
     }
   }
 }
+function createRmCb(childElm, listeners) {
+  return function remove() {
+    if (--listeners === 0) {
+      var parent = parentNode$1(childElm);
+      removeChild$1(parent, childElm);
+    }
+  };
+}
+function nextSibling$1(node) {
+  return node._isFragmentNode ? node.nextSibling : nextSibling(node);
+}
+function parentNode$1(node) {
+  return node._isFragmentNode ? node.parentNode : parentNode(node);
+}
+function appendChild$1(node, child) {
+  if (node._isFragmentNode) {
+    node.appendChild(child);
+  } else {
+    if (child._isFragmentNode) {
+      child.appendInParent(node);
+    } else {
+      appendChild(node, child);
+    }
+  }
+}
+function removeChild$1(node, child) {
+  if (node._isFragmentNode) {
+    node.removeChild(child);
+  } else {
+    if (child._isFragmentNode) {
+      child.removeInParent(node);
+    } else {
+      removeChild(node, child);
+    }
+  }
+}
+function insertBefore$1(parentNode, newNode, referenceNode) {
+  if (parentNode._isFragmentNode) {
+    parentNode.insertBefore(newNode, referenceNode);
+  } else {
+    if (newNode._isFragmentNode) {
+      newNode.insertBeforeInParent(parentNode, referenceNode);
+    } else {
+      if (referenceNode && referenceNode._isFragmentNode) {
+        referenceNode = referenceNode.first;
+      }
+
+      insertBefore(parentNode, newNode, referenceNode);
+    }
+  }
+}
+function createComponent(vnode) {
+  var i = vnode.data;
+
+  if (isDef(i)) {
+    if (isDef(i = i.hook) && isDef(i = i.init)) {
+      i(vnode);
+    }
+
+    return isDef(vnode.componentInstance);
+  }
+
+  return false;
+}
+function createElm(vnode, insertedVnodeQueue) {
+  if (createComponent(vnode)) {
+    return vnode.elm;
+  }
+
+  var tag = vnode.tag,
+      data = vnode.data,
+      children = vnode.children;
+
+  if (isDef(tag)) {
+    var elm;
+
+    if (isFragment(vnode)) {
+      elm = vnode.elm = new FragmentNode();
+    } else {
+      elm = vnode.elm = isDef(data) && isDef(data.ns) ? createElementNS(data.ns, tag) : createElement(tag);
+    }
+
+    if (isArray(children)) {
+      for (var i = 0; i < children.length; i++) {
+        var chVNode = children[i];
+
+        if (chVNode != null) {
+          appendChild$1(elm, createElm(chVNode, insertedVnodeQueue));
+        }
+      }
+    } else if (isPrimitiveVnode(vnode.text)) {
+      appendChild(elm, createTextNode(vnode.text));
+    }
+
+    invokeCreateHooks(vnode, insertedVnodeQueue);
+  } else {
+    vnode.elm = createTextNode(vnode.text);
+  }
+
+  return vnode.elm;
+}
 
 function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQueue) {
   for (; startIdx <= endIdx; ++startIdx) {
     var ch = vnodes[startIdx];
 
     if (ch != null) {
-      insertChild(parentElm, createElm(ch, insertedVnodeQueue, parentElm), before);
+      insertBefore$1(parentElm, createElm(ch, insertedVnodeQueue), before);
     }
   }
 }
@@ -678,7 +823,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
       if (isDef(ch.tag)) {
         invokeDestroyHook(ch);
         listeners = cbs.remove.length + 1;
-        rm = createRmCb(ch, listeners);
+        rm = createRmCb(ch.elm, listeners);
 
         for (i = 0; i < cbs.remove.length; ++i) {
           cbs.remove[i](ch, rm);
@@ -720,21 +865,21 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
     } else if (newEndVnode == null) {
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldStartVnode, newStartVnode)) {
-      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, parentElm);
+      patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue);
       oldStartVnode = oldCh[++oldStartIdx];
       newStartVnode = newCh[++newStartIdx];
     } else if (sameVnode(oldEndVnode, newEndVnode)) {
-      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, parentElm);
+      patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue);
       oldEndVnode = oldCh[--oldEndIdx];
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldStartVnode, newEndVnode)) {
-      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, parentElm);
-      insertChild(parentElm, vnodeElm(oldStartVnode), nextSibling$1(vnodeElm(oldEndVnode)));
+      patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue);
+      insertBefore$1(parentElm, oldStartVnode.elm, nextSibling$1(oldEndVnode.elm));
       oldStartVnode = oldCh[++oldStartIdx];
       newEndVnode = newCh[--newEndIdx];
     } else if (sameVnode(oldEndVnode, newStartVnode)) {
-      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, parentElm);
-      insertChild(parentElm, vnodeElm(oldEndVnode), vnodeElm(oldStartVnode));
+      patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue);
+      insertBefore$1(parentElm, oldEndVnode.elm, oldStartVnode.elm);
       oldEndVnode = oldCh[--oldEndIdx];
       newStartVnode = newCh[++newStartIdx];
     } else {
@@ -745,17 +890,17 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
       idxInOld = oldKeyToIdx[newStartVnode.key];
 
       if (isUndef(idxInOld)) {
-        insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode));
+        insertBefore$1(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm);
         newStartVnode = newCh[++newStartIdx];
       } else {
         elmToMove = oldCh[idxInOld];
 
         if (elmToMove.tag !== newStartVnode.tag) {
-          insertChild(parentElm, createElm(newStartVnode, insertedVnodeQueue, parentElm), vnodeElm(oldStartVnode));
+          insertBefore$1(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm);
         } else {
-          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue, parentElm);
+          patchVnode(elmToMove, newStartVnode, insertedVnodeQueue);
           oldCh[idxInOld] = undefined;
-          insertChild(parentElm, vnodeElm(elmToMove), vnodeElm(oldStartVnode));
+          insertBefore$1(parentElm, elmToMove.elm, oldStartVnode.elm);
         }
 
         newStartVnode = newCh[++newStartIdx];
@@ -765,7 +910,7 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
 
   if (oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx) {
     if (oldStartIdx > oldEndIdx) {
-      before = newCh[newEndIdx + 1] == null ? null : vnodeElm(newCh[newEndIdx + 1]);
+      before = newCh[newEndIdx + 1] == null ? null : newCh[newEndIdx + 1].elm;
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
@@ -773,35 +918,28 @@ function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   }
 }
 
-function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
+function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   var i, hook;
 
   if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
     i(oldVnode, vnode);
   }
 
-  if (oldVnode === vnode) return;
-  var ch = vnode.children;
-  var oldCh = oldVnode.children;
   var elm = vnode.elm = oldVnode.elm;
+  var oldCh = oldVnode.children;
+  var ch = vnode.children;
+  if (oldVnode === vnode) return;
 
   if (isDef(vnode.data)) {
     for (i = 0; i < cbs.update.length; ++i) {
-      cbs.update[i](oldVnode, vnode, parentElm);
+      cbs.update[i](oldVnode, vnode);
     }
 
     i = vnode.data.hook;
-
-    if (isDef(i) && isDef(i = i.update)) {
-      i(oldVnode, vnode, parentElm);
-    }
+    if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
 
   if (isComponent(oldVnode) || isComponent(vnode)) ; else if (isUndef(vnode.text)) {
-    if (isFragment(vnode)) {
-      elm = parentElm;
-    }
-
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -830,7 +968,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm) {
   }
 }
 
-function patch(oldVnode, vnode, parentElm) {
+function patch(oldVnode, vnode) {
   if (isArray(vnode)) {
     throw new SyntaxError('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
   }
@@ -842,21 +980,22 @@ function patch(oldVnode, vnode, parentElm) {
   }
 
   if (isUndef(oldVnode)) {
-    createElm(vnode, insertedVnodeQueue, parentElm);
+    createElm(vnode, insertedVnodeQueue);
   } else {
     if (!isVnode(oldVnode)) {
       oldVnode = emptyNodeAt(oldVnode);
     }
 
     if (sameVnode(oldVnode, vnode)) {
-      patchVnode(oldVnode, vnode, insertedVnodeQueue, parentElm);
+      patchVnode(oldVnode, vnode, insertedVnodeQueue);
     } else {
-      var nextSiblingElm = nextSibling$1(vnodeElm(oldVnode));
-      createElm(vnode, insertedVnodeQueue, parentElm);
+      var elm = oldVnode.elm;
+      var parent = parentNode$1(elm);
+      createElm(vnode, insertedVnodeQueue);
 
-      if (parentElm !== null) {
-        insertChild(parentElm, vnodeElm(vnode), nextSiblingElm);
-        removeVnodes(parentElm, [oldVnode], 0, 0);
+      if (parent !== null) {
+        insertBefore$1(parent, vnode.elm, nextSibling$1(elm));
+        removeVnodes(parent, [oldVnode], 0, 0);
       }
     }
   }
@@ -934,7 +1073,7 @@ var Target = {
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(vnode, parentElm) {
+  function Component(vnode) {
     _classCallCheck(this, Component);
 
     this.cursor = 0;
@@ -942,7 +1081,6 @@ function () {
     this.vnode = vnode;
     this.Ctor = vnode.tag;
     this.dependencies = null;
-    this.parentElm = parentElm;
     this.numberOfReRenders = 0;
     this.updateVnode = undefined;
     this.oldRootVnode = undefined;
@@ -1009,7 +1147,7 @@ function () {
       var _this = this;
 
       if (this.updateVnode !== null) {
-        this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode, this.parentElm);
+        this.oldRootVnode = patch(this.oldRootVnode, this.updateVnode);
         this.vnode.elm = this.oldRootVnode.elm;
         this.updateVnode = undefined;
         enqueueTask(function () {
@@ -1025,7 +1163,7 @@ function () {
       if (!this.updateVnode) {
         enqueueTask(function () {
           if (_this2.updateVnode !== null) {
-            _this2.oldRootVnode = patch(_this2.oldRootVnode, _this2.updateVnode, _this2.parentElm);
+            _this2.oldRootVnode = patch(_this2.oldRootVnode, _this2.updateVnode);
             _this2.vnode.elm = _this2.oldRootVnode.elm;
             _this2.updateVnode = undefined;
             updateEffect(_this2.effects);
@@ -1076,29 +1214,24 @@ function () {
       }
     }
   }, {
-    key: "init",
-    value: function init() {
-      this.createVnodeByCtor(true);
-    }
-  }, {
     key: "forceUpdate",
     value: function forceUpdate() {
       this.createVnodeByCtor(false);
     }
   }, {
+    key: "init",
+    value: function init() {
+      this.createVnodeByCtor(true);
+    }
+  }, {
     key: "update",
-    value: function update(oldVnode, vnode, parentElm) {
+    value: function update(oldVnode, vnode) {
       this.vnode = vnode;
-      this.parentElm = parentElm;
       this.createVnodeByCtor(false);
     }
   }, {
     key: "postpatch",
-    value: function postpatch(oldVnode, vnode) {
-      if (typeof this.Ctor._componentDidUpdate === 'function') {
-        this.Ctor._componentDidUpdate(oldVnode, vnode);
-      }
-    }
+    value: function postpatch(oldVnode, vnode) {}
   }, {
     key: "remove",
     value: function remove(vnode, rm) {
@@ -1120,26 +1253,26 @@ function () {
   return Component;
 }();
 
-function createComponentInstanceForVnode(vnode, parentElm) {
+function createComponentInstanceForVnode(vnode) {
   if (isUndef(vnode.componentInstance)) {
-    vnode.componentInstance = new Component(vnode, parentElm);
+    vnode.componentInstance = new Component(vnode);
     vnode.componentInstance.init();
   }
 }
 
 var componentVNodeHooks = {
-  init: function init(vnode, parentElm) {
+  init: function init(vnode) {
     if (isComponent(vnode)) {
-      createComponentInstanceForVnode(vnode, parentElm);
+      createComponentInstanceForVnode(vnode);
     }
   },
   prepatch: function prepatch(oldVnode, vnode) {
     var component = vnode.componentInstance = oldVnode.componentInstance;
     component.vnode = vnode;
   },
-  update: function update(oldVnode, vnode, parentElm) {
+  update: function update(oldVnode, vnode) {
     var component = vnode.componentInstance;
-    component.update(oldVnode, vnode, parentElm);
+    component.update(oldVnode, vnode);
   },
   postpatch: function postpatch(oldVnode, vnode) {
     var component = vnode.componentInstance;
@@ -1619,12 +1752,9 @@ function render(vnode, app, callback) {
     }
 
     if (isVnode(vnode)) {
-      vnode = patch(undefined, vnode, app);
-      var elm = vnodeElm(vnode) || null;
-
-      if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
-        elm && appendChild(app, elm);
-      }
+      vnode = patch(undefined, vnode);
+      var elm = vnode.elm || null;
+      elm && appendChild$1(app, elm);
 
       if (typeof callback === 'function') {
         callback(elm);

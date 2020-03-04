@@ -1,34 +1,20 @@
 import * as api from './domApi.js'
-import { isArray } from '../../../shared.js'
 import { FRAGMENTS_TYPE } from '../../../api/symbols.js'
-
-function firstElm(elms) {
-  const elm = elms[0]
-  return isArray(elm) ? firstElm(elm) : elm
-}
-
-function lastElm(elms) {
-  const elm = elms[elms.length - 1]
-  return isArray(elm) ? lastElm(elm) : elm
-}
 
 export class FragmentNode {
   constructor() {
     this._children = []
-    this._parentNode = null
+    this.parentNode = null
     this._isFragmentNode = true
   }
 
   get first() {
-    return firstElm(this._children)
+    return this.nodes[0]
   }
 
   get last() {
-    return lastElm(this._children)
-  }
-
-  get nodes() {
-    return this._children.flat(Infinity)
+    const nodes = this.nodes
+    return nodes[nodes.length - 1]
   }
 
   get tagName() {
@@ -36,14 +22,41 @@ export class FragmentNode {
   }
 
   get nextSibling() {
-    const nodes = this.nodes
-    return api.nextSibling(nodes[nodes.length - 1])
+    const last = this.last
+    return last
+      ? api.nextSibling(last)
+      : null
   }
-  
+
+  // 全部是真实 dom
+  get nodes() {
+    const ls = []
+    for (let i = 0; i < this._children.length; i++) {
+      const node = this._children[i]
+      if (node._isFragmentNode) {
+        ls.push.apply(ls, node.nodes)
+      } else {
+        ls.push(node)
+      }
+    }
+    return ls
+  }
+
+  realParentNode() {
+    return this.parentNode._isFragmentNode
+      ? this.parentNode.realParentNode()
+      : this.parentNode
+  }
+
   appendChild(child) {
     // 不用添加到真实 dom 环境
     // 整个 fragment 会作为一个整体添加
-    child && this._children.push(child)
+    if (child) {
+      if (child._isFragmentNode) {
+        child.parentNode = this
+      }
+      this._children.push(child)
+    }
   }
 
   removeChild(child) {
@@ -53,14 +66,11 @@ export class FragmentNode {
     }
 
     // 删除的逻辑和添加的逻辑不一样，立即从真实 dom 环境中删除
-    if (this._parentNode) {
+    if (this.parentNode) {
       if (child._isFragmentNode) {
-        const nodes = child.nodes
-        for (let i = 0; i < nodes.length; i++) {
-          api.removeChild(this._parentNode, nodes[i])
-        }
+        child.removeInParent(this.parentNode)
       } else {
-        api.removeChild(this._parentNode, child)
+        api.removeChild(this.realParentNode(), child)
       }
     }
   }
@@ -75,54 +85,52 @@ export class FragmentNode {
     }
 
     // 插入到真实 dom 环境
-    if (this._parentNode) {
-      if (referenceNode && referenceNode._isFragmentNode) {
-        referenceNode = referenceNode.first
-      }
-  
+    if (this.parentNode) {
       if (newNode._isFragmentNode) {
-        const nodes = newNode.nodes
-        for (let i = 0; i < nodes.length; i++) {
-          api.insertBefore(this._parentNode, nodes[i], referenceNode)
-        }
+        newNode.insertBeforeInParent(this.parentNode, referenceNode)
       } else {
-        api.insertBefore(this._parentNode, newNode)
+        if (referenceNode && referenceNode._isFragmentNode) {
+          referenceNode = referenceNode.first
+        }
+        api.insertBefore(this.realParentNode(), newNode, referenceNode)
       }
     }
   }
 
   // 把 fragment 当成子元素来操作
-  appendToParent(parentNode) {
+  appendInParent(parentNode) {
     // 第一次 append 的时候，parentNode 肯定是真实 dom，因为在 render 的时候，传入的是真实 dom
+    this.parentNode = parentNode
+
     if (parentNode._isFragmentNode) {
-      this._parentNode = parentNode._parentNode
       parentNode.appendChild(this)
     } else {
-      this._parentNode = parentNode
-      // 未完待续。。。
+      const nodes = this.nodes
+      for (let i = 0; i < nodes.length; i++) {
+        api.appendChild(parentNode, nodes[i])
+      }
     }
   }
 
-  removeToParent() {
+  removeInParent(parentNode) {
     const nodes = this.nodes
     for (let i = 0; i < nodes.length; i++) {
-      api.removeChild(this._parentNode, nodes[i])
+      parentNode._isFragmentNode
+        ? parentNode.removeChild(nodes[i])
+        : api.removeChild(parentNode, nodes[i])
     }
-    this._children = []
-    this._parentNode = null
+    this.parentNode = null
   }
 
-  insertToParent(parentNode, referenceNode) {
+  insertBeforeInParent(parentNode, referenceNode) {
+    this.parentNode = parentNode
+
     if (parentNode._isFragmentNode) {
-      this._parentNode = parentNode._parentNode
       parentNode.insertBefore(this, referenceNode)
     } else {
-      this._parentNode = parentNode
-
       if (referenceNode && referenceNode._isFragmentNode) {
         referenceNode = referenceNode.first
       }
-
       const nodes = this.nodes
       for (let i = 0; i < nodes.length; i++) {
         api.insertBefore(parentNode, nodes[i], referenceNode)

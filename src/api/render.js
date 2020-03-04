@@ -1,8 +1,8 @@
 import { isArray } from '../shared.js'
 import { patch } from '../vdom/patch.js'
 import { h, createVnode } from '../vdom/h.js'
+import { FRAGMENTS_TYPE } from './symbols.js'
 import { formatVnode } from '../vdom/helpers/h.js'
-import { FRAGMENTS_TYPE } from './nodeSymbols.js'
 import { appendChild } from '../vdom/helpers/patch/util.js'
 import { isVnode, isPrimitiveVnode } from '../vdom/helpers/patch/is.js'
 
