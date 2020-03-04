@@ -2,8 +2,8 @@ import { patch } from '../patch.js'
 import { createVnode } from '../h.js'
 import { formatVnode } from '../helpers/h.js'
 import { isUndef, isArray } from '../../shared.js'
+import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { isPrimitiveVnode } from '../helpers/patch/is.js'
-import { FRAGMENTS_TYPE } from '../../api/nodeSymbols.js'
 import {
   equalDeps,
   mergeProps,

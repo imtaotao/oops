@@ -3,14 +3,8 @@ import { patch } from '../vdom/patch.js'
 import { h, createVnode } from '../vdom/h.js'
 import { formatVnode } from '../vdom/helpers/h.js'
 import { FRAGMENTS_TYPE } from './nodeSymbols.js'
-import { vnodeElm } from '../vdom/helpers/patch/util.js'
-import { appendChild } from '../vdom/helpers/patch/domApi.js'
-import {
-  isVnode,
-  isFragment,
-  isPrimitiveVnode,
-  isComponentAndChildIsFragment,
-} from '../vdom/helpers/patch/is.js'
+import { appendChild } from '../vdom/helpers/patch/util.js'
+import { isVnode, isPrimitiveVnode } from '../vdom/helpers/patch/is.js'
 
 export function render(vnode, app, callback) {
   if (!app) {
@@ -26,11 +20,9 @@ export function render(vnode, app, callback) {
 
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app)
-      const elm = vnodeElm(vnode) || null
+      const elm = vnode.elm || null
+      elm && appendChild(app, elm)
 
-      if (!isFragment(vnode) && !isComponentAndChildIsFragment(vnode)) {
-        elm && appendChild(app, elm)
-      }
       if (typeof callback === 'function') {
         callback(elm)
       }

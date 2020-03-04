@@ -8,7 +8,7 @@ import {
   CONTEXT_TYPE,
   PROVIDER_TYPE,
   FRAGMENTS_TYPE,
-} from '../api/nodeSymbols.js'
+} from '../api/symbols.js'
 
 function inspectedElemntType(tag, props, children) {
   if (typeof tag === 'object') {

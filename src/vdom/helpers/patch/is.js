@@ -1,5 +1,5 @@
 import { createVnode } from '../../h.js'
-import { FRAGMENTS_TYPE } from '../../../api/nodeSymbols.js'
+import { FRAGMENTS_TYPE } from '../../../api/symbols.js'
 
 export const emptyNode = createVnode('', {}, [], undefined, undefined)
 
@@ -17,13 +17,6 @@ export function sameVnode(a, b) {
 
 export function isFragment(vnode) {
   return vnode && vnode.tag === FRAGMENTS_TYPE
-}
-
-export function isComponentAndChildIsFragment(vnode) {
-  return (
-    isComponent(vnode) &&
-    isFragment(vnode.componentInstance.oldRootVnode)
-  )
 }
 
 export function isFilterVnode(vnode) {

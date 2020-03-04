@@ -1,12 +1,12 @@
 import * as api from './domApi.js'
 import { createVnode } from '../../h.js'
 import { cbs } from '../../modules/index.js'
+import { FragmentNode } from './fragment.js'
 import { isDef, isArray } from '../../../shared.js'
 import {
   emptyNode,
   isFragment,
   isPrimitiveVnode,
-  isComponentAndChildIsFragment ,
 } from './is.js'
 
 export function createKeyToOldIdx(children, beginIdx, endIdx) {
@@ -37,40 +37,27 @@ export function firstElm(elms) {
 }
 
 // 如果是 fragment，返回 list 中最后一个的 nextSibling
-export function nextSibling(elm) {
-  return (
-    api.nextSibling(isArray(elm) ? lastElm(elm) : elm)
-  )
+export function nextSibling(node) {
+  return node._isFragmentNode
+    ? node.nextSibling
+    : api.nextSibling(node)
 }
 
-// 如果是组件而且组件返回的是一个 fragment，需要找到真正的 vnode
-export function realVnode(vnode) {
-  return isComponentAndChildIsFragment(vnode)
-    ? vnode.componentInstance.oldRootVnode
-    : vnode
-}
-
-export function vnodeElm(vnode) {
-  vnode = realVnode(vnode)
-  return isFragment(vnode)
-    ? vnode.children.map(vnodeElm)
-    : vnode.elm
-}
-
-export function createRmCb(childVnode, listeners) {
-  const childElm = vnodeElm(childVnode)
-
+export function createRmCb(childElm, listeners) {
   return function remove() {
     if (--listeners === 0) {
-      const parent = isArray(childElm)? null : api.parentNode(childElm)
+      const parent = isArray(childElm)
+        ? api.parentNode(childElm[0])
+        : api.parentNode(childElm)
       removeChild(parent, childElm)
     }
   }
 }
 
-// 对 array 会做处理，因为组件可能会 return null，所以 child 可能没有
 export function appendChild(parentElm, child) {
-  if (isArray(child)) {
+  if (isArray(parentElm)) {
+    child && parentElm.push(child)
+  } else if (isArray(child)) {
     for (let i = 0; i < child.length; i++) {
       appendChild(parentElm, child[i])
     }
@@ -85,16 +72,14 @@ export function removeChild(parentElm, child) {
       removeChild(parentElm, child[i])
     }
   } else {
-    if (child) {
-      parentElm = parentElm || api.parentNode(child)
-      api.removeChild(parentElm, child)
-    }
+    child && api.removeChild(parentElm, child)
   }
 }
 
 export function insertChild(parentElm, child, before) {
   if (isArray(child)) {
-    child = child.flat(Infinity)
+    console.log(child)
+    // child = child.flat(Infinity)
     for (let i = 0; i < child.length; i++) {
       insertChild(parentElm, child[i], before)
     }
@@ -112,7 +97,7 @@ export function insertChild(parentElm, child, before) {
 export function createElm(vnode, insertedVnodeQueue, parentElm) {
   // 如果是一个组件则没必要往下走
   if (createComponent(vnode, parentElm)) {
-    return vnodeElm(vnode)
+    return vnode.elm
   }
   
   const { tag, data, children } = vnode
@@ -120,9 +105,8 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
   if (isDef(tag)) {
     let elm
     if (isFragment(vnode)) {
-      // 如果发生是 fragment，只需要在 patch 的时候，把 parentElm 作为 elm 参与 path
-      // 并不需要吧 vnode.elm 设置为 parentElm，意思是如果当前 vnode 为 fragment，他没有 elm
-      elm = parentElm
+      // 如果是 fragment，不创建真正的元素，而是用一个数组存放子元素，并存放 parentElm 的引用，以便最终作用到真实节点上
+      elm = vnode.elm = new FragmentNode()
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
         ? api.createElementNS(data.ns, tag)
@@ -142,7 +126,7 @@ export function createElm(vnode, insertedVnodeQueue, parentElm) {
   } else {
     vnode.elm = api.createTextNode(vnode.text)
   }
-  return vnodeElm(vnode)
+  return vnode.elm
 }
 
 export function createComponent(vnode, parentElm) {

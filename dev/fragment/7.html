@@ -42,21 +42,24 @@
       ) : (
         <Fragment>
           <Stateful key="a" />
-          <div key="b">World</div>
+          <Fragment>
+            <div key="b">World</div>
+          </Fragment>
         </Fragment>
       );
     }
 
     let changeValue
     const node1 = render(<Foo set={fn => changeValue = fn} />, app)
+    window.n = node1
     ;(async () => {
       // console.log(ops)
 
-      await sleep(2000)
+      await sleep(1000)
       await changeValue(true)
       // console.log(ops)
 
-      await sleep(2000)
+      await sleep(1000)
       await changeValue(false)
       // console.log(ops)
     })()
