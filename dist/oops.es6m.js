@@ -10,6 +10,21 @@ function isDef(v) {
 function isUndef(v) {
   return v === undefined
 }
+function flatMap(
+  array,
+  callback,
+  condition = isArray,
+  result = [],
+) {
+  for (const [i, item] of array.entries()) {
+    if (condition(item)) {
+      flatMap(item, callback, condition, result);
+    } else {
+      result.push(callback(item, i, array));
+    }
+  }
+  return result
+}
 
 function updateClass(oldVnode, vnode) {
   const elm = vnode.elm;
@@ -1145,20 +1160,6 @@ function separateProps(props) {
   }
   return data
 }
-function flatten(array, result = []) {
-  for (const value of array) {
-    if(
-      value !== null &&
-      typeof value === 'object' &&
-      typeof value[Symbol.iterator] === 'function'
-    ) {
-      flatten(value, result);
-    } else {
-      result.push(value);
-    }
-  }
-  return result
-}
 function installHooks(data) {
   const hook = (data || (data = {})).hook || (data.hook = {});
   for (const name in componentVNodeHooks) {
@@ -1211,8 +1212,16 @@ function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children)
 }
 function h(tag, props, ...children) {
-  children = flatten(children);
   if (tag === '') tag = FRAGMENTS_TYPE;
+  children = flatMap(
+    children,
+    v => v,
+    v => (
+      v !== null &&
+      typeof v === 'object' &&
+      typeof v[Symbol.iterator] === 'function'
+    )
+  );
   const {
     tag: _tag,
     props: _props,

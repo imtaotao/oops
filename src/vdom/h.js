@@ -1,5 +1,5 @@
+import { flatMap } from '../shared.js'
 import {
-  flatten,
   formatVnode,
   installHooks,
   separateProps,
@@ -43,9 +43,18 @@ export function createFragmentVnode(children) {
 }
 
 export function h(tag, props, ...children) {
-  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
-  children = flatten(children)
   if (tag === '') tag = FRAGMENTS_TYPE
+
+  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
+  children = flatMap(
+    children,
+    v => v,
+    v => (
+      v !== null &&
+      typeof v === 'object' &&
+      typeof v[Symbol.iterator] === 'function'
+    )
+  )
 
   // 在此针对普通的 node，组件和内置组件做区分
   const {

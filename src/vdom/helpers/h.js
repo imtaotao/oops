@@ -81,38 +81,31 @@ function dealWithDataValue(data, key, value) {
           ? parseClassText(value)
           : value
       break
-
     case 'style':
       data.style =
         typeof value === 'string'
           ? parseStyleText(value)
           : value
       break
-
     case 'hook':
       data.hook = value
       break
-
     case 'props':
       assert('props')
       data.props[value[0]] = value[1]
       break
-
     case 'event':
       assert('on')
       data.on[value[0].slice(2).toLocaleLowerCase()] = value[1]
       break
-
     case 'singleDataset':
       assert('dataset')
       data.dataset[value[0].slice(5)] = value[1]
       break
-
     case 'singleAttr':
       assert('attrs')
       data.attrs[value[0]] = value[1]
       break
-
     case 'on':
     case 'attrs':
     case 'dataset':
@@ -155,22 +148,6 @@ export function separateProps(props) {
     }
   }
   return data
-}
-
-// 对数组做扁平化处理
-export function flatten(array, result = []) {
-  for (const value of array) {
-    if(
-      value !== null &&
-      typeof value === 'object' &&
-      typeof value[Symbol.iterator] === 'function'
-    ) {
-      flatten(value, result)
-    } else {
-      result.push(value)
-    }
-  }
-  return result
 }
 
 export function installHooks(data) {

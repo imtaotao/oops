@@ -92,6 +92,42 @@ function isDef(v) {
 function isUndef(v) {
   return v === undefined;
 }
+function flatMap(array, callback) {
+  var condition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : isArray;
+  var result = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = array.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _slicedToArray(_step.value, 2),
+          i = _step$value[0],
+          item = _step$value[1];
+
+      if (condition(item)) {
+        flatMap(item, callback, condition, result);
+      } else {
+        result.push(callback(item, i, array));
+      }
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+        _iterator["return"]();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+}
 
 function updateClass(oldVnode, vnode) {
   var elm = vnode.elm;
@@ -1441,39 +1477,6 @@ function separateProps(props) {
 
   return data;
 }
-function flatten(array) {
-  var result = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = array[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var value = _step.value;
-
-      if (value !== null && _typeof(value) === 'object' && typeof value[Symbol.iterator] === 'function') {
-        flatten(value, result);
-      } else {
-        result.push(value);
-      }
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-        _iterator["return"]();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  return result;
-}
 function installHooks(data) {
   var hook = (data || (data = {})).hook || (data.hook = {});
 
@@ -1554,8 +1557,12 @@ function h(tag, props) {
     children[_key - 2] = arguments[_key];
   }
 
-  children = flatten(children);
   if (tag === '') tag = FRAGMENTS_TYPE;
+  children = flatMap(children, function (v) {
+    return v;
+  }, function (v) {
+    return v !== null && _typeof(v) === 'object' && typeof v[Symbol.iterator] === 'function';
+  });
 
   var _inspectedElemntType = inspectedElemntType(tag, props, children),
       _tag = _inspectedElemntType.tag,
