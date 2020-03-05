@@ -3,10 +3,8 @@ import * as api from './helpers/patch/domApi.js'
 import {
   isDef,
   isUndef,
-  isArray,
 } from '../shared.js'
 import {
-  isVnode,
   sameVnode,
   isComponent,
 } from './helpers/patch/is.js'
@@ -15,7 +13,6 @@ import {
   createRmCb,
   removeChild,
   insertBefore,
-  emptyNodeAt,
   parentNode,
   nextSibling,
   invokeDestroyHook,

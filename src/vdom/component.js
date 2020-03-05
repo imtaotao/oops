@@ -1,12 +1,12 @@
-import { patch } from '../patch.js'
-import { isUndef } from '../../shared.js'
-import { formatPatchRootVnode } from '../helpers/patch/util.js'
+import { patch } from './patch.js'
+import { isUndef } from '../shared.js'
+import { formatPatchRootVnode } from './helpers/patch/util.js'
 import {
   equalDeps,
   mergeProps,
   enqueueTask,
   updateEffect,
-} from '../helpers/component.js'
+} from './helpers/component.js'
 
 const RE_RENDER_LIMIT = 25
 

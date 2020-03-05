@@ -1,7 +1,13 @@
 import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
-import { componentVNodeHooks } from '../component/hooks.js'
-import { isPrimitiveVnode, isFilterVnode } from './patch/is.js'
+import { componentVNodeHooks } from '../hooks/component.js'
+import {
+  isConsumer,
+  isProvider,
+  isComponent,
+  isFilterVnode,
+  isPrimitiveVnode,
+} from './patch/is.js'
 
 function cached(fn) {
   const cache = Object.create(null)
@@ -150,10 +156,23 @@ export function separateProps(props) {
   return data
 }
 
-export function installHooks(data) {
+export function installHooks(tag, data) {
+  let vnodeHooks
+  const simulateVnode = { tag }
   const hook = (data || (data = {})).hook || (data.hook = {})
-  for (const name in componentVNodeHooks) {
-    hook[name] = componentVNodeHooks[name]
+
+  if (isComponent(simulateVnode)) {
+    vnodeHooks = componentVNodeHooks
+  } else if (isProvider(simulateVnode)) {
+    console.log(tag)
+  } else if (isConsumer(simulateVnode)) {
+    console.log(tag)
+  }
+
+  if (vnodeHooks) {
+    for (const name in vnodeHooks) {
+      hook[name] = vnodeHooks[name]
+    }
   }
   return data
 }

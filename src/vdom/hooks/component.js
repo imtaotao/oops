@@ -1,6 +1,5 @@
-import { Component } from './create.js'
 import { isUndef } from '../../shared.js'
-import { isComponent } from '../helpers/patch/is.js'
+import { Component } from '../component.js'
 
 function createComponentInstanceForVnode(vnode) {
   if (isUndef(vnode.component)) {
@@ -11,9 +10,7 @@ function createComponentInstanceForVnode(vnode) {
 
 export const componentVNodeHooks = {
   init(vnode) {
-    if (isComponent(vnode)) {
-      createComponentInstanceForVnode(vnode)
-    }
+    createComponentInstanceForVnode(vnode)
   },
 
   prepatch(oldVnode, vnode) {

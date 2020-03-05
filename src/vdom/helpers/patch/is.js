@@ -1,5 +1,9 @@
 import { createVnode } from '../../h.js'
-import { FRAGMENTS_TYPE } from '../../../api/symbols.js'
+import { 
+  CONTEXT_TYPE,
+  PROVIDER_TYPE,
+  FRAGMENTS_TYPE,
+} from '../../../api/symbols.js'
 
 export const emptyNode = createVnode('', {}, [], undefined, undefined)
 
@@ -11,12 +15,26 @@ export function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
 
-export function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
+export function isConsumer(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === CONTEXT_TYPE
+  )
+}
+
+export function isProvider(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === PROVIDER_TYPE
+  )
 }
 
 export function isFragment(vnode) {
-  return vnode && vnode.tag === FRAGMENTS_TYPE
+  return vnode.tag === FRAGMENTS_TYPE
+}
+
+export function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag
 }
 
 export function isFilterVnode(vnode) {
