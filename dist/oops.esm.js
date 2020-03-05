@@ -313,6 +313,50 @@ var styleModule = {
   remove: applyRemoveStyle
 };
 
+var CAPS_REGEX = /[A-Z]/g;
+
+function updateDataset(oldVnode, vnode) {
+  var elm = vnode.elm;
+
+  if (elm) {
+    var key;
+    var oldDataset = oldVnode.data.dataset;
+    var dataset = vnode.data.dataset;
+    if (!oldDataset && !dataset) return;
+    if (oldDataset === dataset) return;
+    oldDataset = oldDataset || {};
+    dataset = dataset || {};
+    var d = elm.dataset;
+
+    for (key in oldDataset) {
+      if (!dataset[key]) {
+        if (d) {
+          if (key in d) {
+            delete d[key];
+          }
+        } else {
+          elm.removeAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase());
+        }
+      }
+    }
+
+    for (key in dataset) {
+      if (oldDataset[key] !== dataset[key]) {
+        if (d) {
+          d[key] = dataset[key];
+        } else {
+          elm.setAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase(), dataset[key]);
+        }
+      }
+    }
+  }
+}
+
+var datasetModule = {
+  create: updateDataset,
+  update: updateDataset
+};
+
 var xChar = 120;
 var colonChar = 58;
 var xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -449,7 +493,7 @@ var eventListenersModule = {
 
 var cbs = {};
 var hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
-var modules = [classModule, propsModule, styleModule, attributesModule, eventListenersModule];
+var modules = [classModule, propsModule, styleModule, datasetModule, attributesModule, eventListenersModule];
 
 for (var i = 0; i < hooks.length; i++) {
   cbs[hooks[i]] = [];

@@ -1,6 +1,7 @@
 import { classModule } from './class.js'
 import { propsModule } from './props.js'
 import { styleModule } from './style.js'
+import { datasetModule } from './dataset.js'
 import { attributesModule } from './attributes.js'
 import { eventListenersModule } from './eventlisteners.js'
 
@@ -10,6 +11,7 @@ const modules = [
   classModule,
   propsModule,
   styleModule,
+  datasetModule,
   attributesModule,
   eventListenersModule,
 ]

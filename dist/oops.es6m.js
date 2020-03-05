@@ -174,6 +174,45 @@ const styleModule = {
   remove: applyRemoveStyle,
 };
 
+const CAPS_REGEX = /[A-Z]/g;
+function updateDataset(oldVnode, vnode) {
+  const elm = vnode.elm;
+  if (elm) {
+    let key;
+    let oldDataset = oldVnode.data.dataset;
+    let dataset = vnode.data.dataset;
+    if (!oldDataset && !dataset) return
+    if (oldDataset === dataset) return
+    oldDataset = oldDataset || {};
+    dataset = dataset || {};
+    const d = elm.dataset;
+    for (key in oldDataset) {
+      if (!dataset[key]) {
+        if (d) {
+          if (key in d) {
+            delete d[key];
+          }
+        } else {
+          elm.removeAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase());
+        }
+      }
+    }
+    for (key in dataset) {
+      if (oldDataset[key] !== dataset[key]) {
+        if (d) {
+          d[key] = dataset[key];
+        } else {
+          elm.setAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase(), dataset[key]);
+        }
+      }
+    }
+  }
+}
+const datasetModule = {
+  create: updateDataset,
+  update: updateDataset,
+};
+
 const xChar = 120;
 const colonChar = 58;
 const xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -300,6 +339,7 @@ const modules = [
   classModule,
   propsModule,
   styleModule,
+  datasetModule,
   attributesModule,
   eventListenersModule,
 ];
