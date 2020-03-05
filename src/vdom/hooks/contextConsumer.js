@@ -1,7 +1,7 @@
 import { isUndef } from '../../shared.js'
 import { Component } from '../component.js'
 
-export const componentVNodeHooks = {
+export const ConsumerVNodeHooks = {
   init(vnode) {
     if (isUndef(vnode.component)) {
       vnode.component = new Component(vnode)

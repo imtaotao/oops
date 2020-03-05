@@ -127,7 +127,7 @@ export class Component {
 
   inspectReRender() {
     if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-      throw new Error('Too many re-renders. Oops limits the number of renders to prevent an infinite loop.')
+      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
     }
   }
 
