@@ -83,12 +83,22 @@ export class FragmentNode {
   appendChild(child) {
     // 不用添加到真实 dom 环境
     // 整个 fragment 会作为一个整体添加
-    // 而在 diff 过程中新增的元素，使用的是 insertBefore，所以在这里不用处理这种情况
     if (child) {
       if (child._isFragmentNode) {
         child.parentNode = this
       }
       this._children.push(child)
+    }
+
+    // 而在 diff 过程中新增的元素，使用的是 insertBefore，
+    // 所以这里本来不用处理这种情况，但是为了保证逻辑的完整性，还是加上
+    if (this.parentNode) {
+      if (child._isFragmentNode) {
+        // 如果 this.parentNode 是一个 fragment，会一直网上找到真实 dom 元素为止
+        child.appendSelfInParent(this.parentNode)
+      } else {
+        api.appendChild(this.realParentNode(), child)
+      }
     }
   }
 
