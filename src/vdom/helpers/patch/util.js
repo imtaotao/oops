@@ -173,7 +173,7 @@ export function createElm(vnode, insertedVnodeQueue) {
         }
       }
     } else if (isPrimitiveVnode(vnode.text)) {
-      api.appendChild(elm, api.createTextNode(vnode.text))
+      appendChild(elm, api.createTextNode(vnode.text))
     }
     invokeCreateHooks(vnode, insertedVnodeQueue)
   } else {
