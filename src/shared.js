@@ -8,17 +8,12 @@ export function isUndef(v) {
   return v === undefined
 }
 
-export function flatMap(
-  array,
-  callback,
-  condition = isArray,
-  result = [],
-) {
-  for (const [i, item] of array.entries()) {
+export function flat(array, condition = isArray, result = []) {
+  for (const item of array) {
     if (condition(item)) {
-      flatMap(item, callback, condition, result)
+      flat(item, condition, result)
     } else {
-      result.push(callback(item, i, array))
+      result.push(item)
     }
   }
   return result

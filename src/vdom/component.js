@@ -143,7 +143,7 @@ export class Component {
   // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
     this.vnode = vnode
-    this.createVnodeByCtor(false)
+    this.createVnodeByCtor(true)
   }
 
   // 已更新

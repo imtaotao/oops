@@ -1,4 +1,4 @@
-import { flatMap } from '../shared.js'
+import { flat } from '../shared.js'
 import { FRAGMENTS_TYPE } from '../api/symbols.js'
 import {
   formatVnode,
@@ -19,15 +19,11 @@ export function createFragmentVnode(children) {
 export function h(tag, props, ...children) {
   if (tag === '') tag = FRAGMENTS_TYPE
   // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
-  children = flatMap(
-    children,
-    v => v,
-    v => (
-      v !== null &&
-      typeof v === 'object' &&
-      typeof v[Symbol.iterator] === 'function'
-    )
-  )
+  children = flat(children, v => (
+    v !== null &&
+    typeof v === 'object' &&
+    typeof v[Symbol.iterator] === 'function'
+  ))
 
   let data
   if (data = typeof tag === 'string' || tag === FRAGMENTS_TYPE) {

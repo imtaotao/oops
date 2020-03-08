@@ -6,6 +6,8 @@ import { createVnode, createFragmentVnode } from '../../h.js'
 import {
   emptyNode,
   isFragment,
+  isProvider,
+  isConsumer,
   isPrimitiveVnode,
 } from './is.js'
 
@@ -153,12 +155,12 @@ export function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode)) {
     return vnode.elm
   }
-  
+
   const { tag, data, children } = vnode
 
   if (isDef(tag)) {
     let elm
-    if (isFragment(vnode)) {
+    if (isFragment(vnode) || isProvider(vnode)) {
       elm = vnode.elm = new FragmentNode()
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
@@ -178,6 +180,14 @@ export function createElm(vnode, insertedVnodeQueue) {
     invokeCreateHooks(vnode, insertedVnodeQueue)
   } else {
     vnode.elm = api.createTextNode(vnode.text)
+  }
+
+  // 初始化之后
+  if (isDef(data)) {
+    let i = data.hook
+    if (isDef(i) && isDef(i = i.initBefore)) {
+      i(vnode)
+    }
   }
   return vnode.elm
 }

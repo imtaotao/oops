@@ -1,6 +1,7 @@
 import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
 import { componentVNodeHooks } from '../hooks/component.js'
+import { providerVNodeHooks } from '../hooks/contextProvider.js'
 import {
   isConsumer,
   isProvider,
@@ -164,7 +165,7 @@ export function installHooks(tag, data) {
   if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks
   } else if (isProvider(simulateVnode)) {
-    console.log(tag)
+    vnodeHooks = providerVNodeHooks
   } else if (isConsumer(simulateVnode)) {
     console.log(tag)
   }

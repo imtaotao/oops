@@ -40,6 +40,10 @@ export class FragmentNode {
     installMethods(this.classList, classList)
   }
 
+  get tagName() {
+    return FRAGMENTS_TYPE
+  }
+
   get first() {
     return this.nodes[0]
   }
@@ -49,15 +53,9 @@ export class FragmentNode {
     return nodes[nodes.length - 1]
   }
 
-  get tagName() {
-    return FRAGMENTS_TYPE
-  }
-
   get nextSibling() {
     const last = this.last
-    return last
-      ? api.nextSibling(last)
-      : null
+    return last ? api.nextSibling(last) : null
   }
 
   // 全部是真实 dom
@@ -94,7 +92,7 @@ export class FragmentNode {
     // 所以这里本来不用处理这种情况，但是为了保证逻辑的完整性，还是加上
     if (this.parentNode) {
       if (child._isFragmentNode) {
-        // 如果 this.parentNode 是一个 fragment，会一直网上找到真实 dom 元素为止
+        // 如果 this.parentNode 是一个 fragment，会一直往上找到真实 dom 元素为止
         child.appendSelfInParent(this.parentNode)
       } else {
         api.appendChild(this.realParentNode(), child)
@@ -120,6 +118,7 @@ export class FragmentNode {
 
   insertBefore(newNode, referenceNode) {
     const referenceIndex = this._children.indexOf(referenceNode)
+
     if (referenceIndex > -1) {
       this._children.splice(referenceIndex, 0, newNode)
     } else {
@@ -166,6 +165,7 @@ export class FragmentNode {
 
   insertBeforeSelfInParent(parentNode, referenceNode) {
     this.parentNode = parentNode
+
     if (parentNode._isFragmentNode) {
       parentNode.insertBefore(this, referenceNode)
     } else {

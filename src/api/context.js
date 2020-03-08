@@ -102,7 +102,8 @@ class ContextStack {
   }
 
   pop() {
-    this.context._currentValue = this.valueStack.shift()
+    this.valueStack.pop()
+    this.context._currentValue = this.valueStack[this.valueStack.length - 1]
   }
 
   reset() {

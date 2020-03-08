@@ -1,33 +1,25 @@
-import { isUndef } from '../../shared.js'
-import { Component } from '../component.js'
+const push = ({tag, data}) => {
+  tag._context._contextStack.push(data.value)
+}
+
+const pop = vnode => {
+  vnode.tag._context._contextStack.pop()
+}
 
 export const providerVNodeHooks = {
   init(vnode) {
-    if (isUndef(vnode.component)) {
-      vnode.component = new Component(vnode)
-      vnode.component.init()
-    }
+    push(vnode)
   },
 
-  prepatch(oldVnode, vnode) {
-    const component = vnode.component = oldVnode.component
-    // 换成新的 vnode，这样就会有新的 props
-    component.vnode = vnode
+  initBefore(vnode) {
+    pop(vnode)
   },
 
   update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode)
+    push(vnode)
   },
-
+  
   postpatch(oldVnode, vnode) {
-    vnode.component.postpatch(oldVnode, vnode)
+    pop(vnode)
   },
-
-  remove(vnode, rm) {
-    vnode.component.remove(vnode, rm)
-  },
-
-  destroy(vnode) {
-    vnode.component.destroy(vnode)
-  }
 }

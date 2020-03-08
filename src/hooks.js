@@ -22,7 +22,8 @@ export function useMemo(create, deps) {
   return component.useMemo(create, deps)
 }
 
-// callback: T, deps: Array<any> | void | null
+// callback: T
+// deps: Array<any> | void | null
 export function useCallback(callback, deps) {
   return useMemo(() => callback, deps)
 }

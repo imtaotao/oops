@@ -10,21 +10,20 @@ function isDef(v) {
 function isUndef(v) {
   return v === undefined
 }
-function flatMap(
-  array,
-  callback,
-  condition = isArray,
-  result = [],
-) {
-  for (const [i, item] of array.entries()) {
+function flat(array, condition = isArray, result = []) {
+  for (const item of array) {
     if (condition(item)) {
-      flatMap(item, callback, condition, result);
+      flat(item, condition, result);
     } else {
-      result.push(callback(item, i, array));
+      result.push(item);
     }
   }
   return result
 }
+
+const CONTEXT_TYPE = Symbol.for('oops.context');
+const PROVIDER_TYPE = Symbol.for('oops.provider');
+const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
 
 function updateClass(oldVnode, vnode) {
   const elm = vnode.elm;
@@ -381,10 +380,6 @@ function setTextContent(node, text) {
   node.textContent = text;
 }
 
-const CONTEXT_TYPE = Symbol.for('oops.context');
-const PROVIDER_TYPE = Symbol.for('oops.provider');
-const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
-
 const emptyNode = createVnode('', {}, [], undefined, undefined);
 function isVnode(vnode) {
   return vnode.tag !== undefined
@@ -392,11 +387,23 @@ function isVnode(vnode) {
 function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
-function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
+function isConsumer(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === CONTEXT_TYPE
+  )
+}
+function isProvider(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === PROVIDER_TYPE
+  )
 }
 function isFragment(vnode) {
-  return vnode && vnode.tag === FRAGMENTS_TYPE
+  return vnode.tag === FRAGMENTS_TYPE
+}
+function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag
 }
 function isFilterVnode(vnode) {
   return (
@@ -446,6 +453,9 @@ class FragmentNode {
     installMethods(this.style, style);
     installMethods(this.classList, classList);
   }
+  get tagName() {
+    return FRAGMENTS_TYPE
+  }
   get first() {
     return this.nodes[0]
   }
@@ -453,14 +463,9 @@ class FragmentNode {
     const nodes = this.nodes;
     return nodes[nodes.length - 1]
   }
-  get tagName() {
-    return FRAGMENTS_TYPE
-  }
   get nextSibling() {
     const last = this.last;
-    return last
-      ? nextSibling(last)
-      : null
+    return last ? nextSibling(last) : null
   }
   get nodes() {
     const ls = [];
@@ -485,6 +490,13 @@ class FragmentNode {
         child.parentNode = this;
       }
       this._children.push(child);
+    }
+    if (this.parentNode) {
+      if (child._isFragmentNode) {
+        child.appendSelfInParent(this.parentNode);
+      } else {
+        appendChild(this.realParentNode(), child);
+      }
     }
   }
   removeChild(child) {
@@ -677,7 +689,7 @@ function createElm(vnode, insertedVnodeQueue) {
   const { tag, data, children } = vnode;
   if (isDef(tag)) {
     let elm;
-    if (isFragment(vnode)) {
+    if (isFragment(vnode) || isProvider(vnode)) {
       elm = vnode.elm = new FragmentNode();
     } else {
       elm = vnode.elm = isDef(data) && isDef(data.ns)
@@ -692,11 +704,17 @@ function createElm(vnode, insertedVnodeQueue) {
         }
       }
     } else if (isPrimitiveVnode(vnode.text)) {
-      appendChild(elm, createTextNode(vnode.text));
+      appendChild$1(elm, createTextNode(vnode.text));
     }
     invokeCreateHooks(vnode, insertedVnodeQueue);
   } else {
     vnode.elm = createTextNode(vnode.text);
+  }
+  if (isDef(data)) {
+    let i = data.hook;
+    if (isDef(i) && isDef(i = i.initBefore)) {
+      i(vnode);
+    }
   }
   return vnode.elm
 }
@@ -815,7 +833,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     i = vnode.data.hook;
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
-  if ((isComponent(oldVnode) || isComponent(vnode))) ; else if (isUndef(vnode.text)) {
+  if (isComponent(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -1009,7 +1027,7 @@ class Component {
   }
   inspectReRender() {
     if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-      throw new Error('Too many re-renders. Oops limits the number of renders to prevent an infinite loop.')
+      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
     }
   }
   forceUpdate() {
@@ -1020,7 +1038,7 @@ class Component {
   }
   update(oldVnode, vnode) {
     this.vnode = vnode;
-    this.createVnodeByCtor(false);
+    this.createVnodeByCtor(true);
   }
   postpatch(oldVnode, vnode) {}
   remove(vnode, rm) { rm(); }
@@ -1034,16 +1052,11 @@ class Component {
   }
 }
 
-function createComponentInstanceForVnode(vnode) {
-  if (isUndef(vnode.component)) {
-    vnode.component = new Component(vnode);
-    vnode.component.init();
-  }
-}
 const componentVNodeHooks = {
   init(vnode) {
-    if (isComponent(vnode)) {
-      createComponentInstanceForVnode(vnode);
+    if (isUndef(vnode.component)) {
+      vnode.component = new Component(vnode);
+      vnode.component.init();
     }
   },
   prepatch(oldVnode, vnode) {
@@ -1062,6 +1075,27 @@ const componentVNodeHooks = {
   destroy(vnode) {
     vnode.component.destroy(vnode);
   }
+};
+
+const push = ({tag, data}) => {
+  tag._context._contextStack.push(data.value);
+};
+const pop = vnode => {
+  vnode.tag._context._contextStack.pop();
+};
+const providerVNodeHooks = {
+  init(vnode) {
+    push(vnode);
+  },
+  initBefore(vnode) {
+    pop(vnode);
+  },
+  update(oldVnode, vnode) {
+    push(vnode);
+  },
+  postpatch(oldVnode, vnode) {
+    pop(vnode);
+  },
 };
 
 function cached(fn) {
@@ -1200,10 +1234,21 @@ function separateProps(props) {
   }
   return data
 }
-function installHooks(data) {
+function installHooks(tag, data) {
+  let vnodeHooks;
+  const simulateVnode = { tag };
   const hook = (data || (data = {})).hook || (data.hook = {});
-  for (const name in componentVNodeHooks) {
-    hook[name] = componentVNodeHooks[name];
+  if (isComponent(simulateVnode)) {
+    vnodeHooks = componentVNodeHooks;
+  } else if (isProvider(simulateVnode)) {
+    vnodeHooks = providerVNodeHooks;
+  } else if (isConsumer(simulateVnode)) {
+    console.log(tag);
+  }
+  if (vnodeHooks) {
+    for (const name in vnodeHooks) {
+      hook[name] = vnodeHooks[name];
+    }
   }
   return data
 }
@@ -1224,25 +1269,6 @@ function formatVnode(tag, data, children) {
   return createVnode(tag, data, children, undefined, undefined)
 }
 
-function inspectedElemntType(tag, props, children) {
-  if (typeof tag === 'object') {
-    switch (tag.$$typeof) {
-      case PROVIDER_TYPE:
-        if (typeof tag !== 'function') {
-          const context = tag._context;
-          function ContextProvider({ value, children }) {
-            context._contextStack.push(value);
-            return createVnode(FRAGMENTS_TYPE, {}, children, undefined, undefined)
-          }
-          ContextProvider.$$typeof = tag.$$typeof;
-          ContextProvider._context = tag._context;
-          tag = ContextProvider;
-        }
-        break
-    }
-  }
-  return { tag, props, children }
-}
 function createVnode(tag, data, children, text, elm) {
   const component = undefined;
   const key = data ? data.key : undefined;
@@ -1253,25 +1279,18 @@ function createFragmentVnode(children) {
 }
 function h(tag, props, ...children) {
   if (tag === '') tag = FRAGMENTS_TYPE;
-  children = flatMap(
-    children,
-    v => v,
-    v => (
-      v !== null &&
-      typeof v === 'object' &&
-      typeof v[Symbol.iterator] === 'function'
-    )
-  );
-  const {
-    tag: _tag,
-    props: _props,
-    children: _children,
-  } = inspectedElemntType(tag, props, children);
-  const data =
-    typeof _tag === 'string' || _tag === FRAGMENTS_TYPE
-      ? separateProps(_props)
-      : installHooks(_props);
-  return formatVnode(_tag, data, _children)
+  children = flat(children, v => (
+    v !== null &&
+    typeof v === 'object' &&
+    typeof v[Symbol.iterator] === 'function'
+  ));
+  let data;
+  if (data = typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+    data = separateProps(props);
+  } else {
+    data = installHooks(tag, props);
+  }
+  return formatVnode(tag, data, children)
 }
 
 const MODE_SLASH = 0;
@@ -1485,7 +1504,8 @@ class ContextStack {
     this.context._currentValue = value;
   }
   pop() {
-    this.context._currentValue = this.valueStack.shift();
+    this.valueStack.pop();
+    this.context._currentValue = this.valueStack[this.valueStack.length - 1];
   }
   reset() {
     const defaultValue = this.valueStack[0];
