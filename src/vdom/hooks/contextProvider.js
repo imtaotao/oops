@@ -1,25 +1,17 @@
-const push = ({tag, data}) => {
-  tag._context._contextStack.push(data.value)
-}
-
-const pop = vnode => {
-  vnode.tag._context._contextStack.pop()
-}
-
 export const providerVNodeHooks = {
-  init(vnode) {
-    push(vnode)
+  init({tag, data}) {
+    tag._context._contextStack.push(data.value)
   },
 
   initBefore(vnode) {
-    pop(vnode)
+    vnode.tag._context._contextStack.pop()
   },
 
-  update(oldVnode, vnode) {
-    push(vnode)
+  update(oldVnode, {tag, data}) {
+    tag._context._contextStack.push(data.value)
   },
-  
+
   postpatch(oldVnode, vnode) {
-    pop(vnode)
+    vnode.tag._context._contextStack.pop()
   },
 }

@@ -1,33 +1,37 @@
-import { isUndef } from '../../shared.js'
-import { Component } from '../component.js'
+class ConsumerComponent {
+  constructor(vnode) {
+    this.vnode = vnode
+  }
 
-export const ConsumerVNodeHooks = {
-  init(vnode) {
-    if (isUndef(vnode.component)) {
-      vnode.component = new Component(vnode)
-      vnode.component.init()
+  getRender() {
+    const render = vnode.children[0]
+    if (typeof render !== 'function') {
+      throw new Error(
+        'A context consumer was rendered with multiple children, or a child ' +
+        "that isn't a function. A context consumer expects a single child " +
+        'that is a function. If you did pass a function, make sure there ' +
+        'is no trailing or leading whitespace around it.'
+      )
     }
+    return render
+  }
+
+  init() {
+    
+  }
+}
+
+export const consumerVNodeHooks = {
+  init(vnode) {
+    vnode.component = new ConsumerComponent(vnode)
+    vnode.component.init()
   },
 
   prepatch(oldVnode, vnode) {
     const component = vnode.component = oldVnode.component
-    // 换成新的 vnode，这样就会有新的 props
     component.vnode = vnode
   },
 
   update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode)
   },
-
-  postpatch(oldVnode, vnode) {
-    vnode.component.postpatch(oldVnode, vnode)
-  },
-
-  remove(vnode, rm) {
-    vnode.component.remove(vnode, rm)
-  },
-
-  destroy(vnode) {
-    vnode.component.destroy(vnode)
-  }
 }

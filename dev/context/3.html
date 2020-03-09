@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>useContext</title>
+
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    const { Fragment, useCallback, useState, createContext, useContext } = React;
+    // const { Fragment, useCallback, useState, render, createContext, useContext } = oops
+    // ReactDOM.render = oops.render
+    // React.createElement = oops.h
+
+    const Context = createContext({
+      index: 'xx'
+    });
+  
+    function Parent() {
+      console.log('Parent render')
+      return <Child />
+    }
+
+    function Child2(props) {
+      console.log('child2 render');
+      return (
+        <Context.Consumer>
+          1
+          {({ index }) => {
+            console.log('child2 consumer render');
+            return <div>{props.index}</div>
+          }}
+        </Context.Consumer>
+      )
+    }
+
+    function Child() {
+      return (
+        <Context.Consumer>
+          {({ index, changeIndex }) => {
+            console.log('Child Consumer render');
+            return (
+              <Fragment>
+                <button onClick={changeIndex}>{index} +</button>
+                <Child2 index={index} />
+              </Fragment>
+            ) 
+          }}
+        </Context.Consumer>
+      )
+    }
+
+    function Ancestor(props) {
+      console.log('Ancestor render');
+      const [index, setIndex] = useState(1)
+      return (
+        <Fragment>
+          <Context.Provider
+            value={{
+              index,
+              changeIndex: setIndex
+            }}
+          >
+            <Parent />
+          </Context.Provider>
+        </Fragment>
+      );
+    }
+
+    ReactDOM.render(<Ancestor />, document.getElementById("root"));
+  </script>
+</body>
+</html>

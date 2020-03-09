@@ -2,6 +2,7 @@ import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
 import { componentVNodeHooks } from '../hooks/component.js'
 import { providerVNodeHooks } from '../hooks/contextProvider.js'
+import { consumerVNodeHooks } from '../hooks/contextConsumer.js'
 import {
   isConsumer,
   isProvider,
@@ -162,12 +163,10 @@ export function installHooks(tag, data) {
   const simulateVnode = { tag }
   const hook = (data || (data = {})).hook || (data.hook = {})
 
-  if (isComponent(simulateVnode)) {
-    vnodeHooks = componentVNodeHooks
-  } else if (isProvider(simulateVnode)) {
+  if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks
-  } else if (isConsumer(simulateVnode)) {
-    console.log(tag)
+  } else if (isComponent(simulateVnode) || isConsumer(simulateVnode)) {
+    vnodeHooks = componentVNodeHooks
   }
 
   if (vnodeHooks) {
