@@ -30,6 +30,10 @@
       dark: {
         foreground: "#ffffff",
         background: "#222222"
+      },
+      cc: {
+        foreground: "#8bc34a",
+        background: "#35a4e5"
       }
     };
 
@@ -44,6 +48,12 @@
           { a }
           <ThemeContext.Provider value={themes.dark}>
             <Toolbar a={a}/>
+          </ThemeContext.Provider>
+          <ThemeContext.Provider value={themes.cc}>
+            <Toolbar a={a}/>
+            <ThemeContext.Provider value={themes.dark}>
+              <ThemedButton name="out"  a={a + 1}/>
+            </ThemeContext.Provider>
           </ThemeContext.Provider>
           <ThemedButton name="out"/>
         </Fragment>

@@ -1,14 +1,11 @@
 import { isUndef } from '../../shared.js'
 import { Component } from '../component.js'
-import { isConsumer, isComponent } from '../helpers/patch/is.js'
+import { isComponent } from '../helpers/patch/is.js'
 
 export const componentVNodeHooks = {
   init(vnode) {
     if (isUndef(vnode.component)) {
       if (isComponent(vnode)) {
-        vnode.component = new Component(vnode)
-        vnode.component.init()
-      } else if (isConsumer(vnode)) {
         vnode.component = new Component(vnode)
         vnode.component.init()
       }

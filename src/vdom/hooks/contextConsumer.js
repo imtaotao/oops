@@ -1,10 +1,16 @@
+import { patch } from '../patch.js'
+import { readContext } from '../../api/context.js'
+import { formatPatchRootVnode } from '../helpers/patch/util.js'
+
 class ConsumerComponent {
   constructor(vnode) {
     this.vnode = vnode
+    this.rootVnode = undefined
+    this.context = vnode.tag._context
   }
 
-  getRender() {
-    const render = vnode.children[0]
+  rewardRender() {
+    const render = this.vnode.children[0]
     if (typeof render !== 'function') {
       throw new Error(
         'A context consumer was rendered with multiple children, or a child ' +
@@ -16,15 +22,22 @@ class ConsumerComponent {
     return render
   }
 
-  init() {
-    
+  render() {
+    const value = readContext(this, this.context)
+    console.log(this.context)
+    const updateVnode = formatPatchRootVnode(this.rewardRender()(value))
+    if (updateVnode) {
+      this.rootVnode = patch(this.rootVnode, updateVnode)
+      this.vnode.elm = this.rootVnode.elm
+    }
   }
 }
+
 
 export const consumerVNodeHooks = {
   init(vnode) {
     vnode.component = new ConsumerComponent(vnode)
-    vnode.component.init()
+    vnode.component.render()
   },
 
   prepatch(oldVnode, vnode) {
@@ -33,5 +46,6 @@ export const consumerVNodeHooks = {
   },
 
   update(oldVnode, vnode) {
+    vnode.component.render()
   },
 }

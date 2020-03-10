@@ -165,7 +165,9 @@ export function installHooks(tag, data) {
 
   if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks
-  } else if (isComponent(simulateVnode) || isConsumer(simulateVnode)) {
+  } else if (isConsumer(simulateVnode))  {
+    vnodeHooks = consumerVNodeHooks
+  } else if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks
   }
 

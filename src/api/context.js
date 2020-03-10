@@ -85,7 +85,9 @@ export function readContext(currentlyComponent, context, observedBits) {
   if (context._dependencies === null) {
     context._dependencies = [item]
   } else {
-    context._dependencies.push(item)
+    if (context._dependencies.every(v => v.component !== currentlyComponent)) {
+      context._dependencies.push(item)
+    }
   }
   return context._currentValue
 }
