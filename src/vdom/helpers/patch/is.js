@@ -1,5 +1,6 @@
 import { createVnode } from '../../h.js'
 import { 
+  MEMO_TYPE,
   CONTEXT_TYPE,
   PROVIDER_TYPE,
   FRAGMENTS_TYPE,
@@ -26,6 +27,13 @@ export function isProvider(vnode) {
   return (
     typeof vnode.tag === 'object' &&
     vnode.tag.$$typeof === PROVIDER_TYPE
+  )
+}
+
+export function isMemo(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === MEMO_TYPE
   )
 }
 

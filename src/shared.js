@@ -1,3 +1,9 @@
+import {
+  CONTEXT_TYPE,
+  PROVIDER_TYPE,
+  FRAGMENTS_TYPE
+} from './api/symbols.js'
+
 export const isArray = Array.isArray
 
 export function isDef(v) {
@@ -17,4 +23,16 @@ export function flat(array, condition = isArray, result = []) {
     }
   }
   return result
+}
+
+export function isValidElementType(type) {
+  return (
+    typeof type === 'string' ||
+    typeof type === 'function' ||
+    type === FRAGMENTS_TYPE ||
+    (typeof type === 'object' &&
+      type !== null &&
+      (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PROVIDER_TYPE))
+  )
 }

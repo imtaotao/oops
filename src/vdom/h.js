@@ -1,5 +1,6 @@
 import { flat } from '../shared.js'
 import { FRAGMENTS_TYPE } from '../api/symbols.js'
+import { isMemo, isFragment } from './helpers/patch/is.js'
 import {
   formatVnode,
   installHooks,
@@ -26,10 +27,11 @@ export function h(tag, props, ...children) {
   ))
 
   let data
-  if (data = typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
     data = separateProps(props)
   } else {
     data = installHooks(tag, props)
   }
+
   return formatVnode(tag, data, children)
 }

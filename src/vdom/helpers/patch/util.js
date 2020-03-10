@@ -151,7 +151,7 @@ export function createComponent(vnode) {
 }
 
 export function createElm(vnode, insertedVnodeQueue) {
-  // 如果是一个组件则没必要往下走
+  // 如果是一个组件则没必要往下走（包含自定义的组件和内部标识组件）
   if (createComponent(vnode)) {
     return vnode.elm
   }
