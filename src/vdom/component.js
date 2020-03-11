@@ -20,7 +20,7 @@ export class Component {
     this.cursor = 0
     this.preProps = {}
     this.vnode = vnode // 组件标签节点
-    this.Ctor = vnode.tag
+    this.render = vnode.tag
     this.dependencies = null // context 依赖
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode
@@ -71,7 +71,7 @@ export class Component {
     }
   }
 
-  createVnodeByCtor(isSync) {
+  createVnodeByRender(isSync) {
     this.numberOfReRenders++
     this.inspectReRender()
     try {
@@ -80,7 +80,7 @@ export class Component {
       }
       Target.component = this
       this.props = mergeProps(this.vnode)
-      this.updateVnode = formatPatchRootVnode(this.Ctor(this.props))
+      this.updateVnode = formatPatchRootVnode(this.render(this.props))
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +
@@ -132,18 +132,18 @@ export class Component {
   }
 
   forceUpdate() {
-    this.createVnodeByCtor(false)
+    this.createVnodeByRender(false)
   }
 
   // 生命周期方法
   init() {
-    this.createVnodeByCtor(true)
+    this.createVnodeByRender(true)
   }
 
   // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
     this.vnode = vnode
-    this.createVnodeByCtor(true)
+    this.createVnodeByRender(true)
   }
 
   // 已更新

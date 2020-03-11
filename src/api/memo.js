@@ -2,9 +2,9 @@ import { MEMO_TYPE } from './symbols.js'
 import { isValidElementType } from '../shared.js'
 
 export function memo(tag, compare) {
-  if (!isValidElementType) {
+  if (!isValidElementType(tag)) {
     throw new Error(
-      'memo: The first argument must be a component. Instead received:' +
+      'memo: The first argument must be a component. Instead received: ' +
         (tag === null ? 'null' : typeof tag),
     )
   }

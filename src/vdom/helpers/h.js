@@ -1,9 +1,11 @@
 import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
+import { memoVNodeHooks } from '../hooks/memo.js'
 import { componentVNodeHooks } from '../hooks/component.js'
 import { providerVNodeHooks } from '../hooks/contextProvider.js'
 import { consumerVNodeHooks } from '../hooks/contextConsumer.js'
 import {
+  isMemo,
   isConsumer,
   isProvider,
   isComponent,
@@ -169,6 +171,8 @@ export function installHooks(tag, data) {
     vnodeHooks = consumerVNodeHooks
   } else if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks
+  } else if (isMemo(simulateVnode)) {
+    vnodeHooks = memoVNodeHooks
   }
 
   if (vnodeHooks) {

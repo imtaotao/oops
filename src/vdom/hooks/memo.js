@@ -1,0 +1,87 @@
+import { patch } from '../patch.js'
+import { cloneVnode } from '../h.js'
+import { isMemo } from '../helpers/patch/is.js'
+import { mergeProps } from '../helpers/component.js'
+import { FRAGMENTS_TYPE } from '../../api/symbols.js'
+import { separateProps, installHooks } from '../helpers/h.js'
+
+function defaultCompare(oldProps, newProps) {
+
+}
+
+class MemoComponent {
+  constructor(vnode) {
+    this.vnode = vnode
+    this.memoInfo = null
+    this.rootVnode = undefined
+  }
+
+  createVnodeAndPatch() {
+    const { tag } = this.memoInfo
+    const updateVnode = cloneVnode(this.vnode)
+
+    updateVnode.tag = tag
+    updateVnode.component = undefined
+    updateVnode.data.hook = undefined
+
+    const props = updateVnode.data
+
+    if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+      updateVnode.data = separateProps(props)
+    } else {
+      updateVnode.data = installHooks(tag, props)
+    }
+
+    this.rootVnode = patch(this.rootVnode, updateVnode)
+    this.vnode.elm = this.rootVnode.elm
+  }
+
+  init() {
+    const { tag, compare } = this.vnode.tag
+    this.memoInfo = { tag, compare }
+    this.createVnodeAndPatch()
+  }
+
+  update(oldVnode, vnode) {
+    const { tag, compare } = vnode.tag
+    if (compare === null) {
+      compare = defaultCompare
+    }
+
+    if (typeof compare !== 'function') {
+      throw new TypeError('compare is not a function.')
+    }
+
+    const oldProps = mergeProps(oldVnode)
+    const newProps = mergeProps(vnode)
+
+    // children 不应该作为对比的 props 传入
+    delete oldProps.children
+    delete newProps.children
+
+    // 如果不等才需要更新
+    if (compare(oldProps, newProps) === false) {
+      this.memoInfo = { tag, compare }
+      this.vnode = vnode
+      this.createVnodeAndPatch()
+    }
+  }
+}
+
+export const memoVNodeHooks = {
+  init(vnode) {
+    if (isMemo(vnode)) {
+      vnode.component = new MemoComponent(vnode)
+      vnode.component.init()
+    }
+  },
+
+  prepatch(oldVnode, vnode) {
+    const component = vnode.component = oldVnode.component
+    component.vnode = vnode
+  },
+
+  update(oldVnode, vnode) {
+    vnode.component.update(oldVnode, vnode)
+  },
+}

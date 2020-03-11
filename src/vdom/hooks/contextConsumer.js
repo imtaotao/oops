@@ -1,5 +1,6 @@
 import { patch } from '../patch.js'
 import { readContext } from '../../api/context.js'
+import { isConsumer } from '../helpers/patch/is.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
 
 class ConsumerComponent {
@@ -24,20 +25,21 @@ class ConsumerComponent {
 
   render() {
     const value = readContext(this, this.context)
-    console.log(this.context)
     const updateVnode = formatPatchRootVnode(this.rewardRender()(value))
     if (updateVnode) {
       this.rootVnode = patch(this.rootVnode, updateVnode)
       this.vnode.elm = this.rootVnode.elm
     }
-  }
+  }                       
 }
 
 
 export const consumerVNodeHooks = {
   init(vnode) {
-    vnode.component = new ConsumerComponent(vnode)
-    vnode.component.render()
+    if (isConsumer(vnode)) {
+      vnode.component = new ConsumerComponent(vnode)
+      vnode.component.render()
+    }
   },
 
   prepatch(oldVnode, vnode) {

@@ -8,9 +8,29 @@ import {
 } from './helpers/h.js'
 
 export function createVnode(tag, data, children, text, elm) {
-  const component = undefined
-  const key = data ? data.key : undefined
-  return { tag, data, children, key, elm, text, component }
+  return {
+    tag,
+    data,
+    elm,
+    text,
+    children,
+    component: undefined,
+    key: data ? data.key : undefined,
+  }
+}
+
+export function cloneVnode(vnode) {
+  const cloned = createVnode(
+    vnode.tag,
+    vnode.data,
+    vnode.children && vnode.children.slice(),
+    vnode.text,
+    vnode.elm,
+  )
+  cloned.key = vnode.key
+  cloned.component = vnode.component
+  cloned.isClone = true
+  return cloned
 }
 
 export function createFragmentVnode(children) {

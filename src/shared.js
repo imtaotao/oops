@@ -1,7 +1,8 @@
 import {
+  MEMO_TYPE,
   CONTEXT_TYPE,
   PROVIDER_TYPE,
-  FRAGMENTS_TYPE
+  FRAGMENTS_TYPE,
 } from './api/symbols.js'
 
 export const isArray = Array.isArray
@@ -33,6 +34,7 @@ export function isValidElementType(type) {
     (typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
-        type.$$typeof === PROVIDER_TYPE))
+        type.$$typeof === PROVIDER_TYPE ||
+        type.$$typeof === MEMO_TYPE))
   )
 }
