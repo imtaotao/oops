@@ -21,6 +21,7 @@ function defaultCompare(oldProps, newProps) {
 class MemoComponent {
   constructor(vnode) {
     this.vnode = vnode
+    this.prevProps = {}
     this.memoInfo = null
     this.rootVnode = undefined
   }
@@ -48,6 +49,8 @@ class MemoComponent {
   init() {
     const { tag, compare } = this.vnode.tag
     this.memoInfo = { tag, compare }
+    this.prevProps = mergeProps(this.vnode)
+    delete this.prevProps.children
     this.createVnodeAndPatch()
   }
 
@@ -61,18 +64,15 @@ class MemoComponent {
       throw new TypeError('compare is not a function.')
     }
 
-    const oldProps = mergeProps(oldVnode)
-    const newProps = mergeProps(vnode)
-
     // children 不应该作为对比的 props 传入
-    delete oldProps.children
     delete newProps.children
 
     // 如果不等才需要更新
-    if (!compare(oldProps, newProps)) {
+    if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare }
       this.vnode = vnode
       this.createVnodeAndPatch()
+      this.prevProps = newProps
     }
   }
 }

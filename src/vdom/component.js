@@ -18,7 +18,6 @@ export const Target = {
 export class Component {
   constructor(vnode) {
     this.cursor = 0
-    this.preProps = {}
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
     this.dependencies = null // context 依赖
