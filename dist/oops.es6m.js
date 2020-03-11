@@ -3,6 +3,11 @@
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
+const MEMO_TYPE = Symbol.for('oops.memo');
+const CONTEXT_TYPE = Symbol.for('oops.context');
+const PROVIDER_TYPE = Symbol.for('oops.provider');
+const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
+
 const isArray = Array.isArray;
 function isDef(v) {
   return v !== undefined
@@ -20,10 +25,64 @@ function flat(array, condition = isArray, result = []) {
   }
   return result
 }
+function isValidElementType(type) {
+  return (
+    typeof type === 'string' ||
+    typeof type === 'function' ||
+    type === FRAGMENTS_TYPE ||
+    (typeof type === 'object' &&
+      type !== null &&
+      (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PROVIDER_TYPE ||
+        type.$$typeof === MEMO_TYPE))
+  )
+}
 
-const CONTEXT_TYPE = Symbol.for('oops.context');
-const PROVIDER_TYPE = Symbol.for('oops.provider');
-const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
+const emptyNode = createVnode('', {}, [], undefined, undefined);
+function isVnode(vnode) {
+  return vnode.tag !== undefined
+}
+function isComponent(vnode) {
+  return typeof vnode.tag === 'function'
+}
+function isConsumer(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === CONTEXT_TYPE
+  )
+}
+function isProvider(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === PROVIDER_TYPE
+  )
+}
+function isMemo(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === MEMO_TYPE
+  )
+}
+function isFragment(vnode) {
+  return vnode.tag === FRAGMENTS_TYPE
+}
+function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag
+}
+function isFilterVnode(vnode) {
+  return (
+    vnode === null ||
+    typeof vnode === 'boolean' ||
+    typeof vnode === 'undefined'
+  )
+}
+function isPrimitiveVnode(vnode) {
+  return (
+    typeof vnode === 'string' ||
+    typeof vnode === 'number' ||
+    typeof vnode === 'symbol'
+  )
+}
 
 function updateClass(oldVnode, vnode) {
   const elm = vnode.elm;
@@ -378,46 +437,6 @@ function nextSibling(node) {
 }
 function setTextContent(node, text) {
   node.textContent = text;
-}
-
-const emptyNode = createVnode('', {}, [], undefined, undefined);
-function isVnode(vnode) {
-  return vnode.tag !== undefined
-}
-function isComponent(vnode) {
-  return typeof vnode.tag === 'function'
-}
-function isConsumer(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === CONTEXT_TYPE
-  )
-}
-function isProvider(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === PROVIDER_TYPE
-  )
-}
-function isFragment(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE
-}
-function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
-}
-function isFilterVnode(vnode) {
-  return (
-    vnode === null ||
-    typeof vnode === 'boolean' ||
-    typeof vnode === 'undefined'
-  )
-}
-function isPrimitiveVnode(vnode) {
-  return (
-    typeof vnode === 'string' ||
-    typeof vnode === 'number' ||
-    typeof vnode === 'symbol'
-  )
 }
 
 const classList = [
@@ -924,6 +943,78 @@ function updateEffect(effects) {
   }
 }
 
+function defaultCompare(oldProps, newProps) {
+  const oks = Object.keys(oldProps);
+  const nks = Object.keys(newProps);
+  if (oks.length !== nks.length) return false
+  for (let i = 0; i < oks.length; i++) {
+    const key = oks[i];
+    if (!(key in newProps)) return false
+    if (oldProps[key] !== newProps[key]) return false
+  }
+  return true
+}
+class MemoComponent {
+  constructor(vnode) {
+    this.vnode = vnode;
+    this.memoInfo = null;
+    this.rootVnode = undefined;
+  }
+  createVnodeAndPatch() {
+    const { tag } = this.memoInfo;
+    const updateVnode = cloneVnode(this.vnode);
+    updateVnode.tag = tag;
+    updateVnode.component = undefined;
+    updateVnode.data.hook = undefined;
+    const props = updateVnode.data;
+    if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+      updateVnode.data = separateProps(props);
+    } else {
+      updateVnode.data = installHooks(tag, props);
+    }
+    this.rootVnode = patch(this.rootVnode, updateVnode);
+    this.vnode.elm = this.rootVnode.elm;
+  }
+  init() {
+    const { tag, compare } = this.vnode.tag;
+    this.memoInfo = { tag, compare };
+    this.createVnodeAndPatch();
+  }
+  update(oldVnode, vnode) {
+    let { tag, compare } = vnode.tag;
+    if (compare === null) {
+      compare = defaultCompare;
+    }
+    if (typeof compare !== 'function') {
+      throw new TypeError('compare is not a function.')
+    }
+    const oldProps = mergeProps(oldVnode);
+    const newProps = mergeProps(vnode);
+    delete oldProps.children;
+    delete newProps.children;
+    if (!compare(oldProps, newProps)) {
+      this.memoInfo = { tag, compare };
+      this.vnode = vnode;
+      this.createVnodeAndPatch();
+    }
+  }
+}
+const memoVNodeHooks = {
+  init(vnode) {
+    if (isMemo(vnode)) {
+      vnode.component = new MemoComponent(vnode);
+      vnode.component.init();
+    }
+  },
+  prepatch(oldVnode, vnode) {
+    const component = vnode.component = oldVnode.component;
+    component.vnode = vnode;
+  },
+  update(oldVnode, vnode) {
+    vnode.component.update(oldVnode, vnode);
+  },
+};
+
 const RE_RENDER_LIMIT = 25;
 const Target = {
   component: undefined,
@@ -933,7 +1024,7 @@ class Component {
     this.cursor = 0;
     this.preProps = {};
     this.vnode = vnode;
-    this.Ctor = vnode.tag;
+    this.render = vnode.tag;
     this.dependencies = null;
     this.numberOfReRenders = 0;
     this.updateVnode = undefined;
@@ -976,7 +1067,7 @@ class Component {
       return (memoized[0] = create())
     }
   }
-  createVnodeByCtor(isSync) {
+  createVnodeByRender(isSync) {
     this.numberOfReRenders++;
     this.inspectReRender();
     try {
@@ -985,7 +1076,7 @@ class Component {
       }
       Target.component = this;
       this.props = mergeProps(this.vnode);
-      this.updateVnode = formatPatchRootVnode(this.Ctor(this.props));
+      this.updateVnode = formatPatchRootVnode(this.render(this.props));
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +
@@ -1031,14 +1122,14 @@ class Component {
     }
   }
   forceUpdate() {
-    this.createVnodeByCtor(false);
+    this.createVnodeByRender(false);
   }
   init() {
-    this.createVnodeByCtor(true);
+    this.createVnodeByRender(true);
   }
   update(oldVnode, vnode) {
     this.vnode = vnode;
-    this.createVnodeByCtor(true);
+    this.createVnodeByRender(true);
   }
   postpatch(oldVnode, vnode) {}
   remove(vnode, rm) { rm(); }
@@ -1219,7 +1310,6 @@ class ConsumerComponent {
   }
   render() {
     const value = readContext(this, this.context);
-    console.log(this.context);
     const updateVnode = formatPatchRootVnode(this.rewardRender()(value));
     if (updateVnode) {
       this.rootVnode = patch(this.rootVnode, updateVnode);
@@ -1229,8 +1319,10 @@ class ConsumerComponent {
 }
 const consumerVNodeHooks = {
   init(vnode) {
-    vnode.component = new ConsumerComponent(vnode);
-    vnode.component.render();
+    if (isConsumer(vnode)) {
+      vnode.component = new ConsumerComponent(vnode);
+      vnode.component.render();
+    }
   },
   prepatch(oldVnode, vnode) {
     const component = vnode.component = oldVnode.component;
@@ -1387,6 +1479,8 @@ function installHooks(tag, data) {
     vnodeHooks = consumerVNodeHooks;
   } else if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks;
+  } else if (isMemo(simulateVnode)) {
+    vnodeHooks = memoVNodeHooks;
   }
   if (vnodeHooks) {
     for (const name in vnodeHooks) {
@@ -1413,9 +1507,28 @@ function formatVnode(tag, data, children) {
 }
 
 function createVnode(tag, data, children, text, elm) {
-  const component = undefined;
-  const key = data ? data.key : undefined;
-  return { tag, data, children, key, elm, text, component }
+  return {
+    tag,
+    data,
+    elm,
+    text,
+    children,
+    component: undefined,
+    key: data ? data.key : undefined,
+  }
+}
+function cloneVnode(vnode) {
+  const cloned = createVnode(
+    vnode.tag,
+    vnode.data,
+    vnode.children && vnode.children.slice(),
+    vnode.text,
+    vnode.elm,
+  );
+  cloned.key = vnode.key;
+  cloned.component = vnode.component;
+  cloned.isClone = true;
+  return cloned
 }
 function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children)
@@ -1428,7 +1541,7 @@ function h(tag, props, ...children) {
     typeof v[Symbol.iterator] === 'function'
   ));
   let data;
-  if (data = typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
     data = separateProps(props);
   } else {
     data = installHooks(tag, props);
@@ -1593,7 +1706,18 @@ function jsx(statics, ...fields) {
   return createVNodeTree(h, statics, fields)
 }
 
-function memo(component, areEqual) {
+function memo(tag, compare) {
+  if (!isValidElementType(tag)) {
+    throw new Error(
+      'memo: The first argument must be a component. Instead received: ' +
+        (tag === null ? 'null' : typeof tag),
+    )
+  }
+  return {
+    tag,
+    $$typeof: MEMO_TYPE,
+    compare: compare === undefined ? null : compare
+  }
 }
 
 function render(vnode, app, callback) {

@@ -81,6 +81,11 @@ function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance");
 }
 
+var MEMO_TYPE = Symbol["for"]('oops.memo');
+var CONTEXT_TYPE = Symbol["for"]('oops.context');
+var PROVIDER_TYPE = Symbol["for"]('oops.provider');
+var FRAGMENTS_TYPE = Symbol["for"]('oops.fragments');
+
 var isArray = Array.isArray;
 function isDef(v) {
   return v !== undefined;
@@ -122,10 +127,38 @@ function flat(array) {
 
   return result;
 }
+function isValidElementType(type) {
+  return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === MEMO_TYPE);
+}
 
-var CONTEXT_TYPE = Symbol["for"]('oops.context');
-var PROVIDER_TYPE = Symbol["for"]('oops.provider');
-var FRAGMENTS_TYPE = Symbol["for"]('oops.fragments');
+var emptyNode = createVnode('', {}, [], undefined, undefined);
+function isVnode(vnode) {
+  return vnode.tag !== undefined;
+}
+function isComponent(vnode) {
+  return typeof vnode.tag === 'function';
+}
+function isConsumer(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
+}
+function isProvider(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
+}
+function isMemo(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
+}
+function isFragment(vnode) {
+  return vnode.tag === FRAGMENTS_TYPE;
+}
+function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag;
+}
+function isFilterVnode(vnode) {
+  return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
+}
+function isPrimitiveVnode(vnode) {
+  return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
+}
 
 function updateClass(oldVnode, vnode) {
   var elm = vnode.elm;
@@ -534,32 +567,6 @@ function nextSibling(node) {
 }
 function setTextContent(node, text) {
   node.textContent = text;
-}
-
-var emptyNode = createVnode('', {}, [], undefined, undefined);
-function isVnode(vnode) {
-  return vnode.tag !== undefined;
-}
-function isComponent(vnode) {
-  return typeof vnode.tag === 'function';
-}
-function isConsumer(vnode) {
-  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
-}
-function isProvider(vnode) {
-  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
-}
-function isFragment(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE;
-}
-function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag;
-}
-function isFilterVnode(vnode) {
-  return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
-}
-function isPrimitiveVnode(vnode) {
-  return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
 }
 
 var classList = ['add', 'remove'];
@@ -1178,6 +1185,112 @@ function updateEffect(effects) {
   }
 }
 
+function defaultCompare(oldProps, newProps) {
+  var oks = Object.keys(oldProps);
+  var nks = Object.keys(newProps);
+  if (oks.length !== nks.length) return false;
+
+  for (var i = 0; i < oks.length; i++) {
+    var key = oks[i];
+    if (!(key in newProps)) return false;
+    if (oldProps[key] !== newProps[key]) return false;
+  }
+
+  return true;
+}
+
+var MemoComponent =
+/*#__PURE__*/
+function () {
+  function MemoComponent(vnode) {
+    _classCallCheck(this, MemoComponent);
+
+    this.vnode = vnode;
+    this.memoInfo = null;
+    this.rootVnode = undefined;
+  }
+
+  _createClass(MemoComponent, [{
+    key: "createVnodeAndPatch",
+    value: function createVnodeAndPatch() {
+      var tag = this.memoInfo.tag;
+      var updateVnode = cloneVnode(this.vnode);
+      updateVnode.tag = tag;
+      updateVnode.component = undefined;
+      updateVnode.data.hook = undefined;
+      var props = updateVnode.data;
+
+      if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+        updateVnode.data = separateProps(props);
+      } else {
+        updateVnode.data = installHooks(tag, props);
+      }
+
+      this.rootVnode = patch(this.rootVnode, updateVnode);
+      this.vnode.elm = this.rootVnode.elm;
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      var _this$vnode$tag = this.vnode.tag,
+          tag = _this$vnode$tag.tag,
+          compare = _this$vnode$tag.compare;
+      this.memoInfo = {
+        tag: tag,
+        compare: compare
+      };
+      this.createVnodeAndPatch();
+    }
+  }, {
+    key: "update",
+    value: function update(oldVnode, vnode) {
+      var _vnode$tag = vnode.tag,
+          tag = _vnode$tag.tag,
+          compare = _vnode$tag.compare;
+
+      if (compare === null) {
+        compare = defaultCompare;
+      }
+
+      if (typeof compare !== 'function') {
+        throw new TypeError('compare is not a function.');
+      }
+
+      var oldProps = mergeProps(oldVnode);
+      var newProps = mergeProps(vnode);
+      delete oldProps.children;
+      delete newProps.children;
+
+      if (!compare(oldProps, newProps)) {
+        this.memoInfo = {
+          tag: tag,
+          compare: compare
+        };
+        this.vnode = vnode;
+        this.createVnodeAndPatch();
+      }
+    }
+  }]);
+
+  return MemoComponent;
+}();
+
+var memoVNodeHooks = {
+  init: function init(vnode) {
+    if (isMemo(vnode)) {
+      vnode.component = new MemoComponent(vnode);
+      vnode.component.init();
+    }
+  },
+  prepatch: function prepatch(oldVnode, vnode) {
+    var component = vnode.component = oldVnode.component;
+    component.vnode = vnode;
+  },
+  update: function update(oldVnode, vnode) {
+    vnode.component.update(oldVnode, vnode);
+  }
+};
+
 var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
@@ -1191,7 +1304,7 @@ function () {
     this.cursor = 0;
     this.preProps = {};
     this.vnode = vnode;
-    this.Ctor = vnode.tag;
+    this.render = vnode.tag;
     this.dependencies = null;
     this.numberOfReRenders = 0;
     this.updateVnode = undefined;
@@ -1254,8 +1367,8 @@ function () {
       }
     }
   }, {
-    key: "createVnodeByCtor",
-    value: function createVnodeByCtor(isSync) {
+    key: "createVnodeByRender",
+    value: function createVnodeByRender(isSync) {
       this.numberOfReRenders++;
       this.inspectReRender();
 
@@ -1266,7 +1379,7 @@ function () {
 
         Target.component = this;
         this.props = mergeProps(this.vnode);
-        this.updateVnode = formatPatchRootVnode(this.Ctor(this.props));
+        this.updateVnode = formatPatchRootVnode(this.render(this.props));
 
         if (isUndef(this.updateVnode)) {
           throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
@@ -1322,18 +1435,18 @@ function () {
   }, {
     key: "forceUpdate",
     value: function forceUpdate() {
-      this.createVnodeByCtor(false);
+      this.createVnodeByRender(false);
     }
   }, {
     key: "init",
     value: function init() {
-      this.createVnodeByCtor(true);
+      this.createVnodeByRender(true);
     }
   }, {
     key: "update",
     value: function update(oldVnode, vnode) {
       this.vnode = vnode;
-      this.createVnodeByCtor(true);
+      this.createVnodeByRender(true);
     }
   }, {
     key: "postpatch",
@@ -1552,7 +1665,6 @@ function () {
     key: "render",
     value: function render() {
       var value = readContext(this, this.context);
-      console.log(this.context);
       var updateVnode = formatPatchRootVnode(this.rewardRender()(value));
 
       if (updateVnode) {
@@ -1567,8 +1679,10 @@ function () {
 
 var consumerVNodeHooks = {
   init: function init(vnode) {
-    vnode.component = new ConsumerComponent(vnode);
-    vnode.component.render();
+    if (isConsumer(vnode)) {
+      vnode.component = new ConsumerComponent(vnode);
+      vnode.component.render();
+    }
   },
   prepatch: function prepatch(oldVnode, vnode) {
     var component = vnode.component = oldVnode.component;
@@ -1739,6 +1853,8 @@ function installHooks(tag, data) {
     vnodeHooks = consumerVNodeHooks;
   } else if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks;
+  } else if (isMemo(simulateVnode)) {
+    vnodeHooks = memoVNodeHooks;
   }
 
   if (vnodeHooks) {
@@ -1769,17 +1885,22 @@ function formatVnode(tag, data, children) {
 }
 
 function createVnode(tag, data, children, text, elm) {
-  var component = undefined;
-  var key = data ? data.key : undefined;
   return {
     tag: tag,
     data: data,
-    children: children,
-    key: key,
     elm: elm,
     text: text,
-    component: component
+    children: children,
+    component: undefined,
+    key: data ? data.key : undefined
   };
+}
+function cloneVnode(vnode) {
+  var cloned = createVnode(vnode.tag, vnode.data, vnode.children && vnode.children.slice(), vnode.text, vnode.elm);
+  cloned.key = vnode.key;
+  cloned.component = vnode.component;
+  cloned.isClone = true;
+  return cloned;
 }
 function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children);
@@ -1795,7 +1916,7 @@ function h(tag, props) {
   });
   var data;
 
-  if (data = typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
     data = separateProps(props);
   } else {
     data = installHooks(tag, props);
@@ -1985,7 +2106,17 @@ function jsx(statics) {
   return createVNodeTree(h, statics, fields);
 }
 
-function memo(component, areEqual) {}
+function memo(tag, compare) {
+  if (!isValidElementType(tag)) {
+    throw new Error('memo: The first argument must be a component. Instead received: ' + (tag === null ? 'null' : _typeof(tag)));
+  }
+
+  return {
+    tag: tag,
+    $$typeof: MEMO_TYPE,
+    compare: compare === undefined ? null : compare
+  };
+}
 
 function render(vnode, app, callback) {
   if (app) {

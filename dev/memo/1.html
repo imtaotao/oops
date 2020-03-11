@@ -16,10 +16,10 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    const { useState, memo, createContext } = React;
-    // const { useState, memo, createContext } = oops
-    // ReactDOM.render = oops.render
-    // React.createElement = oops.h
+    // const { useState, memo, createContext } = React;
+    const { useState, memo, createContext } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
     
     const context = createContext({ name: 'chentao' })
 
@@ -28,19 +28,16 @@
      * Only updates when message changes
      */
     let ScotchyComponent = props => {
-      // console.log('scotchy render');
+      console.log('scotchy render');
       return <div>{props.message}</div>;
     }
 
     // create a version that only renders on prop changes
-    ScotchyComponent = memo(ScotchyComponent, (o, n) => {
-      console.log(o, n, 1)
-      return false
-    });
+    ScotchyComponent = memo(ScotchyComponent);
 
     // ScotchyComponent = memo(ScotchyComponent, (o, n) => {
     //   console.log(o, n, 2)
-    //   return true
+    //   return false
     // });
 
 
@@ -81,7 +78,7 @@
                 type="text"
                 className="input"
                 value={value}
-                onChange={handleChange}
+                onInput={handleChange}
                 style={{ marginTop: "30px", marginBottom: "30px" }}
               />
 

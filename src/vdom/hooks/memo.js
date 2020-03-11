@@ -6,7 +6,16 @@ import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { separateProps, installHooks } from '../helpers/h.js'
 
 function defaultCompare(oldProps, newProps) {
+  const oks = Object.keys(oldProps)
+  const nks = Object.keys(newProps)
 
+  if (oks.length !== nks.length) return false
+  for (let i = 0; i < oks.length; i++) {
+    const key = oks[i]
+    if (!(key in newProps)) return false
+    if (oldProps[key] !== newProps[key]) return false
+  }
+  return true
 }
 
 class MemoComponent {
@@ -43,7 +52,7 @@ class MemoComponent {
   }
 
   update(oldVnode, vnode) {
-    const { tag, compare } = vnode.tag
+    let { tag, compare } = vnode.tag
     if (compare === null) {
       compare = defaultCompare
     }
@@ -60,7 +69,7 @@ class MemoComponent {
     delete newProps.children
 
     // 如果不等才需要更新
-    if (compare(oldProps, newProps) === false) {
+    if (!compare(oldProps, newProps)) {
       this.memoInfo = { tag, compare }
       this.vnode = vnode
       this.createVnodeAndPatch()
