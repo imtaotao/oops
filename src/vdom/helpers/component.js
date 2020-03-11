@@ -1,7 +1,7 @@
 import { isDef, isArray } from '../../shared.js'
 
-export function mergeProps({data, children}) {
-  const res = { children }
+export function mergeProps({data, children}, needChildren) {
+  const res = needChildren ? { children } : {}
   for (const key in data) {
     if (key !== 'hook') {
       res[key] = data[key]

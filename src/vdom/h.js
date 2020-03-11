@@ -1,6 +1,5 @@
 import { flat } from '../shared.js'
 import { FRAGMENTS_TYPE } from '../api/symbols.js'
-import { isMemo, isFragment } from './helpers/patch/is.js'
 import {
   formatVnode,
   installHooks,

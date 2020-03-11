@@ -29,11 +29,9 @@ class MemoComponent {
   createVnodeAndPatch() {
     const { tag } = this.memoInfo
     const updateVnode = cloneVnode(this.vnode)
-
     updateVnode.tag = tag
     updateVnode.component = undefined
     updateVnode.data.hook = undefined
-
     const props = updateVnode.data
 
     if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
@@ -49,8 +47,7 @@ class MemoComponent {
   init() {
     const { tag, compare } = this.vnode.tag
     this.memoInfo = { tag, compare }
-    this.prevProps = mergeProps(this.vnode)
-    delete this.prevProps.children
+    this.prevProps = mergeProps(this.vnode, false)
     this.createVnodeAndPatch()
   }
 
@@ -65,8 +62,7 @@ class MemoComponent {
     }
 
     // children 不应该作为对比的 props 传入
-    delete newProps.children
-
+    const newProps = mergeProps(vnode, false)
     // 如果不等才需要更新
     if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare }

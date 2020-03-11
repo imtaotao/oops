@@ -20,7 +20,6 @@ export class Component {
     this.cursor = 0
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
-    this.dependencies = null // context 依赖
     this.numberOfReRenders = 0 // 重复渲染计数
     this.updateVnode = undefined // 新的 vnode
     this.rootVnode = undefined // 组件返回的根节点
@@ -78,7 +77,7 @@ export class Component {
         this.patch()
       }
       Target.component = this
-      this.props = mergeProps(this.vnode)
+      this.props = mergeProps(this.vnode, true)
       this.updateVnode = formatPatchRootVnode(this.render(this.props))
       if (isUndef(this.updateVnode)) {
         throw new Error(

@@ -132,35 +132,6 @@
     return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === MEMO_TYPE);
   }
 
-  var emptyNode = createVnode('', {}, [], undefined, undefined);
-  function isVnode(vnode) {
-    return vnode.tag !== undefined;
-  }
-  function isComponent(vnode) {
-    return typeof vnode.tag === 'function';
-  }
-  function isConsumer(vnode) {
-    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
-  }
-  function isProvider(vnode) {
-    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
-  }
-  function isMemo(vnode) {
-    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
-  }
-  function isFragment(vnode) {
-    return vnode.tag === FRAGMENTS_TYPE;
-  }
-  function sameVnode(a, b) {
-    return a.key === b.key && a.tag === b.tag;
-  }
-  function isFilterVnode(vnode) {
-    return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
-  }
-  function isPrimitiveVnode(vnode) {
-    return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
-  }
-
   function updateClass(oldVnode, vnode) {
     var elm = vnode.elm;
 
@@ -568,6 +539,35 @@
   }
   function setTextContent(node, text) {
     node.textContent = text;
+  }
+
+  var emptyNode = createVnode('', {}, [], undefined, undefined);
+  function isVnode(vnode) {
+    return vnode.tag !== undefined;
+  }
+  function isComponent(vnode) {
+    return typeof vnode.tag === 'function';
+  }
+  function isConsumer(vnode) {
+    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
+  }
+  function isProvider(vnode) {
+    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
+  }
+  function isMemo(vnode) {
+    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
+  }
+  function isFragment(vnode) {
+    return vnode.tag === FRAGMENTS_TYPE;
+  }
+  function sameVnode(a, b) {
+    return a.key === b.key && a.tag === b.tag;
+  }
+  function isFilterVnode(vnode) {
+    return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
+  }
+  function isPrimitiveVnode(vnode) {
+    return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
   }
 
   var classList = ['add', 'remove'];
@@ -1131,12 +1131,12 @@
     return vnode;
   }
 
-  function mergeProps(_ref) {
+  function mergeProps(_ref, needChildren) {
     var data = _ref.data,
         children = _ref.children;
-    var res = {
+    var res = needChildren ? {
       children: children
-    };
+    } : {};
 
     for (var key in data) {
       if (key !== 'hook') {
@@ -1207,6 +1207,7 @@
       _classCallCheck(this, MemoComponent);
 
       this.vnode = vnode;
+      this.prevProps = {};
       this.memoInfo = null;
       this.rootVnode = undefined;
     }
@@ -1240,6 +1241,7 @@
           tag: tag,
           compare: compare
         };
+        this.prevProps = mergeProps(this.vnode, false);
         this.createVnodeAndPatch();
       }
     }, {
@@ -1257,18 +1259,16 @@
           throw new TypeError('compare is not a function.');
         }
 
-        var oldProps = mergeProps(oldVnode);
-        var newProps = mergeProps(vnode);
-        delete oldProps.children;
-        delete newProps.children;
+        var newProps = mergeProps(vnode, false);
 
-        if (!compare(oldProps, newProps)) {
+        if (!compare(this.prevProps, newProps)) {
           this.memoInfo = {
             tag: tag,
             compare: compare
           };
           this.vnode = vnode;
           this.createVnodeAndPatch();
+          this.prevProps = newProps;
         }
       }
     }]);
@@ -1303,10 +1303,8 @@
       _classCallCheck(this, Component);
 
       this.cursor = 0;
-      this.preProps = {};
       this.vnode = vnode;
       this.render = vnode.tag;
-      this.dependencies = null;
       this.numberOfReRenders = 0;
       this.updateVnode = undefined;
       this.rootVnode = undefined;
@@ -1379,7 +1377,7 @@
           }
 
           Target.component = this;
-          this.props = mergeProps(this.vnode);
+          this.props = mergeProps(this.vnode, true);
           this.updateVnode = formatPatchRootVnode(this.render(this.props));
 
           if (isUndef(this.updateVnode)) {
