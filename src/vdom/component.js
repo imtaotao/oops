@@ -1,5 +1,6 @@
 import { patch } from './patch.js'
 import { isUndef } from '../shared.js'
+import { removeIndependencies } from '../api/context.js'
 import { formatPatchRootVnode } from './helpers/patch/util.js'
 import {
   equalDeps,
@@ -21,8 +22,9 @@ export class Component {
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
     this.numberOfReRenders = 0 // 重复渲染计数
-    this.updateVnode = undefined // 新的 vnode
     this.rootVnode = undefined // 组件返回的根节点
+    this.updateVnode = undefined // 新的 vnode
+    this.contextDependencies = [] // 依赖的 context
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
@@ -147,7 +149,13 @@ export class Component {
   // 已更新
   postpatch(oldVnode, vnode) {}
 
-  remove(vnode, rm) { rm() }
+  remove(vnode, remove) {
+    const rmWraper = () => {
+      removeIndependencies(this)
+      remove()
+    }
+    rmWraper()
+  }
 
   destroy(vnode) {
     for (const key in this.effects) {

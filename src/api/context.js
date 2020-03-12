@@ -35,6 +35,29 @@ export function exitDisallowedContextRead() {
   isDisallowedContextRead = false
 }
 
+class ContextStack {
+  constructor(context, defaultValue) {
+    this.context = context
+    this.valueStack = [defaultValue]
+  }
+
+  push(value) {
+    this.valueStack.push(value)
+    this.context._currentValue = value
+  }
+
+  pop() {
+    this.valueStack.pop()
+    this.context._currentValue = this.valueStack[this.valueStack.length - 1]
+  }
+
+  reset() {
+    const defaultValue = this.valueStack[0]
+    this.context._currentValue = defaultValue
+    this.valueStack = [defaultValue]
+  }
+}
+
 export function calculateChangedBits(context, newValue, oldValue) {
   if (Object.is(oldValue, newValue)) {
     // No change
@@ -67,19 +90,11 @@ export function readContext(currentlyComponent, context, observedBits) {
     )
   }
 
-  let resolvedObservedBits
-  if (
-    typeof observedBits !== 'number' ||
-    observedBits === MAX_SIGNED_31_BIT_INT
-  ) {
-    resolvedObservedBits = MAX_SIGNED_31_BIT_INT
-  } else {
-    resolvedObservedBits = observedBits
-  }
-  
   const item = {
     component: currentlyComponent,
-    observedBits: resolvedObservedBits,
+    observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT
+      ? MAX_SIGNED_31_BIT_INT
+      : observedBits,
   }
   
   if (context._dependencies === null) {
@@ -89,29 +104,29 @@ export function readContext(currentlyComponent, context, observedBits) {
       context._dependencies.push(item)
     }
   }
+
+  if (!currentlyComponent.isConsumer) {
+    if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
+      currentlyComponent.contextDependencies.push(context)
+    }
+  }
   return context._currentValue
 }
 
-class ContextStack {
-  constructor(context, defaultValue) {
-    this.context = context
-    this.valueStack = [defaultValue]
+export function removeIndependencies(component) {
+  const remove = context => {
+    const index = context._dependencies.findIndex(item => item.component === component)
+    if (index > -1) {
+      context._dependencies.splice(index, 1)
+    }
   }
-
-  push(value) {
-    this.valueStack.push(value)
-    this.context._currentValue = value
-  }
-
-  pop() {
-    this.valueStack.pop()
-    this.context._currentValue = this.valueStack[this.valueStack.length - 1]
-  }
-
-  reset() {
-    const defaultValue = this.valueStack[0]
-    this.context._currentValue = defaultValue
-    this.valueStack = [defaultValue]
+  if (component.isConsumer) {
+    remove(component.context)
+  } else {
+    const contexts = component.contextDependencies
+    for (let i = 0; i < contexts.length; i++) {
+      remove(contexts[i])
+    }
   }
 }
 

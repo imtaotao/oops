@@ -1015,6 +1015,125 @@ const memoVNodeHooks = {
   },
 };
 
+const MAX_SIGNED_31_BIT_INT = 1073741823;
+class ContextStack {
+  constructor(context, defaultValue) {
+    this.context = context;
+    this.valueStack = [defaultValue];
+  }
+  push(value) {
+    this.valueStack.push(value);
+    this.context._currentValue = value;
+  }
+  pop() {
+    this.valueStack.pop();
+    this.context._currentValue = this.valueStack[this.valueStack.length - 1];
+  }
+  reset() {
+    const defaultValue = this.valueStack[0];
+    this.context._currentValue = defaultValue;
+    this.valueStack = [defaultValue];
+  }
+}
+function readContext(currentlyComponent, context, observedBits) {
+  const item = {
+    component: currentlyComponent,
+    observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT
+      ? MAX_SIGNED_31_BIT_INT
+      : observedBits,
+  };
+  if (context._dependencies === null) {
+    context._dependencies = [item];
+  } else {
+    if (context._dependencies.every(v => v.component !== currentlyComponent)) {
+      context._dependencies.push(item);
+    }
+  }
+  if (!currentlyComponent.isConsumer) {
+    if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
+      currentlyComponent.contextDependencies.push(context);
+    }
+  }
+  return context._currentValue
+}
+function removeIndependencies(component) {
+  const remove = context => {
+    const index = context._dependencies.findIndex(item => item.component === component);
+    if (index > -1) {
+      context._dependencies.splice(index, 1);
+    }
+  };
+  if (component.isConsumer) {
+    remove(component.context);
+  } else {
+    const contexts = component.contextDependencies;
+    for (let i = 0; i < contexts.length; i++) {
+      remove(contexts[i]);
+    }
+  }
+}
+function createContext(defaultValue, calculateChangedBits) {
+  if (calculateChangedBits === undefined) {
+    calculateChangedBits = null;
+  } else {
+    if (calculateChangedBits !== null && typeof calculateChangedBits !== 'function') {
+      throw new Error('createContext: Expected the optional second argument to be a function.')
+    }
+  }
+  const context = {
+    $$typeof: CONTEXT_TYPE,
+    _dependencies: null,
+    _currentValue: defaultValue,
+    _calculateChangedBits: calculateChangedBits,
+    Provider: null,
+    Consumer: null,
+  };
+  context.Provider = {
+    $$typeof: PROVIDER_TYPE,
+    _context: context,
+  };
+  const Consumer = {
+    $$typeof: CONTEXT_TYPE,
+    _context: context,
+    _calculateChangedBits: context._calculateChangedBits,
+  };
+  Object.defineProperties(Consumer, {
+    Provider: {
+      get() {
+        console.error(
+          'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Provider> instead?',
+        );
+        return context.Provider
+      },
+      set(_Provider) {
+        context.Provider = _Provider;
+      },
+    },
+    _currentValue: {
+      get() {
+        return context._currentValue
+      },
+      set(_currentValue) {
+        context._currentValue = _currentValue;
+      },
+    },
+    Consumer: {
+      get() {
+        console.error(
+          false,
+          'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
+            'a future major release. Did you mean to render <Context.Consumer> instead?',
+        );
+        return context.Consumer
+      },
+    },
+  });
+  context.Consumer = Consumer;
+  context._contextStack = new ContextStack(context, defaultValue);
+  return context
+}
+
 const RE_RENDER_LIMIT = 25;
 const Target = {
   component: undefined,
@@ -1025,8 +1144,9 @@ class Component {
     this.vnode = vnode;
     this.render = vnode.tag;
     this.numberOfReRenders = 0;
-    this.updateVnode = undefined;
     this.rootVnode = undefined;
+    this.updateVnode = undefined;
+    this.contextDependencies = [];
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
@@ -1130,7 +1250,13 @@ class Component {
     this.createVnodeByRender(true);
   }
   postpatch(oldVnode, vnode) {}
-  remove(vnode, rm) { rm(); }
+  remove(vnode, remove) {
+    const rmWraper = () => {
+      removeIndependencies(this);
+      remove();
+    };
+    rmWraper();
+  }
   destroy(vnode) {
     for (const key in this.effects) {
       const { destroy } = this.effects[key];
@@ -1183,114 +1309,10 @@ const providerVNodeHooks = {
   },
 };
 
-const MAX_SIGNED_31_BIT_INT = 1073741823;
-function readContext(currentlyComponent, context, observedBits) {
-  let resolvedObservedBits;
-  if (
-    typeof observedBits !== 'number' ||
-    observedBits === MAX_SIGNED_31_BIT_INT
-  ) {
-    resolvedObservedBits = MAX_SIGNED_31_BIT_INT;
-  } else {
-    resolvedObservedBits = observedBits;
-  }
-  const item = {
-    component: currentlyComponent,
-    observedBits: resolvedObservedBits,
-  };
-  if (context._dependencies === null) {
-    context._dependencies = [item];
-  } else {
-    if (context._dependencies.every(v => v.component !== currentlyComponent)) {
-      context._dependencies.push(item);
-    }
-  }
-  return context._currentValue
-}
-class ContextStack {
-  constructor(context, defaultValue) {
-    this.context = context;
-    this.valueStack = [defaultValue];
-  }
-  push(value) {
-    this.valueStack.push(value);
-    this.context._currentValue = value;
-  }
-  pop() {
-    this.valueStack.pop();
-    this.context._currentValue = this.valueStack[this.valueStack.length - 1];
-  }
-  reset() {
-    const defaultValue = this.valueStack[0];
-    this.context._currentValue = defaultValue;
-    this.valueStack = [defaultValue];
-  }
-}
-function createContext(defaultValue, calculateChangedBits) {
-  if (calculateChangedBits === undefined) {
-    calculateChangedBits = null;
-  } else {
-    if (calculateChangedBits !== null && typeof calculateChangedBits !== 'function') {
-      throw new Error('createContext: Expected the optional second argument to be a function.')
-    }
-  }
-  const context = {
-    $$typeof: CONTEXT_TYPE,
-    _dependencies: null,
-    _currentValue: defaultValue,
-    _calculateChangedBits: calculateChangedBits,
-    Provider: null,
-    Consumer: null,
-  };
-  context.Provider = {
-    $$typeof: PROVIDER_TYPE,
-    _context: context,
-  };
-  const Consumer = {
-    $$typeof: CONTEXT_TYPE,
-    _context: context,
-    _calculateChangedBits: context._calculateChangedBits,
-  };
-  Object.defineProperties(Consumer, {
-    Provider: {
-      get() {
-        console.error(
-          'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Provider> instead?',
-        );
-        return context.Provider
-      },
-      set(_Provider) {
-        context.Provider = _Provider;
-      },
-    },
-    _currentValue: {
-      get() {
-        return context._currentValue
-      },
-      set(_currentValue) {
-        context._currentValue = _currentValue;
-      },
-    },
-    Consumer: {
-      get() {
-        console.error(
-          false,
-          'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Consumer> instead?',
-        );
-        return context.Consumer
-      },
-    },
-  });
-  context.Consumer = Consumer;
-  context._contextStack = new ContextStack(context, defaultValue);
-  return context
-}
-
 class ConsumerComponent {
   constructor(vnode) {
     this.vnode = vnode;
+    this.isConsumer = true;
     this.rootVnode = undefined;
     this.context = vnode.tag._context;
   }
@@ -1314,6 +1336,9 @@ class ConsumerComponent {
       this.vnode.elm = this.rootVnode.elm;
     }
   }
+  destroy(vnode) {
+    removeIndependencies(this);
+  }
 }
 const consumerVNodeHooks = {
   init(vnode) {
@@ -1329,6 +1354,9 @@ const consumerVNodeHooks = {
   update(oldVnode, vnode) {
     vnode.component.render();
   },
+  destroy(vnode) {
+    vnode.component.destroy(vnode);
+  }
 };
 
 function cached(fn) {

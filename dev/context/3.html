@@ -17,8 +17,8 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    // const { Fragment, useCallback, useState, createContext, useContext } = React;
-    const { Fragment, useCallback, useState, render, createContext, useContext } = oops
+    // const { Fragment, useCallback, useState, createContext, useContext, memo } = React;
+    const { Fragment, useCallback, useState, createContext, useContext, memo } = oops
     ReactDOM.render = oops.render
     React.createElement = oops.h
 
@@ -26,32 +26,16 @@
       index: 'xx'
     });
   
-    function Parent() {
-      console.log('Parent render')
-      return <Child />
-    }
-
-    function Child2(props) {
-      console.log('child2 render');
-      return (
-        <Context.Consumer>
-          {({ index }) => {
-            console.log('child2 consumer render');
-            return <div>{props.index}</div>
-          }}
-        </Context.Consumer>
-      )
-    }
-
+    
     function Child() {
+      console.log('child');
       return (
         <Context.Consumer>
           {({ index, changeIndex }) => {
-            console.log('Child Consumer render');
+            console.log('Child Consumer');
             return (
               <Fragment>
                 <button onClick={() => changeIndex(index + 1)}>{index} +</button>
-                <Child2 index={index} />
               </Fragment>
             ) 
           }}
@@ -59,8 +43,13 @@
       )
     }
 
+    const Parent = memo(function Parent() {
+      console.log('Parent')
+      return <Child />
+    })
+
     function Ancestor(props) {
-      console.log('Ancestor render');
+      console.log('contaier');
       const [index, setIndex] = useState(1)
       return (
         <Fragment>

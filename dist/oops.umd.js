@@ -1292,6 +1292,143 @@
     }
   };
 
+  var MAX_SIGNED_31_BIT_INT = 1073741823;
+
+  var ContextStack =
+  /*#__PURE__*/
+  function () {
+    function ContextStack(context, defaultValue) {
+      _classCallCheck(this, ContextStack);
+
+      this.context = context;
+      this.valueStack = [defaultValue];
+    }
+
+    _createClass(ContextStack, [{
+      key: "push",
+      value: function push(value) {
+        this.valueStack.push(value);
+        this.context._currentValue = value;
+      }
+    }, {
+      key: "pop",
+      value: function pop() {
+        this.valueStack.pop();
+        this.context._currentValue = this.valueStack[this.valueStack.length - 1];
+      }
+    }, {
+      key: "reset",
+      value: function reset() {
+        var defaultValue = this.valueStack[0];
+        this.context._currentValue = defaultValue;
+        this.valueStack = [defaultValue];
+      }
+    }]);
+
+    return ContextStack;
+  }();
+  function readContext(currentlyComponent, context, observedBits) {
+
+    var item = {
+      component: currentlyComponent,
+      observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT ? MAX_SIGNED_31_BIT_INT : observedBits
+    };
+
+    if (context._dependencies === null) {
+      context._dependencies = [item];
+    } else {
+      if (context._dependencies.every(function (v) {
+        return v.component !== currentlyComponent;
+      })) {
+        context._dependencies.push(item);
+      }
+    }
+
+    if (!currentlyComponent.isConsumer) {
+      if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
+        currentlyComponent.contextDependencies.push(context);
+      }
+    }
+
+    return context._currentValue;
+  }
+  function removeIndependencies(component) {
+    var remove = function remove(context) {
+      var index = context._dependencies.findIndex(function (item) {
+        return item.component === component;
+      });
+
+      if (index > -1) {
+        context._dependencies.splice(index, 1);
+      }
+    };
+
+    if (component.isConsumer) {
+      remove(component.context);
+    } else {
+      var contexts = component.contextDependencies;
+
+      for (var i = 0; i < contexts.length; i++) {
+        remove(contexts[i]);
+      }
+    }
+  }
+  function createContext(defaultValue, calculateChangedBits) {
+    if (calculateChangedBits === undefined) {
+      calculateChangedBits = null;
+    } else {
+      if (calculateChangedBits !== null && typeof calculateChangedBits !== 'function') {
+        throw new Error('createContext: Expected the optional second argument to be a function.');
+      }
+    }
+
+    var context = {
+      $$typeof: CONTEXT_TYPE,
+      _dependencies: null,
+      _currentValue: defaultValue,
+      _calculateChangedBits: calculateChangedBits,
+      Provider: null,
+      Consumer: null
+    };
+    context.Provider = {
+      $$typeof: PROVIDER_TYPE,
+      _context: context
+    };
+    var Consumer = {
+      $$typeof: CONTEXT_TYPE,
+      _context: context,
+      _calculateChangedBits: context._calculateChangedBits
+    };
+    Object.defineProperties(Consumer, {
+      Provider: {
+        get: function get() {
+          console.error('Rendering <Context.Consumer.Provider> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Provider> instead?');
+          return context.Provider;
+        },
+        set: function set(_Provider) {
+          context.Provider = _Provider;
+        }
+      },
+      _currentValue: {
+        get: function get() {
+          return context._currentValue;
+        },
+        set: function set(_currentValue) {
+          context._currentValue = _currentValue;
+        }
+      },
+      Consumer: {
+        get: function get() {
+          console.error(false, 'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Consumer> instead?');
+          return context.Consumer;
+        }
+      }
+    });
+    context.Consumer = Consumer;
+    context._contextStack = new ContextStack(context, defaultValue);
+    return context;
+  }
+
   var RE_RENDER_LIMIT = 25;
   var Target = {
     component: undefined
@@ -1306,8 +1443,9 @@
       this.vnode = vnode;
       this.render = vnode.tag;
       this.numberOfReRenders = 0;
-      this.updateVnode = undefined;
       this.rootVnode = undefined;
+      this.updateVnode = undefined;
+      this.contextDependencies = [];
       this.state = Object.create(null);
       this.memos = Object.create(null);
       this.effects = Object.create(null);
@@ -1452,8 +1590,16 @@
       value: function postpatch(oldVnode, vnode) {}
     }, {
       key: "remove",
-      value: function remove(vnode, rm) {
-        rm();
+      value: function remove(vnode, _remove) {
+        var _this3 = this;
+
+        var rmWraper = function rmWraper() {
+          removeIndependencies(_this3);
+
+          _remove();
+        };
+
+        rmWraper();
       }
     }, {
       key: "destroy",
@@ -1519,125 +1665,6 @@
     }
   };
 
-  var MAX_SIGNED_31_BIT_INT = 1073741823;
-  function readContext(currentlyComponent, context, observedBits) {
-
-    var resolvedObservedBits;
-
-    if (typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT) {
-      resolvedObservedBits = MAX_SIGNED_31_BIT_INT;
-    } else {
-      resolvedObservedBits = observedBits;
-    }
-
-    var item = {
-      component: currentlyComponent,
-      observedBits: resolvedObservedBits
-    };
-
-    if (context._dependencies === null) {
-      context._dependencies = [item];
-    } else {
-      if (context._dependencies.every(function (v) {
-        return v.component !== currentlyComponent;
-      })) {
-        context._dependencies.push(item);
-      }
-    }
-
-    return context._currentValue;
-  }
-
-  var ContextStack =
-  /*#__PURE__*/
-  function () {
-    function ContextStack(context, defaultValue) {
-      _classCallCheck(this, ContextStack);
-
-      this.context = context;
-      this.valueStack = [defaultValue];
-    }
-
-    _createClass(ContextStack, [{
-      key: "push",
-      value: function push(value) {
-        this.valueStack.push(value);
-        this.context._currentValue = value;
-      }
-    }, {
-      key: "pop",
-      value: function pop() {
-        this.valueStack.pop();
-        this.context._currentValue = this.valueStack[this.valueStack.length - 1];
-      }
-    }, {
-      key: "reset",
-      value: function reset() {
-        var defaultValue = this.valueStack[0];
-        this.context._currentValue = defaultValue;
-        this.valueStack = [defaultValue];
-      }
-    }]);
-
-    return ContextStack;
-  }();
-
-  function createContext(defaultValue, calculateChangedBits) {
-    if (calculateChangedBits === undefined) {
-      calculateChangedBits = null;
-    } else {
-      if (calculateChangedBits !== null && typeof calculateChangedBits !== 'function') {
-        throw new Error('createContext: Expected the optional second argument to be a function.');
-      }
-    }
-
-    var context = {
-      $$typeof: CONTEXT_TYPE,
-      _dependencies: null,
-      _currentValue: defaultValue,
-      _calculateChangedBits: calculateChangedBits,
-      Provider: null,
-      Consumer: null
-    };
-    context.Provider = {
-      $$typeof: PROVIDER_TYPE,
-      _context: context
-    };
-    var Consumer = {
-      $$typeof: CONTEXT_TYPE,
-      _context: context,
-      _calculateChangedBits: context._calculateChangedBits
-    };
-    Object.defineProperties(Consumer, {
-      Provider: {
-        get: function get() {
-          console.error('Rendering <Context.Consumer.Provider> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Provider> instead?');
-          return context.Provider;
-        },
-        set: function set(_Provider) {
-          context.Provider = _Provider;
-        }
-      },
-      _currentValue: {
-        get: function get() {
-          return context._currentValue;
-        },
-        set: function set(_currentValue) {
-          context._currentValue = _currentValue;
-        }
-      },
-      Consumer: {
-        get: function get() {
-          console.error(false, 'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Consumer> instead?');
-          return context.Consumer;
-        }
-      }
-    });
-    context.Consumer = Consumer;
-    context._contextStack = new ContextStack(context, defaultValue);
-    return context;
-  }
-
   var ConsumerComponent =
   /*#__PURE__*/
   function () {
@@ -1645,6 +1672,7 @@
       _classCallCheck(this, ConsumerComponent);
 
       this.vnode = vnode;
+      this.isConsumer = true;
       this.rootVnode = undefined;
       this.context = vnode.tag._context;
     }
@@ -1671,6 +1699,11 @@
           this.vnode.elm = this.rootVnode.elm;
         }
       }
+    }, {
+      key: "destroy",
+      value: function destroy(vnode) {
+        removeIndependencies(this);
+      }
     }]);
 
     return ConsumerComponent;
@@ -1689,6 +1722,9 @@
     },
     update: function update(oldVnode, vnode) {
       vnode.component.render();
+    },
+    destroy: function destroy(vnode) {
+      vnode.component.destroy(vnode);
     }
   };
 

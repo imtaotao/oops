@@ -1,13 +1,14 @@
 import { patch } from '../patch.js'
-import { readContext } from '../../api/context.js'
 import { isConsumer } from '../helpers/patch/is.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
+import { readContext, removeIndependencies } from '../../api/context.js'
 
 class ConsumerComponent {
   constructor(vnode) {
     this.vnode = vnode
+    this.isConsumer = true
     this.rootVnode = undefined
-    this.context = vnode.tag._context
+    this.context = vnode.tag._context // 普通组件可能会用到多个 context，但 context.consumer 只会有一个
   }
 
   rewardRender() {
@@ -30,7 +31,11 @@ class ConsumerComponent {
       this.rootVnode = patch(this.rootVnode, updateVnode)
       this.vnode.elm = this.rootVnode.elm
     }
-  }                       
+  }
+
+  destroy(vnode) {
+    removeIndependencies(this)
+  }
 }
 
 
@@ -50,4 +55,8 @@ export const consumerVNodeHooks = {
   update(oldVnode, vnode) {
     vnode.component.render()
   },
+
+  destroy(vnode) {
+    vnode.component.destroy(vnode)
+  }
 }
