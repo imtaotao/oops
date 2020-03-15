@@ -1,6 +1,5 @@
 import { patch } from './patch.js'
 import { isUndef } from '../shared.js'
-import { removeIndependencies } from '../api/context.js'
 import { formatPatchRootVnode } from './helpers/patch/util.js'
 import {
   equalDeps,
@@ -150,11 +149,7 @@ export class Component {
   postpatch(oldVnode, vnode) {}
 
   remove(vnode, remove) {
-    const rmWraper = () => {
-      removeIndependencies(this)
-      remove()
-    }
-    rmWraper()
+    remove()
   }
 
   destroy(vnode) {

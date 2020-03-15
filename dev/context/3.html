@@ -17,17 +17,17 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    // const { Fragment, useCallback, useState, createContext, useContext, memo } = React;
-    const { Fragment, useCallback, useState, createContext, useContext, memo } = oops
-    ReactDOM.render = oops.render
-    React.createElement = oops.h
+    const { Fragment, useCallback, useState, createContext, useContext, memo } = React;
+    // const { Fragment, useCallback, useState, createContext, useContext, memo } = oops
+    // ReactDOM.render = oops.render
+    // React.createElement = oops.h
 
     const Context = createContext({
       index: 'xx'
     });
   
     
-    function Child() {
+    const Child = function Child() {
       console.log('child');
       return (
         <Context.Consumer>
@@ -54,13 +54,12 @@
       return (
         <Fragment>
           <Context.Provider
-            value={{
-              index,
-              changeIndex: setIndex
-            }}
+            value={1}
           >
             <Parent />
+            <button onClick={() => setIndex(index + 1)}>{index} +11</button>
           </Context.Provider>
+          <Child />
         </Fragment>
       );
     }

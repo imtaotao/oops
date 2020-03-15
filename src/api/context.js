@@ -38,23 +38,35 @@ export function exitDisallowedContextRead() {
 class ContextStack {
   constructor(context, defaultValue) {
     this.context = context
-    this.valueStack = [defaultValue]
+    this.valueStack = [
+      {
+        component: {
+          customerQueue: [],
+        },
+        value: defaultValue,
+      },
+    ]
   }
 
-  push(value) {
-    this.valueStack.push(value)
+  push(value, provider) {
+    const item = { value, provider }
+    this.valueStack.push(item)
     this.context._currentValue = value
   }
 
   pop() {
     this.valueStack.pop()
-    this.context._currentValue = this.valueStack[this.valueStack.length - 1]
+    const lastItme = this.valueStack[this.valueStack.length - 1]
+    this.context._currentValue = lastItme ? lastItme.value : null
   }
 
   reset() {
-    const defaultValue = this.valueStack[0]
-    this.context._currentValue = defaultValue
-    this.valueStack = [defaultValue]
+    this.valueStack = this.valueStack[0]
+    this.context._currentValue = this.valueStack[0].value
+  }
+
+  getCurrentProvider() {
+    return this.valueStack[this.valueStack.length - 1].component
   }
 }
 
@@ -80,7 +92,7 @@ export function calculateChangedBits(context, newValue, oldValue) {
 }
 
 // 读取 context，这个方法给 Consumer 和 useContext 使用
-export function readContext(currentlyComponent, context, observedBits) {
+export function readContext(currentComponent, context, observedBits) {
   if (isDisallowedContextRead) {
     console.error(
       'Context can only be read while React is rendering. ' +
@@ -91,43 +103,24 @@ export function readContext(currentlyComponent, context, observedBits) {
   }
 
   const item = {
-    component: currentlyComponent,
+    component: currentComponent,
     observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT
       ? MAX_SIGNED_31_BIT_INT
       : observedBits,
   }
   
-  if (context._dependencies === null) {
-    context._dependencies = [item]
-  } else {
-    if (context._dependencies.every(v => v.component !== currentlyComponent)) {
-      context._dependencies.push(item)
-    }
+  const currentProvider = context.getCurrentProvider()
+  const queue = currentProvider.customerQueue
+  if (queue.every(item => item.component !== currentComponent)) {
+    context._dependencies.push(item)
   }
 
-  if (!currentlyComponent.isConsumer) {
-    if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
-      currentlyComponent.contextDependencies.push(context)
+  if (!currentComponent.isConsumer) {
+    if (currentComponent.contextDependencies.indexOf(context) < 0) {
+      currentComponent.contextDependencies.push(context)
     }
   }
   return context._currentValue
-}
-
-export function removeIndependencies(component) {
-  const remove = context => {
-    const index = context._dependencies.findIndex(item => item.component === component)
-    if (index > -1) {
-      context._dependencies.splice(index, 1)
-    }
-  }
-  if (component.isConsumer) {
-    remove(component.context)
-  } else {
-    const contexts = component.contextDependencies
-    for (let i = 0; i < contexts.length; i++) {
-      remove(contexts[i])
-    }
-  }
 }
 
 export function createContext(defaultValue, calculateChangedBits) {
@@ -141,7 +134,6 @@ export function createContext(defaultValue, calculateChangedBits) {
 
   const context = {
     $$typeof: CONTEXT_TYPE,
-    _dependencies: null,
     _currentValue: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
