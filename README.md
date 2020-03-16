@@ -23,7 +23,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `jsx`
 + [x] `memo`
 + [x] `render`
-+ [ ] `createContext`
++ [x] `createContext`
 
 ## Built-in components
 + [x] `<Fragment/>`
