@@ -697,7 +697,7 @@ function createComponent(vnode) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode);
     }
-    return isDef(vnode.component)
+    return isDef(vnode.component) && !isProvider(vnode)
   }
   return false
 }
@@ -852,7 +852,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     i = vnode.data.hook;
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
-  if (isComponent(vnode)) ; else if (isUndef(vnode.text)) {
+  if (isComponent(vnode) || isMemo(vnode) || isConsumer(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -967,11 +967,10 @@ class MemoComponent {
     updateVnode.tag = tag;
     updateVnode.component = undefined;
     updateVnode.data.hook = undefined;
-    const props = updateVnode.data;
     if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-      updateVnode.data = separateProps(props);
+      updateVnode.data = separateProps(updateVnode.data);
     } else {
-      updateVnode.data = installHooks(tag, props);
+      updateVnode.data = installHooks(tag, updateVnode.data);
     }
     this.rootVnode = patch(this.rootVnode, updateVnode);
     this.vnode.elm = this.rootVnode.elm;
@@ -1019,56 +1018,59 @@ const MAX_SIGNED_31_BIT_INT = 1073741823;
 class ContextStack {
   constructor(context, defaultValue) {
     this.context = context;
-    this.valueStack = [defaultValue];
+    this.stack = [
+      {
+        provider: {
+          consumerQueue: [],
+        },
+        value: defaultValue,
+      },
+    ];
   }
-  push(value) {
-    this.valueStack.push(value);
+  push(value, provider) {
+    const item = { value, provider };
+    this.stack.push(item);
     this.context._currentValue = value;
   }
   pop() {
-    this.valueStack.pop();
-    this.context._currentValue = this.valueStack[this.valueStack.length - 1];
+    this.stack.pop();
+    const lastItme = this.stack[this.stack.length - 1];
+    this.context._currentValue = lastItme ? lastItme.value : null;
   }
   reset() {
-    const defaultValue = this.valueStack[0];
-    this.context._currentValue = defaultValue;
-    this.valueStack = [defaultValue];
+    this.stack = this.stack[0];
+    this.context._currentValue = this.stack[0].value;
+  }
+  getCurrentProvider() {
+    return this.stack[this.stack.length - 1].provider
   }
 }
-function readContext(currentlyComponent, context, observedBits) {
+function readContext(consumer, context, observedBits) {
+  const currentProvider = context._contextStack.getCurrentProvider();
+  const queue = currentProvider.consumerQueue;
   const item = {
-    component: currentlyComponent,
+    consumer,
     observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT
       ? MAX_SIGNED_31_BIT_INT
       : observedBits,
   };
-  if (context._dependencies === null) {
-    context._dependencies = [item];
-  } else {
-    if (context._dependencies.every(v => v.component !== currentlyComponent)) {
-      context._dependencies.push(item);
-    }
+  if (queue.every(item => item.consumer !== consumer)) {
+    queue.push(item);
   }
-  if (!currentlyComponent.isConsumer) {
-    if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
-      currentlyComponent.contextDependencies.push(context);
-    }
+  if (consumer.providerDependencies.indexOf(currentProvider) < 0) {
+    consumer.providerDependencies.push(currentProvider);
   }
   return context._currentValue
 }
-function removeIndependencies(component) {
-  const remove = context => {
-    const index = context._dependencies.findIndex(item => item.component === component);
-    if (index > -1) {
-      context._dependencies.splice(index, 1);
-    }
-  };
-  if (component.isConsumer) {
-    remove(component.context);
-  } else {
-    const contexts = component.contextDependencies;
-    for (let i = 0; i < contexts.length; i++) {
-      remove(contexts[i]);
+function removedInDeps(consumer) {
+  const queue = consumer.providerDependencies;
+  if (queue.length > 0) {
+    for (let i = 0; i < queue.length; i++) {
+      const providerDep = queue[i];
+      const index = providerDep.consumerQueue.findIndex(item => item.consumer === consumer);
+      if (index > -1) {
+        queue.splice(index, 1);
+      }
     }
   }
 }
@@ -1082,7 +1084,6 @@ function createContext(defaultValue, calculateChangedBits) {
   }
   const context = {
     $$typeof: CONTEXT_TYPE,
-    _dependencies: null,
     _currentValue: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
@@ -1121,7 +1122,6 @@ function createContext(defaultValue, calculateChangedBits) {
     Consumer: {
       get() {
         console.error(
-          false,
           'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
             'a future major release. Did you mean to render <Context.Consumer> instead?',
         );
@@ -1143,10 +1143,11 @@ class Component {
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
+    this.destroyed = false;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
-    this.contextDependencies = [];
+    this.providerDependencies = [];
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
@@ -1173,7 +1174,7 @@ class Component {
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload);
     this.state[key] = newValue;
-    this.forceUpdate();
+    this.forceUpdate(false);
   }
   useMemo(create, deps) {
     const key = this.cursor++;
@@ -1239,8 +1240,8 @@ class Component {
       throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
     }
   }
-  forceUpdate() {
-    this.createVnodeByRender(false);
+  forceUpdate(isSync) {
+    this.createVnodeByRender(isSync);
   }
   init() {
     this.createVnodeByRender(true);
@@ -1251,19 +1252,17 @@ class Component {
   }
   postpatch(oldVnode, vnode) {}
   remove(vnode, remove) {
-    const rmWraper = () => {
-      removeIndependencies(this);
-      remove();
-    };
-    rmWraper();
+    remove();
   }
   destroy(vnode) {
+    this.destroyed = true;
     for (const key in this.effects) {
       const { destroy } = this.effects[key];
       if (typeof destroy === 'function') {
         destroy();
       }
     }
+    removedInDeps(this);
   }
 }
 
@@ -1294,26 +1293,58 @@ const componentVNodeHooks = {
   }
 };
 
+class ProviderComponent {
+  constructor(vnode) {
+    this.vnode = vnode;
+    this.consumerQueue = [];
+    this.updateDuplicate = null;
+  }
+}
 const providerVNodeHooks = {
-  init({tag, data}) {
-    tag._context._contextStack.push(data.value);
+  init(vnode) {
+    if (isProvider(vnode)) {
+      const { tag, data } = vnode;
+      vnode.component = new ProviderComponent(vnode);
+      tag._context._contextStack.push(data.value, vnode.component);
+    }
   },
   initBefore(vnode) {
     vnode.tag._context._contextStack.pop();
   },
-  update(oldVnode, {tag, data}) {
-    tag._context._contextStack.push(data.value);
+  prepatch(oldVnode, vnode) {
+    const component = vnode.component = oldVnode.component;
+    component.vnode = vnode;
+  },
+  update(oldVnode, vnode) {
+    const { tag, data, component } = vnode;
+    tag._context._contextStack.push(data.value, component);
+    component.updateDuplicate = [];
   },
   postpatch(oldVnode, vnode) {
-    vnode.tag._context._contextStack.pop();
+    const { tag, component } = vnode;
+    let { consumerQueue, updateDuplicate } = component;
+    consumerQueue = consumerQueue.slice();
+    if (consumerQueue.length !== updateDuplicate.length) {
+      for (let i = 0; i < consumerQueue.length; i++) {
+        const consumer = consumerQueue[i].consumer;
+        if (updateDuplicate.indexOf(consumer) === -1) {
+          if (!consumer.destroyed) {
+            consumer.forceUpdate(true);
+          }
+        }
+      }
+    }
+    component.updateDuplicate = null;
+    tag._context._contextStack.pop();
   },
 };
 
 class ConsumerComponent {
   constructor(vnode) {
     this.vnode = vnode;
-    this.isConsumer = true;
+    this.destroyed = false;
     this.rootVnode = undefined;
+    this.providerDependencies = [];
     this.context = vnode.tag._context;
   }
   rewardRender() {
@@ -1336,8 +1367,12 @@ class ConsumerComponent {
       this.vnode.elm = this.rootVnode.elm;
     }
   }
+  forceUpdate() {
+    this.render();
+  }
   destroy(vnode) {
-    removeIndependencies(this);
+    this.destroyed = true;
+    removedInDeps(vnode.component);
   }
 }
 const consumerVNodeHooks = {
@@ -1352,7 +1387,14 @@ const consumerVNodeHooks = {
     component.vnode = vnode;
   },
   update(oldVnode, vnode) {
-    vnode.component.render();
+    const component = vnode.component;
+    const providerDeps = component.providerDependencies;
+    for (let i = 0; i < providerDeps.length; i++) {
+      if (isArray(providerDeps[i].updateDuplicate)) {
+        providerDeps[i].updateDuplicate.push(component);
+      }
+    }
+    component.render();
   },
   destroy(vnode) {
     vnode.component.destroy(vnode);

@@ -1,14 +1,16 @@
 import { patch } from '../patch.js'
-import { readContext } from '../../api/context.js'
+import { isArray } from '../../shared.js'
 import { isConsumer } from '../helpers/patch/is.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
+import { readContext, removedInDeps } from '../../api/context.js'
 
 class ConsumerComponent {
   constructor(vnode) {
     this.vnode = vnode
-    this.isConsumer = true
+    this.destroyed = false
     this.rootVnode = undefined
-    this.context = vnode.tag._context // 普通组件可能会用到多个 context，但 context.consumer 只会有一个
+    this.providerDependencies = []
+    this.context = vnode.tag._context
   }
 
   rewardRender() {
@@ -32,6 +34,15 @@ class ConsumerComponent {
       this.vnode.elm = this.rootVnode.elm
     }
   }
+
+  forceUpdate() {
+    this.render()
+  }
+
+  destroy(vnode) {
+    this.destroyed = true
+    removedInDeps(vnode.component)
+  }
 }
 
 export const consumerVNodeHooks = {
@@ -48,6 +59,17 @@ export const consumerVNodeHooks = {
   },
 
   update(oldVnode, vnode) {
-    vnode.component.render()
+    const component = vnode.component
+    const providerDeps = component.providerDependencies
+    for (let i = 0; i < providerDeps.length; i++) {
+      if (isArray(providerDeps[i].updateDuplicate)) {
+        providerDeps[i].updateDuplicate.push(component)
+      }
+    }
+    component.render()
   },
+
+  destroy(vnode) {
+    vnode.component.destroy(vnode)
+  }
 }

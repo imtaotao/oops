@@ -1,5 +1,6 @@
 import { patch } from './patch.js'
 import { isUndef } from '../shared.js'
+import { removedInDeps } from '../api/context.js'
 import { formatPatchRootVnode } from './helpers/patch/util.js'
 import {
   equalDeps,
@@ -20,10 +21,11 @@ export class Component {
     this.cursor = 0
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
+    this.destroyed = false
     this.numberOfReRenders = 0 // 重复渲染计数
     this.rootVnode = undefined // 组件返回的根节点
     this.updateVnode = undefined // 新的 vnode
-    this.contextDependencies = [] // 依赖的 context
+    this.providerDependencies = [] // 依赖的 context
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
@@ -55,7 +57,7 @@ export class Component {
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
     this.state[key] = newValue
-    this.forceUpdate()
+    this.forceUpdate(false)
   }
 
   useMemo(create, deps) {
@@ -130,8 +132,8 @@ export class Component {
     }
   }
 
-  forceUpdate() {
-    this.createVnodeByRender(false)
+  forceUpdate(isSync) {
+    this.createVnodeByRender(isSync)
   }
 
   // 生命周期方法
@@ -153,11 +155,13 @@ export class Component {
   }
 
   destroy(vnode) {
+    this.destroyed = true
     for (const key in this.effects) {
       const { destroy } = this.effects[key]
       if (typeof destroy === 'function') {
         destroy()
       }
     }
+    removedInDeps(this)
   }
 }

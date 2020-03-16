@@ -145,7 +145,7 @@ export function createComponent(vnode) {
     if (isDef(i = i.hook) && isDef(i = i.init)) {
       i(vnode)
     }
-    return isDef(vnode.component)
+    return isDef(vnode.component) && !isProvider(vnode)
   }
   return false
 }

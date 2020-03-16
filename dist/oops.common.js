@@ -882,7 +882,7 @@ function createComponent(vnode) {
       i(vnode);
     }
 
-    return isDef(vnode.component);
+    return isDef(vnode.component) && !isProvider(vnode);
   }
 
   return false;
@@ -1070,7 +1070,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
 
-  if (isComponent(vnode)) ; else if (isUndef(vnode.text)) {
+  if (isComponent(vnode) || isMemo(vnode) || isConsumer(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -1223,12 +1223,11 @@ function () {
       updateVnode.tag = tag;
       updateVnode.component = undefined;
       updateVnode.data.hook = undefined;
-      var props = updateVnode.data;
 
       if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-        updateVnode.data = separateProps(props);
+        updateVnode.data = separateProps(updateVnode.data);
       } else {
-        updateVnode.data = installHooks(tag, props);
+        updateVnode.data = installHooks(tag, updateVnode.data);
       }
 
       this.rootVnode = patch(this.rootVnode, updateVnode);
@@ -1304,75 +1303,80 @@ function () {
     _classCallCheck(this, ContextStack);
 
     this.context = context;
-    this.valueStack = [defaultValue];
+    this.stack = [{
+      provider: {
+        consumerQueue: []
+      },
+      value: defaultValue
+    }];
   }
 
   _createClass(ContextStack, [{
     key: "push",
-    value: function push(value) {
-      this.valueStack.push(value);
+    value: function push(value, provider) {
+      var item = {
+        value: value,
+        provider: provider
+      };
+      this.stack.push(item);
       this.context._currentValue = value;
     }
   }, {
     key: "pop",
     value: function pop() {
-      this.valueStack.pop();
-      this.context._currentValue = this.valueStack[this.valueStack.length - 1];
+      this.stack.pop();
+      var lastItme = this.stack[this.stack.length - 1];
+      this.context._currentValue = lastItme ? lastItme.value : null;
     }
   }, {
     key: "reset",
     value: function reset() {
-      var defaultValue = this.valueStack[0];
-      this.context._currentValue = defaultValue;
-      this.valueStack = [defaultValue];
+      this.stack = this.stack[0];
+      this.context._currentValue = this.stack[0].value;
+    }
+  }, {
+    key: "getCurrentProvider",
+    value: function getCurrentProvider() {
+      return this.stack[this.stack.length - 1].provider;
     }
   }]);
 
   return ContextStack;
 }();
-function readContext(currentlyComponent, context, observedBits) {
+function readContext(consumer, context, observedBits) {
+  var currentProvider = context._contextStack.getCurrentProvider();
 
+  var queue = currentProvider.consumerQueue;
   var item = {
-    component: currentlyComponent,
+    consumer: consumer,
     observedBits: typeof observedBits !== 'number' || observedBits === MAX_SIGNED_31_BIT_INT ? MAX_SIGNED_31_BIT_INT : observedBits
   };
 
-  if (context._dependencies === null) {
-    context._dependencies = [item];
-  } else {
-    if (context._dependencies.every(function (v) {
-      return v.component !== currentlyComponent;
-    })) {
-      context._dependencies.push(item);
-    }
+  if (queue.every(function (item) {
+    return item.consumer !== consumer;
+  })) {
+    queue.push(item);
   }
 
-  if (!currentlyComponent.isConsumer) {
-    if (currentlyComponent.contextDependencies.indexOf(context) < 0) {
-      currentlyComponent.contextDependencies.push(context);
-    }
+  if (consumer.providerDependencies.indexOf(currentProvider) < 0) {
+    consumer.providerDependencies.push(currentProvider);
   }
 
   return context._currentValue;
 }
-function removeIndependencies(component) {
-  var remove = function remove(context) {
-    var index = context._dependencies.findIndex(function (item) {
-      return item.component === component;
-    });
+function removedInDeps(consumer) {
+  var queue = consumer.providerDependencies;
 
-    if (index > -1) {
-      context._dependencies.splice(index, 1);
-    }
-  };
+  if (queue.length > 0) {
+    for (var i = 0; i < queue.length; i++) {
+      var providerDep = queue[i];
+      var index = providerDep.consumerQueue.findIndex(function (item) {
+        return item.consumer === consumer;
+      });
 
-  if (component.isConsumer) {
-    remove(component.context);
-  } else {
-    var contexts = component.contextDependencies;
-
-    for (var i = 0; i < contexts.length; i++) {
-      remove(contexts[i]);
+      if (index > -1) {
+        queue.splice(index, 1);
+      }
     }
   }
 }
@@ -1387,7 +1391,6 @@ function createContext(defaultValue, calculateChangedBits) {
 
   var context = {
     $$typeof: CONTEXT_TYPE,
-    _dependencies: null,
     _currentValue: defaultValue,
     _calculateChangedBits: calculateChangedBits,
     Provider: null,
@@ -1422,7 +1425,7 @@ function createContext(defaultValue, calculateChangedBits) {
     },
     Consumer: {
       get: function get() {
-        console.error(false, 'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Consumer> instead?');
+        console.error('Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Consumer> instead?');
         return context.Consumer;
       }
     }
@@ -1445,10 +1448,11 @@ function () {
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
+    this.destroyed = false;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
-    this.contextDependencies = [];
+    this.providerDependencies = [];
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
@@ -1491,7 +1495,7 @@ function () {
     value: function useReducer(payload, key, reducer) {
       var newValue = reducer(this.state[key], payload);
       this.state[key] = newValue;
-      this.forceUpdate();
+      this.forceUpdate(false);
     }
   }, {
     key: "useMemo",
@@ -1574,8 +1578,8 @@ function () {
     }
   }, {
     key: "forceUpdate",
-    value: function forceUpdate() {
-      this.createVnodeByRender(false);
+    value: function forceUpdate(isSync) {
+      this.createVnodeByRender(isSync);
     }
   }, {
     key: "init",
@@ -1594,19 +1598,13 @@ function () {
   }, {
     key: "remove",
     value: function remove(vnode, _remove) {
-      var _this3 = this;
-
-      var rmWraper = function rmWraper() {
-        removeIndependencies(_this3);
-
-        _remove();
-      };
-
-      rmWraper();
+      _remove();
     }
   }, {
     key: "destroy",
     value: function destroy(vnode) {
+      this.destroyed = true;
+
       for (var key in this.effects) {
         var destroy = this.effects[key].destroy;
 
@@ -1614,6 +1612,8 @@ function () {
           destroy();
         }
       }
+
+      removedInDeps(this);
     }
   }]);
 
@@ -1647,24 +1647,62 @@ var componentVNodeHooks = {
   }
 };
 
-var providerVNodeHooks = {
-  init: function init(_ref) {
-    var tag = _ref.tag,
-        data = _ref.data;
+var ProviderComponent = function ProviderComponent(vnode) {
+  _classCallCheck(this, ProviderComponent);
 
-    tag._context._contextStack.push(data.value);
+  this.vnode = vnode;
+  this.consumerQueue = [];
+  this.updateDuplicate = null;
+};
+
+var providerVNodeHooks = {
+  init: function init(vnode) {
+    if (isProvider(vnode)) {
+      var tag = vnode.tag,
+          data = vnode.data;
+      vnode.component = new ProviderComponent(vnode);
+
+      tag._context._contextStack.push(data.value, vnode.component);
+    }
   },
   initBefore: function initBefore(vnode) {
     vnode.tag._context._contextStack.pop();
   },
-  update: function update(oldVnode, _ref2) {
-    var tag = _ref2.tag,
-        data = _ref2.data;
+  prepatch: function prepatch(oldVnode, vnode) {
+    var component = vnode.component = oldVnode.component;
+    component.vnode = vnode;
+  },
+  update: function update(oldVnode, vnode) {
+    var tag = vnode.tag,
+        data = vnode.data,
+        component = vnode.component;
 
-    tag._context._contextStack.push(data.value);
+    tag._context._contextStack.push(data.value, component);
+
+    component.updateDuplicate = [];
   },
   postpatch: function postpatch(oldVnode, vnode) {
-    vnode.tag._context._contextStack.pop();
+    var tag = vnode.tag,
+        component = vnode.component;
+    var consumerQueue = component.consumerQueue,
+        updateDuplicate = component.updateDuplicate;
+    consumerQueue = consumerQueue.slice();
+
+    if (consumerQueue.length !== updateDuplicate.length) {
+      for (var i = 0; i < consumerQueue.length; i++) {
+        var consumer = consumerQueue[i].consumer;
+
+        if (updateDuplicate.indexOf(consumer) === -1) {
+          if (!consumer.destroyed) {
+            consumer.forceUpdate(true);
+          }
+        }
+      }
+    }
+
+    component.updateDuplicate = null;
+
+    tag._context._contextStack.pop();
   }
 };
 
@@ -1675,8 +1713,9 @@ function () {
     _classCallCheck(this, ConsumerComponent);
 
     this.vnode = vnode;
-    this.isConsumer = true;
+    this.destroyed = false;
     this.rootVnode = undefined;
+    this.providerDependencies = [];
     this.context = vnode.tag._context;
   }
 
@@ -1703,9 +1742,15 @@ function () {
       }
     }
   }, {
+    key: "forceUpdate",
+    value: function forceUpdate() {
+      this.render();
+    }
+  }, {
     key: "destroy",
     value: function destroy(vnode) {
-      removeIndependencies(this);
+      this.destroyed = true;
+      removedInDeps(vnode.component);
     }
   }]);
 
@@ -1724,7 +1769,16 @@ var consumerVNodeHooks = {
     component.vnode = vnode;
   },
   update: function update(oldVnode, vnode) {
-    vnode.component.render();
+    var component = vnode.component;
+    var providerDeps = component.providerDependencies;
+
+    for (var i = 0; i < providerDeps.length; i++) {
+      if (isArray(providerDeps[i].updateDuplicate)) {
+        providerDeps[i].updateDuplicate.push(component);
+      }
+    }
+
+    component.render();
   },
   destroy: function destroy(vnode) {
     vnode.component.destroy(vnode);

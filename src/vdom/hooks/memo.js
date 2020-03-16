@@ -32,12 +32,11 @@ class MemoComponent {
     updateVnode.tag = tag
     updateVnode.component = undefined
     updateVnode.data.hook = undefined
-    const props = updateVnode.data
 
     if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-      updateVnode.data = separateProps(props)
+      updateVnode.data = separateProps(updateVnode.data)
     } else {
-      updateVnode.data = installHooks(tag, props)
+      updateVnode.data = installHooks(tag, updateVnode.data)
     }
 
     this.rootVnode = patch(this.rootVnode, updateVnode)

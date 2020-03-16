@@ -17,10 +17,10 @@
     window.oops = oops
   </script>
   <script type="text/babel">
-    const { Fragment, useCallback, useState, createContext, useContext, memo } = React;
-    // const { Fragment, useCallback, useState, createContext, useContext, memo } = oops
-    // ReactDOM.render = oops.render
-    // React.createElement = oops.h
+    // const { Fragment, useCallback, useState, createContext, useContext, memo } = React;
+    const { Fragment, useCallback, useState, createContext, useContext, memo } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
 
     const Context = createContext({
       index: 'xx'
@@ -43,23 +43,27 @@
       )
     }
 
-    const Parent = memo(function Parent() {
-      console.log('Parent')
-      return <Child />
-    })
+    const Parent = memo(
+      function Parent() {
+        console.log('Parent')
+        return <Child />
+      }
+    )
 
     function Ancestor(props) {
       console.log('contaier');
-      const [index, setIndex] = useState(1)
+      const [index, changeIndex] = useState(1)
       return (
         <Fragment>
           <Context.Provider
-            value={1}
+            value={{
+              index,
+              changeIndex,
+            }}
           >
             <Parent />
-            <button onClick={() => setIndex(index + 1)}>{index} +11</button>
+            <button onClick={() => changeIndex(index + 1)}>{index} +</button>
           </Context.Provider>
-          <Child />
         </Fragment>
       );
     }
