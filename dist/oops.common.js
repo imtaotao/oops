@@ -1188,6 +1188,44 @@ function updateEffect(effects) {
     }
   }
 }
+function commonHooksConfig(cfg) {
+  var basicHooks = {
+    initBefore: function initBefore(vnode) {
+      if (typeof vnode.component.initBefore === 'function') {
+        vnode.component.initBefore(vnode);
+      }
+    },
+    prepatch: function prepatch(oldVnode, vnode) {
+      var component = vnode.component = oldVnode.component;
+      component.vnode = vnode;
+
+      if (typeof component.prepatch === 'function') {
+        component.prepatch(oldVnode, vnode);
+      }
+    },
+    update: function update(oldVnode, vnode) {
+      if (typeof vnode.component.update === 'function') {
+        vnode.component.update(oldVnode, vnode);
+      }
+    },
+    postpatch: function postpatch(oldVnode, vnode) {
+      if (typeof vnode.component.postpatch === 'function') {
+        vnode.component.postpatch(oldVnode, vnode);
+      }
+    },
+    remove: function remove(vnode, rm) {
+      if (typeof vnode.component.remove === 'function') {
+        vnode.component.remove(vnode, rm);
+      }
+    },
+    destroy: function destroy(vnode) {
+      if (typeof vnode.component.destroy === 'function') {
+        vnode.component.destroy(vnode);
+      }
+    }
+  };
+  return cfg ? Object.assign(basicHooks, cfg) : basicHooks;
+}
 
 function defaultCompare(oldProps, newProps) {
   var oks = Object.keys(oldProps);
@@ -1511,6 +1549,13 @@ function () {
       }
     }
   }, {
+    key: "inspectReRender",
+    value: function inspectReRender() {
+      if (this.numberOfReRenders > RE_RENDER_LIMIT) {
+        throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.');
+      }
+    }
+  }, {
     key: "createVnodeByRender",
     value: function createVnodeByRender(isSync) {
       this.numberOfReRenders++;
@@ -1570,13 +1615,6 @@ function () {
       }
     }
   }, {
-    key: "inspectReRender",
-    value: function inspectReRender() {
-      if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-        throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.');
-      }
-    }
-  }, {
     key: "forceUpdate",
     value: function forceUpdate(isSync) {
       this.createVnodeByRender(isSync);
@@ -1592,9 +1630,6 @@ function () {
       this.vnode = vnode;
       this.createVnodeByRender(true);
     }
-  }, {
-    key: "postpatch",
-    value: function postpatch(oldVnode, vnode) {}
   }, {
     key: "remove",
     value: function remove(vnode, _remove) {
@@ -1619,43 +1654,68 @@ function () {
 
   return Component;
 }();
-
-var componentVNodeHooks = {
+var componentVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
-    if (isUndef(vnode.component)) {
-      if (isComponent(vnode)) {
-        vnode.component = new Component(vnode);
-        vnode.component.init();
-      }
+    if (isComponent(vnode)) {
+      vnode.component = new Component(vnode);
+      vnode.component.init();
     }
-  },
-  prepatch: function prepatch(oldVnode, vnode) {
-    var component = vnode.component = oldVnode.component;
-    component.vnode = vnode;
-  },
-  update: function update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode);
-  },
-  postpatch: function postpatch(oldVnode, vnode) {
-    vnode.component.postpatch(oldVnode, vnode);
-  },
-  remove: function remove(vnode, rm) {
-    vnode.component.remove(vnode, rm);
-  },
-  destroy: function destroy(vnode) {
-    vnode.component.destroy(vnode);
   }
-};
+});
 
-var ProviderComponent = function ProviderComponent(vnode) {
-  _classCallCheck(this, ProviderComponent);
+var ProviderComponent =
+/*#__PURE__*/
+function () {
+  function ProviderComponent(vnode) {
+    _classCallCheck(this, ProviderComponent);
 
-  this.vnode = vnode;
-  this.consumerQueue = [];
-  this.updateDuplicate = null;
-};
+    this.vnode = vnode;
+    this.consumerQueue = [];
+    this.updateDuplicate = null;
+  }
 
-var providerVNodeHooks = {
+  _createClass(ProviderComponent, [{
+    key: "initBefore",
+    value: function initBefore(vnode) {
+      vnode.tag._context._contextStack.pop();
+    }
+  }, {
+    key: "update",
+    value: function update(oldVnode, vnode) {
+      var tag = vnode.tag,
+          data = vnode.data;
+
+      tag._context._contextStack.push(data.value, this);
+
+      this.updateDuplicate = [];
+    }
+  }, {
+    key: "postpatch",
+    value: function postpatch(oldVnode, vnode) {
+      var consumerQueue = this.consumerQueue.slice();
+
+      if (consumerQueue.length !== this.updateDuplicate.length) {
+        for (var i = 0; i < consumerQueue.length; i++) {
+          var consumer = consumerQueue[i].consumer;
+
+          if (this.updateDuplicate.indexOf(consumer) === -1) {
+            if (!consumer.destroyed) {
+              consumer.forceUpdate(true);
+            }
+          }
+        }
+      }
+
+      this.updateDuplicate = null;
+
+      vnode.tag._context._contextStack.pop();
+    }
+  }]);
+
+  return ProviderComponent;
+}();
+
+var providerVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isProvider(vnode)) {
       var tag = vnode.tag,
@@ -1664,47 +1724,8 @@ var providerVNodeHooks = {
 
       tag._context._contextStack.push(data.value, vnode.component);
     }
-  },
-  initBefore: function initBefore(vnode) {
-    vnode.tag._context._contextStack.pop();
-  },
-  prepatch: function prepatch(oldVnode, vnode) {
-    var component = vnode.component = oldVnode.component;
-    component.vnode = vnode;
-  },
-  update: function update(oldVnode, vnode) {
-    var tag = vnode.tag,
-        data = vnode.data,
-        component = vnode.component;
-
-    tag._context._contextStack.push(data.value, component);
-
-    component.updateDuplicate = [];
-  },
-  postpatch: function postpatch(oldVnode, vnode) {
-    var tag = vnode.tag,
-        component = vnode.component;
-    var consumerQueue = component.consumerQueue,
-        updateDuplicate = component.updateDuplicate;
-    consumerQueue = consumerQueue.slice();
-
-    if (consumerQueue.length !== updateDuplicate.length) {
-      for (var i = 0; i < consumerQueue.length; i++) {
-        var consumer = consumerQueue[i].consumer;
-
-        if (updateDuplicate.indexOf(consumer) === -1) {
-          if (!consumer.destroyed) {
-            consumer.forceUpdate(true);
-          }
-        }
-      }
-    }
-
-    component.updateDuplicate = null;
-
-    tag._context._contextStack.pop();
   }
-};
+});
 
 var ConsumerComponent =
 /*#__PURE__*/
@@ -1747,6 +1768,19 @@ function () {
       this.render();
     }
   }, {
+    key: "update",
+    value: function update(oldVnode, vnode) {
+      var providerDeps = this.providerDependencies;
+
+      for (var i = 0; i < providerDeps.length; i++) {
+        if (isArray(providerDeps[i].updateDuplicate)) {
+          providerDeps[i].updateDuplicate.push(this);
+        }
+      }
+
+      this.render();
+    }
+  }, {
     key: "destroy",
     value: function destroy(vnode) {
       this.destroyed = true;
@@ -1757,33 +1791,14 @@ function () {
   return ConsumerComponent;
 }();
 
-var consumerVNodeHooks = {
+var consumerVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isConsumer(vnode)) {
       vnode.component = new ConsumerComponent(vnode);
       vnode.component.render();
     }
-  },
-  prepatch: function prepatch(oldVnode, vnode) {
-    var component = vnode.component = oldVnode.component;
-    component.vnode = vnode;
-  },
-  update: function update(oldVnode, vnode) {
-    var component = vnode.component;
-    var providerDeps = component.providerDependencies;
-
-    for (var i = 0; i < providerDeps.length; i++) {
-      if (isArray(providerDeps[i].updateDuplicate)) {
-        providerDeps[i].updateDuplicate.push(component);
-      }
-    }
-
-    component.render();
-  },
-  destroy: function destroy(vnode) {
-    vnode.component.destroy(vnode);
   }
-};
+});
 
 function cached(fn) {
   var cache = Object.create(null);

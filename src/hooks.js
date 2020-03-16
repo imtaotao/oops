@@ -1,5 +1,5 @@
-import { Target } from './vdom/component.js'
 import { readContext } from './api/context.js'
+import { Target } from './vdom/components/ordinary.js'
 
 function resolveTargetComponent() {
   if (Target.component === undefined) {

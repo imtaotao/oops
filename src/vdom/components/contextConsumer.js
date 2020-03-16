@@ -1,6 +1,7 @@
 import { patch } from '../patch.js'
 import { isArray } from '../../shared.js'
 import { isConsumer } from '../helpers/patch/is.js'
+import { commonHooksConfig } from '../helpers/component.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import { readContext, removedInDeps } from '../../api/context.js'
 
@@ -39,37 +40,27 @@ class ConsumerComponent {
     this.render()
   }
 
+  update(oldVnode, vnode) {
+    const providerDeps = this.providerDependencies
+    for (let i = 0; i < providerDeps.length; i++) {
+      if (isArray(providerDeps[i].updateDuplicate)) {
+        providerDeps[i].updateDuplicate.push(this)
+      }
+    }
+    this.render()
+  }
+
   destroy(vnode) {
     this.destroyed = true
     removedInDeps(vnode.component)
   }
 }
 
-export const consumerVNodeHooks = {
+export const consumerVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isConsumer(vnode)) {
       vnode.component = new ConsumerComponent(vnode)
       vnode.component.render()
     }
-  },
-
-  prepatch(oldVnode, vnode) {
-    const component = vnode.component = oldVnode.component
-    component.vnode = vnode
-  },
-
-  update(oldVnode, vnode) {
-    const component = vnode.component
-    const providerDeps = component.providerDependencies
-    for (let i = 0; i < providerDeps.length; i++) {
-      if (isArray(providerDeps[i].updateDuplicate)) {
-        providerDeps[i].updateDuplicate.push(component)
-      }
-    }
-    component.render()
-  },
-
-  destroy(vnode) {
-    vnode.component.destroy(vnode)
   }
-}
+})

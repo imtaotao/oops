@@ -10,9 +10,11 @@
 
 
 ## Hooks
+The `observedBits` function of `context` is not implemented yet.
+
 + [x] `useState`
 + [x] `useEffect`
-+ [ ] `useContext`
++ [x] `useContext`
 + [x] `useReducer`
 + [x] `useMemo`
 + [x] `useCallback`
@@ -23,7 +25,7 @@
 + [x] `render`
 + [ ] `createContext`
 
-## 内置组件
+## Built-in components
 + [x] `<Fragment/>`
-+ [ ] `<Context.Provider/>`
-+ [ ] `<Context.Consumer/>`
++ [x] `<Context.Provider/>`
++ [x] `<Context.Consumer/>`

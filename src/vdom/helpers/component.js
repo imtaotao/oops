@@ -43,3 +43,51 @@ export function updateEffect(effects) {
     }
   }
 }
+
+// 通用的 component vnode hooks
+export function commonHooksConfig(cfg) {
+  const basicHooks = {
+    initBefore(vnode) {
+      if (typeof vnode.component.initBefore === 'function') {
+        vnode.component.initBefore(vnode)
+      }
+    },
+
+    prepatch(oldVnode, vnode) {
+      // 换成新的 vnode，这样就会有新的 props
+      const component = vnode.component = oldVnode.component
+      component.vnode = vnode
+      if (typeof component.prepatch === 'function') {
+        component.prepatch(oldVnode, vnode)
+      }
+    },
+
+    update(oldVnode, vnode) {
+      if (typeof vnode.component.update === 'function') {
+        vnode.component.update(oldVnode, vnode)
+      }
+    },
+
+    postpatch(oldVnode, vnode) {
+      if (typeof vnode.component.postpatch === 'function') {
+        vnode.component.postpatch(oldVnode, vnode)
+      }
+    },
+  
+    remove(vnode, rm) {
+      if (typeof vnode.component.remove === 'function') {
+        vnode.component.remove(vnode, rm)
+      }
+    },
+  
+    destroy(vnode) {
+      if (typeof vnode.component.destroy === 'function') {
+        vnode.component.destroy(vnode)
+      }
+    },
+  }
+
+  return cfg
+    ? Object.assign(basicHooks, cfg)
+    : basicHooks
+}

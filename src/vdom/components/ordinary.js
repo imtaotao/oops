@@ -1,13 +1,15 @@
-import { patch } from './patch.js'
-import { isUndef } from '../shared.js'
-import { removedInDeps } from '../api/context.js'
-import { formatPatchRootVnode } from './helpers/patch/util.js'
+import { patch } from '../patch.js'
+import { isUndef } from '../../shared.js'
+import { isComponent } from '../helpers/patch/is.js'
+import { removedInDeps } from '../../api/context.js'
+import { commonHooksConfig } from '../helpers/component.js'
+import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import {
   equalDeps,
   mergeProps,
   enqueueTask,
   updateEffect,
-} from './helpers/component.js'
+} from '../helpers/component.js'
 
 const RE_RENDER_LIMIT = 25
 
@@ -72,6 +74,12 @@ export class Component {
     }
   }
 
+  inspectReRender() {
+    if (this.numberOfReRenders > RE_RENDER_LIMIT) {
+      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
+    }
+  }
+
   createVnodeByRender(isSync) {
     this.numberOfReRenders++
     this.inspectReRender()
@@ -126,12 +134,6 @@ export class Component {
     }
   }
 
-  inspectReRender() {
-    if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
-    }
-  }
-
   forceUpdate(isSync) {
     this.createVnodeByRender(isSync)
   }
@@ -146,9 +148,6 @@ export class Component {
     this.vnode = vnode
     this.createVnodeByRender(true)
   }
-
-  // 已更新
-  postpatch(oldVnode, vnode) {}
 
   remove(vnode, remove) {
     remove()
@@ -165,3 +164,12 @@ export class Component {
     removedInDeps(this)
   }
 }
+
+export const componentVNodeHooks = commonHooksConfig({
+  init(vnode) {
+    if (isComponent(vnode)) {
+      vnode.component = new Component(vnode)
+      vnode.component.init()
+    }
+  }
+})
