@@ -4,16 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>useRef</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
 </head>
 <body>
-  <div id='app'></div>
+  <div id='root'></div>
   <script type="module">
-    import { jsx, render, useRef } from '../../src/index.js'
-    
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    // const { Fragment, useRef, useState, useEffect } = React;
+    const { Fragment, useRef, useState, useEffect } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
+
     function App() {
-      
+      const latestMessage = useRef("");
+
+      const showMessage = () => {
+        alert("You said: " + latestMessage.current);
+      };
+
+      const handleSendClick = () => {
+        setTimeout(showMessage, 3000);
+      };
+
+      const handleMessageChange = e => {
+        latestMessage.current = e.target.value;
+      };
+
+      return (
+        <Fragment>
+          <input value={latestMessage.current} onChange={handleMessageChange} />
+          <button onClick={handleSendClick}>Send</button>
+        </Fragment>
+      );
     }
-    render(jsx`<${App}/>`, app)
+
+    ReactDOM.render(<App />, document.getElementById("root"));
   </script>
 </body>
 </html>

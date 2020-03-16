@@ -38,6 +38,14 @@ export function createFragmentVnode(children) {
 
 export function h(tag, props, ...children) {
   if (tag === '') tag = FRAGMENTS_TYPE
+  // 组件不支持 ref
+  if (typeof tag === 'function' && props && 'ref' in props) {
+    throw new Error(
+      'Function components cannot be given refs. ' +
+      'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
+    )
+  }
+
   // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
   children = flat(children, v => (
     v !== null &&
@@ -51,6 +59,5 @@ export function h(tag, props, ...children) {
   } else {
     data = installHooks(tag, props)
   }
-
   return formatVnode(tag, data, children)
 }

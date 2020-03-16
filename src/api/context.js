@@ -75,7 +75,7 @@ export function calculateChangedBits(context, newValue, oldValue) {
 export function readContext(consumer, context, observedBits) {
   // if (isDisallowedContextRead) {
   //   console.error(
-  //     'Context can only be read while React is rendering. ' +
+  //     'Context can only be read while oops is rendering. ' +
   //       'You can read it directly in the function body, but not ' +
   //       'inside Hooks like useReducer() or useMemo().',
   //   )

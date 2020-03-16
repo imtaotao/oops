@@ -57,6 +57,7 @@ export function useReducer(reducer, initialArg, init) {
 // initialValue: any
 export function useRef(initialValue) {
   const component = resolveTargetComponent()
+  return component.useRef(initialValue)
 }
 
 // ref: {current: T | null} | ((inst: T | null) => any) | null | void,

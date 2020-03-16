@@ -28,6 +28,7 @@ class Component {
     this.rootVnode = undefined // 组件返回的根节点
     this.updateVnode = undefined // 新的 vnode
     this.providerDependencies = [] // 依赖的 context
+    this.refs = Object.create(null)
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
@@ -72,6 +73,12 @@ class Component {
       memoized[1] = deps
       return (memoized[0] = create()) 
     }
+  }
+
+  useRef(initialValue) {
+    const key = this.cursor++
+    const current = this.refs[key] || (this.refs[key] = { current: initialValue })
+    return current
   }
 
   inspectReRender() {

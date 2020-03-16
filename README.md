@@ -21,7 +21,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `useReducer`
 + [x] `useCallback`
 + [x] `useMemo`
-+ [ ] `useRef`
++ [x] `useRef`
 + [ ] `useImperativeHandle`
 + [ ] `useLayoutEffect`
 
@@ -30,6 +30,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `memo`
 + [x] `render`
 + [x] `createContext`
++ [ ] `forwardRef`
 
 ## Built-in components
 + [x] `<Fragment/>`

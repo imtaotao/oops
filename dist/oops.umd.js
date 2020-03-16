@@ -375,12 +375,26 @@
     if (elm) {
       var attrs = vnode.data.attrs;
       var oldAttrs = oldVnode.data.attrs;
+
+      if (attrs && 'ref' in attrs) {
+        var ref = attrs.ref;
+
+        if (typeof ref === 'function') {
+          ref(elm);
+        } else if (_typeof(ref) === 'object') {
+          if (ref && 'current' in ref) {
+            ref.current = elm;
+          }
+        }
+      }
+
       if (!oldAttrs && !attrs) return;
       if (oldAttrs === attrs) return;
       oldAttrs = oldAttrs || {};
       attrs = attrs || {};
 
       for (var key in attrs) {
+        if (key === 'ref') continue;
         var cur = attrs[key];
         var old = oldAttrs[key];
 
@@ -404,6 +418,8 @@
       }
 
       for (var _key in oldAttrs) {
+        if (_key === 'ref') continue;
+
         if (!(_key in attrs)) {
           elm.removeAttribute(_key);
         }
@@ -1482,6 +1498,7 @@
       this.rootVnode = undefined;
       this.updateVnode = undefined;
       this.providerDependencies = [];
+      this.refs = Object.create(null);
       this.state = Object.create(null);
       this.memos = Object.create(null);
       this.effects = Object.create(null);
@@ -1538,6 +1555,15 @@
           memoized[1] = deps;
           return memoized[0] = create();
         }
+      }
+    }, {
+      key: "useRef",
+      value: function useRef(initialValue) {
+        var key = this.cursor++;
+        var current = this.refs[key] || (this.refs[key] = {
+          current: initialValue
+        });
+        return current;
       }
     }, {
       key: "inspectReRender",
@@ -2010,6 +2036,11 @@
     }
 
     if (tag === '') tag = FRAGMENTS_TYPE;
+
+    if (typeof tag === 'function' && props && 'ref' in props) {
+      throw new Error('Function components cannot be given refs. ' + 'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?');
+    }
+
     children = flat(children, function (v) {
       return v !== null && _typeof(v) === 'object' && typeof v[Symbol.iterator] === 'function';
     });
@@ -2260,9 +2291,9 @@
       return callback;
     }, deps);
   }
-  function useContext(context, observedBits) {
+  function useContext(context, unstable_observedBits) {
     var component = resolveTargetComponent();
-    return readContext(component, context, observedBits);
+    return readContext(component, context, unstable_observedBits);
   }
   function useState(initialState) {
     var update = function update(oldValue, newValue) {
@@ -2283,6 +2314,12 @@
       return component.useReducer(value, key, reducer);
     }];
   }
+  function useRef(initialValue) {
+    var component = resolveTargetComponent();
+    return component.useRef(initialValue);
+  }
+  function useImperativeHandle(ref, create, inputs) {}
+  function useLayoutEffect(create, inputs) {}
 
   var oops = {
     h: h,
@@ -2290,13 +2327,16 @@
     memo: memo,
     render: render,
     Fragment: FRAGMENTS_TYPE,
+    useRef: useRef,
     useMemo: useMemo,
     useState: useState,
     useEffect: useEffect,
     useContext: useContext,
     useReducer: useReducer,
     useCallback: useCallback,
-    createContext: createContext
+    createContext: createContext,
+    useLayoutEffect: useLayoutEffect,
+    useImperativeHandle: useImperativeHandle
   };
 
   exports.Fragment = FRAGMENTS_TYPE;
@@ -2309,8 +2349,11 @@
   exports.useCallback = useCallback;
   exports.useContext = useContext;
   exports.useEffect = useEffect;
+  exports.useImperativeHandle = useImperativeHandle;
+  exports.useLayoutEffect = useLayoutEffect;
   exports.useMemo = useMemo;
   exports.useReducer = useReducer;
+  exports.useRef = useRef;
   exports.useState = useState;
 
   Object.defineProperty(exports, '__esModule', { value: true });

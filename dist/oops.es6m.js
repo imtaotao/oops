@@ -234,11 +234,22 @@ function updateAttrs(oldVnode, vnode) {
   if (elm) {
     let attrs = vnode.data.attrs;
     let oldAttrs = oldVnode.data.attrs;
+    if (attrs && 'ref' in attrs) {
+      const ref = attrs.ref;
+      if (typeof ref === 'function') {
+        ref(elm);
+      } else if (typeof ref === 'object') {
+        if (ref && 'current' in ref) {
+          ref.current = elm;
+        }
+      }
+    }
     if (!oldAttrs && !attrs) return
     if (oldAttrs === attrs) return
     oldAttrs = oldAttrs || {};
     attrs = attrs || {};
     for (const key in attrs) {
+      if (key === 'ref') continue
       const cur = attrs[key];
       const old = oldAttrs[key];
       if (old !== cur) {
@@ -260,6 +271,7 @@ function updateAttrs(oldVnode, vnode) {
       }
     }
     for (const key in oldAttrs) {
+      if (key === 'ref') continue
       if (!(key in attrs)) {
         elm.removeAttribute(key);
       }
@@ -1180,6 +1192,7 @@ class Component {
     this.rootVnode = undefined;
     this.updateVnode = undefined;
     this.providerDependencies = [];
+    this.refs = Object.create(null);
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
@@ -1217,6 +1230,11 @@ class Component {
       memoized[1] = deps;
       return (memoized[0] = create())
     }
+  }
+  useRef(initialValue) {
+    const key = this.cursor++;
+    const current = this.refs[key] || (this.refs[key] = { current: initialValue });
+    return current
   }
   inspectReRender() {
     if (this.numberOfReRenders > RE_RENDER_LIMIT) {
@@ -1601,6 +1619,12 @@ function createFragmentVnode(children) {
 }
 function h(tag, props, ...children) {
   if (tag === '') tag = FRAGMENTS_TYPE;
+  if (typeof tag === 'function' && props && 'ref' in props) {
+    throw new Error(
+      'Function components cannot be given refs. ' +
+      'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
+    )
+  }
   children = flat(children, v => (
     v !== null &&
     typeof v === 'object' &&
@@ -1822,9 +1846,9 @@ function useMemo(create, deps) {
 function useCallback(callback, deps) {
   return useMemo(() => callback, deps)
 }
-function useContext(context, observedBits) {
+function useContext(context, unstable_observedBits) {
   const component = resolveTargetComponent();
-  return readContext(component, context, observedBits)
+  return readContext(component, context, unstable_observedBits)
 }
 function useState(initialState) {
   const update = (oldValue, newValue) => {
@@ -1843,6 +1867,14 @@ function useReducer(reducer, initialArg, init) {
   );
   return [state, value => component.useReducer(value, key, reducer)]
 }
+function useRef(initialValue) {
+  const component = resolveTargetComponent();
+  return component.useRef(initialValue)
+}
+function useImperativeHandle(ref, create, inputs) {
+}
+function useLayoutEffect(create, inputs) {
+}
 
 const oops = {
   h,
@@ -1850,6 +1882,7 @@ const oops = {
   memo,
   render,
   Fragment: FRAGMENTS_TYPE,
+  useRef,
   useMemo,
   useState,
   useEffect,
@@ -1857,7 +1890,9 @@ const oops = {
   useReducer,
   useCallback,
   createContext,
+  useLayoutEffect,
+  useImperativeHandle,
 };
 
 export default oops;
-export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useMemo, useReducer, useState };
+export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
