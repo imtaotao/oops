@@ -12,12 +12,18 @@
 ## Hooks
 The `observedBits` function of `context` is not implemented yet.
 
+### Basic Hooks
 + [x] `useState`
 + [x] `useEffect`
 + [x] `useContext`
+
+### Additional Hooks
 + [x] `useReducer`
-+ [x] `useMemo`
 + [x] `useCallback`
++ [x] `useMemo`
++ [ ] `useRef`
++ [ ] `useImperativeHandle`
++ [ ] `useLayoutEffect`
 
 ## API
 + [x] `jsx`

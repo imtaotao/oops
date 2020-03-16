@@ -28,9 +28,11 @@ export function useCallback(callback, deps) {
   return useMemo(() => callback, deps)
 }
 
-export function useContext(context, observedBits) {
+// Context: Context<T>,
+// unstable_observedBits: number | boolean | void,
+export function useContext(context, unstable_observedBits) {
   const component = resolveTargetComponent()
-  return readContext(component, context, observedBits)
+  return readContext(component, context, unstable_observedBits)
 }
 
 export function useState(initialState) {
@@ -50,4 +52,22 @@ export function useReducer(reducer, initialArg, init) {
       : initialArg
   )
   return [state, value => component.useReducer(value, key, reducer)]
+}
+
+// initialValue: any
+export function useRef(initialValue) {
+  const component = resolveTargetComponent()
+}
+
+// ref: {current: T | null} | ((inst: T | null) => any) | null | void,
+// create: () => T,
+// inputs: Array<any> | void | null,
+export function useImperativeHandle(ref, create, inputs) {
+
+}
+
+// create: () => (() => void) | void,
+// inputs: Array<any> | void | null,
+export function useLayoutEffect(create, inputs) {
+
 }

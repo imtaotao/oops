@@ -5,12 +5,15 @@ import { render } from './api/render.js'
 import { createContext } from './api/context.js'
 import { FRAGMENTS_TYPE as Fragment } from './api/symbols.js'
 import {
+  useRef,
   useMemo,
   useState,
   useEffect,
   useContext,
   useReducer,
   useCallback,
+  useLayoutEffect,
+  useImperativeHandle,
 } from './hooks.js'
 
 const oops = {
@@ -19,6 +22,7 @@ const oops = {
   memo,
   render,
   Fragment,
+  useRef,
   useMemo,
   useState,
   useEffect,
@@ -26,6 +30,8 @@ const oops = {
   useReducer,
   useCallback,
   createContext,
+  useLayoutEffect,
+  useImperativeHandle,
 }
 
 export {
@@ -34,6 +40,7 @@ export {
   memo,
   render,
   Fragment,
+  useRef,
   useMemo,
   useState,
   useEffect,
@@ -41,5 +48,7 @@ export {
   useReducer,
   useCallback,
   createContext,
+  useLayoutEffect,
+  useImperativeHandle,
   oops as default,
 }
