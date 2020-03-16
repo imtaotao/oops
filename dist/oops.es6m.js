@@ -1037,21 +1037,14 @@ class MemoComponent {
     }
   }
 }
-const memoVNodeHooks = {
+const memoVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode);
       vnode.component.init();
     }
-  },
-  prepatch(oldVnode, vnode) {
-    const component = vnode.component = oldVnode.component;
-    component.vnode = vnode;
-  },
-  update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode);
-  },
-};
+  }
+});
 
 const MAX_SIGNED_31_BIT_INT = 1073741823;
 class ContextStack {

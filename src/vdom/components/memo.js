@@ -3,6 +3,7 @@ import { cloneVnode } from '../h.js'
 import { isMemo } from '../helpers/patch/is.js'
 import { mergeProps } from '../helpers/component.js'
 import { FRAGMENTS_TYPE } from '../../api/symbols.js'
+import { commonHooksConfig } from '../helpers/component.js'
 import { separateProps, installHooks } from '../helpers/h.js'
 
 function defaultCompare(oldProps, newProps) {
@@ -72,20 +73,11 @@ class MemoComponent {
   }
 }
 
-export const memoVNodeHooks = {
+export const memoVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode)
       vnode.component.init()
     }
-  },
-
-  prepatch(oldVnode, vnode) {
-    const component = vnode.component = oldVnode.component
-    component.vnode = vnode
-  },
-
-  update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode)
-  },
-}
+  }
+})

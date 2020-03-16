@@ -18,7 +18,7 @@ export const Target = {
   component: undefined,
 }
 
-export class Component {
+class Component {
   constructor(vnode) {
     this.cursor = 0
     this.vnode = vnode // 组件标签节点

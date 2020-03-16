@@ -1316,21 +1316,14 @@ function () {
   return MemoComponent;
 }();
 
-var memoVNodeHooks = {
+var memoVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode);
       vnode.component.init();
     }
-  },
-  prepatch: function prepatch(oldVnode, vnode) {
-    var component = vnode.component = oldVnode.component;
-    component.vnode = vnode;
-  },
-  update: function update(oldVnode, vnode) {
-    vnode.component.update(oldVnode, vnode);
   }
-};
+});
 
 var MAX_SIGNED_31_BIT_INT = 1073741823;
 
@@ -1477,6 +1470,7 @@ var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
 };
+
 var Component =
 /*#__PURE__*/
 function () {
@@ -1654,6 +1648,7 @@ function () {
 
   return Component;
 }();
+
 var componentVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isComponent(vnode)) {
