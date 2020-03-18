@@ -42,13 +42,13 @@ export function updateEffect(effects) {
   const effectQueue = []
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
-    // 如果依赖不相等才调用
+    // 依赖对比要以同步的方式进行
     if (!equalDeps(deps, prevDeps)) {
       effectQueue.push([create, destroy, effects[key]])
     }
   }
 
-  // 依赖对比要以同步的方式进行，effect 的调用才是真正需要判断时机
+  // effect 的调用才是真正需要判断时机
   if (effectQueue.length > 0) {
     nextFrame(() => {
       for (let i = 0; i < effectQueue.length; i++) {
@@ -59,7 +59,7 @@ export function updateEffect(effects) {
 }
 
 // 通用的 component vnode hooks
-export function commonHooksConfig(cfg) {
+export function commonHooksConfig(config) {
   const basicHooks = {
     initBefore(vnode) {
       const component = vnode.component
@@ -108,7 +108,7 @@ export function commonHooksConfig(cfg) {
     },
   }
 
-  return cfg
-    ? Object.assign(basicHooks, cfg)
+  return config
+    ? Object.assign(basicHooks, config)
     : basicHooks
 }
