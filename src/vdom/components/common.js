@@ -9,6 +9,7 @@ import {
   mergeProps,
   updateEffect,
   updateLayoutEffect,
+  addToProviderUpdateDuplicate,
 } from '../helpers/component.js'
 
 const RE_RENDER_LIMIT = 25
@@ -126,7 +127,7 @@ class Component {
 
   // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
-    this.vnode = vnode
+    addToProviderUpdateDuplicate(this)
     this.forceUpdate()
   }
 

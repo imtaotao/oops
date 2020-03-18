@@ -967,6 +967,16 @@ function updateEffect(effects) {
 function updateLayoutEffect(effects) {
   obtainUpdateList(effects)();
 }
+function addToProviderUpdateDuplicate(consumer) {
+  const deps = consumer.providerDependencies;
+  if (deps && deps.length > 0) {
+    for (let i = 0; i < deps.length; i++) {
+      if (isArray(deps[i].updateDuplicate)) {
+        deps[i].updateDuplicate.push(consumer);
+      }
+    }
+  }
+}
 function commonHooksConfig(config) {
   const basicHooks = {
     initBefore(vnode) {
@@ -1259,7 +1269,7 @@ class Component {
     const current = this.refs[key] || (this.refs[key] = Object.seal({ current: initialValue }));
     return current
   }
-  createVnodeByRender() {
+  forceUpdate() {
     if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
       throw new Error(
         'Too many re-renders. ' +
@@ -1290,15 +1300,12 @@ class Component {
       updateLayoutEffect(this.layoutEffects);
     }
   }
-  forceUpdate() {
-    this.createVnodeByRender();
-  }
   init() {
-    this.createVnodeByRender();
+    this.forceUpdate();
   }
   update(oldVnode, vnode) {
-    this.vnode = vnode;
-    this.createVnodeByRender();
+    addToProviderUpdateDuplicate(this);
+    this.forceUpdate();
   }
   remove(vnode, remove) {
     remove();
@@ -1393,12 +1400,7 @@ class ConsumerComponent {
     this.render();
   }
   update(oldVnode, vnode) {
-    const providerDeps = this.providerDependencies;
-    for (let i = 0; i < providerDeps.length; i++) {
-      if (isArray(providerDeps[i].updateDuplicate)) {
-        providerDeps[i].updateDuplicate.push(this);
-      }
-    }
+    addToProviderUpdateDuplicate(this);
     this.render();
   }
   destroy(vnode) {

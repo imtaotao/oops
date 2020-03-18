@@ -1,9 +1,8 @@
 import { patch } from '../patch.js'
-import { isArray } from '../../shared.js'
 import { isConsumer } from '../helpers/patch/is.js'
-import { commonHooksConfig } from '../helpers/component.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import { readContext, removedInDeps } from '../../api/context.js'
+import { addToProviderUpdateDuplicate, commonHooksConfig } from '../helpers/component.js'
 
 class ConsumerComponent {
   constructor(vnode) {
@@ -41,12 +40,7 @@ class ConsumerComponent {
   }
 
   update(oldVnode, vnode) {
-    const providerDeps = this.providerDependencies
-    for (let i = 0; i < providerDeps.length; i++) {
-      if (isArray(providerDeps[i].updateDuplicate)) {
-        providerDeps[i].updateDuplicate.push(this)
-      }
-    }
+    addToProviderUpdateDuplicate(this)
     this.render()
   }
 

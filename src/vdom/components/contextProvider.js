@@ -15,6 +15,7 @@ class ProviderComponent {
   update(oldVnode, vnode) {
     const { tag, data } = vnode
     tag._context._contextStack.push(data.value, this)
+    // 需要对比新旧的 value，暂时未做...
     this.updateDuplicate = []
   }
 

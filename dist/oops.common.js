@@ -1226,6 +1226,17 @@ function updateEffect(effects) {
 function updateLayoutEffect(effects) {
   obtainUpdateList(effects)();
 }
+function addToProviderUpdateDuplicate(consumer) {
+  var deps = consumer.providerDependencies;
+
+  if (deps && deps.length > 0) {
+    for (var i = 0; i < deps.length; i++) {
+      if (isArray(deps[i].updateDuplicate)) {
+        deps[i].updateDuplicate.push(consumer);
+      }
+    }
+  }
+}
 function commonHooksConfig(config) {
   var basicHooks = {
     initBefore: function initBefore(vnode) {
@@ -1608,8 +1619,8 @@ function () {
       return current;
     }
   }, {
-    key: "createVnodeByRender",
-    value: function createVnodeByRender() {
+    key: "forceUpdate",
+    value: function forceUpdate() {
       if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
         throw new Error('Too many re-renders. ' + 'oops limits the number of renders to prevent an infinite loop.');
       }
@@ -1637,20 +1648,15 @@ function () {
       }
     }
   }, {
-    key: "forceUpdate",
-    value: function forceUpdate() {
-      this.createVnodeByRender();
-    }
-  }, {
     key: "init",
     value: function init() {
-      this.createVnodeByRender();
+      this.forceUpdate();
     }
   }, {
     key: "update",
     value: function update(oldVnode, vnode) {
-      this.vnode = vnode;
-      this.createVnodeByRender();
+      addToProviderUpdateDuplicate(this);
+      this.forceUpdate();
     }
   }, {
     key: "remove",
@@ -1790,14 +1796,7 @@ function () {
   }, {
     key: "update",
     value: function update(oldVnode, vnode) {
-      var providerDeps = this.providerDependencies;
-
-      for (var i = 0; i < providerDeps.length; i++) {
-        if (isArray(providerDeps[i].updateDuplicate)) {
-          providerDeps[i].updateDuplicate.push(this);
-        }
-      }
-
+      addToProviderUpdateDuplicate(this);
       this.render();
     }
   }, {

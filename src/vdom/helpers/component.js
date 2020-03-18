@@ -56,14 +56,26 @@ export function obtainUpdateList(effects) {
   }
 }
 
+// effect 需要在浏览器绘制时的下一帧触发
 export function updateEffect(effects) {
-  // effect 需要在浏览器绘制时的下一帧触发
   nextFrame(obtainUpdateList(effects))
 }
 
+// layoutEffect 在 dom 更新后同步执行
 export function updateLayoutEffect(effects) {
-  // layoutEffect 在 dom 更新后同步执行
   obtainUpdateList(effects)()
+}
+
+// 加入父级 provider 更新副本
+export function addToProviderUpdateDuplicate(consumer) {
+  const deps = consumer.providerDependencies
+  if (deps && deps.length > 0) {
+    for (let i = 0; i < deps.length; i++) {
+      if (isArray(deps[i].updateDuplicate)) {
+        deps[i].updateDuplicate.push(consumer)
+      }
+    }
+  }
 }
 
 // 通用的 component vnode hooks
