@@ -3,76 +3,59 @@
   <head>
     <meta charset="UTF-8" />
     <title>useEffect</title>
-    <script src="../../dist/oops.umd.js"></script>
     <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
-    <style type="text/css">
-      .Input {
-        font-size: 1rem;
-        padding: 0.25rem;
-      }
-      .IconButton {
-        padding: 0.25rem;
-        border: none;
-        background: none;
-        cursor: pointer;
-      }
-      .List {
-        margin: 0.5rem 0 0;
-        padding: 0;
-      }
-      .ListItem {
-        list-style-type: none;
-      }
-      .Label {
-        cursor: pointer;
-        padding: 0.25rem;
-        color: #555;
-      }
-      .Label:hover {
-        color: #000;
-      }
-      .IconButton {
-        padding: 0.25rem;
-        border: none;
-        background: none;
-        cursor: pointer;
-      }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/fre"></script>
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      import * as oops from '../../src/index.js'
+      window.oops = oops
+    </script>
     <script type="text/babel">
-      // const { Fragment, useCallback, useState } = React;
-      const { Fragment, useCallback, useEffect, useState, render } = oops
+      // const { Fragment, useState, useEffect } = React;
+      const { Fragment, useEffect, useState, render } = oops
       ReactDOM.render = oops.render
       React.createElement = oops.h
 
-      // from ReactTestUtilsAct-test.js
+      const times = []
+      let stop = false
+      const ssetTimeout = function (fn, time, count) {
+        const id = setTimeout(fn, time)
+        const now = Date.now()
+        const last = times[times.length - 1]
+        const interval =  last ? now - last.now : 0
+        times.push({id, interval, now: Date.now(), count })
+        return id
+      }
+
+      window.g = function () {
+        return times
+      }
+
+      window.s = function () {
+        stop = true
+      }
+
       function App() {
-        let [state, setState] = useState(0);
-        async function ticker() {
-          await null;
-          setState(x => x + 1);
-        }
+        const [count, setCount] = useState(0)
         useEffect(() => {
-          ticker();
-        }, [Math.min(state, 4)]);
-        return state;
+          if (count === 0) {
+            const randomCount = parseInt(10 + Math.random() * 200)
+            setCount(randomCount)
+          }
+        }, [count])
+
+        return [
+          <div>{count}</div>,
+          <button onClick={() => setCount(0)}>click</button>
+        ]
       }
 
-      async function testAsyncAct() {
-        const el = document.createElement("div");
-        // await ReactTestUtils.act(async () => {
-          ReactDOM.render(<App />, el);
-        // });
-        // all 5 ticks present and accounted for
-        console.log(el.innerHTML);
-      }
-
-      testAsyncAct();
+      ReactDOM.render(<App />, root)
     </script>
   </body>
 </html>

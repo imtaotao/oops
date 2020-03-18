@@ -1165,6 +1165,11 @@ function mergeProps(_ref, needChildren) {
 
   return res;
 }
+function nextFrame$1(callback) {
+  setTimeout(function () {
+    return requestAnimationFrame(callback);
+  });
+}
 function enqueueTask(callback) {
   var channel = new MessageChannel();
   channel.port1.onmessage = callback;
@@ -1181,7 +1186,12 @@ function equalDeps(a, b) {
 
   return false;
 }
-function callEffectCallback(create, destroy, effect) {
+function callEffectCallback(_ref2) {
+  var _ref3 = _slicedToArray(_ref2, 3),
+      create = _ref3[0],
+      destroy = _ref3[1],
+      effect = _ref3[2];
+
   if (typeof destroy === 'function') destroy();
   var cleanup = create();
 
@@ -1192,6 +1202,8 @@ function callEffectCallback(create, destroy, effect) {
   effect.destroy = cleanup;
 }
 function updateEffect(effects) {
+  var effectQueue = [];
+
   for (var key in effects) {
     var _effects$key = effects[key],
         deps = _effects$key.deps,
@@ -1200,43 +1212,64 @@ function updateEffect(effects) {
         destroy = _effects$key.destroy;
 
     if (!equalDeps(deps, prevDeps)) {
-      callEffectCallback(create, destroy, effects[key]);
+      effectQueue.push([create, destroy, effects[key]]);
     }
+  }
+
+  if (effectQueue.length > 0) {
+    nextFrame$1(function () {
+      for (var i = 0; i < effectQueue.length; i++) {
+        callEffectCallback(effectQueue[i]);
+      }
+    });
   }
 }
 function commonHooksConfig(cfg) {
   var basicHooks = {
     initBefore: function initBefore(vnode) {
-      if (typeof vnode.component.initBefore === 'function') {
-        vnode.component.initBefore(vnode);
+      var component = vnode.component;
+
+      if (component && typeof component.initBefore === 'function') {
+        component.initBefore(vnode);
       }
     },
     prepatch: function prepatch(oldVnode, vnode) {
       var component = vnode.component = oldVnode.component;
-      component.vnode = vnode;
 
-      if (typeof component.prepatch === 'function') {
-        component.prepatch(oldVnode, vnode);
+      if (component) {
+        component.vnode = vnode;
+
+        if (typeof component.prepatch === 'function') {
+          component.prepatch(oldVnode, vnode);
+        }
       }
     },
     update: function update(oldVnode, vnode) {
-      if (typeof vnode.component.update === 'function') {
-        vnode.component.update(oldVnode, vnode);
+      var component = vnode.component;
+
+      if (component && typeof component.update === 'function') {
+        component.update(oldVnode, vnode);
       }
     },
     postpatch: function postpatch(oldVnode, vnode) {
-      if (typeof vnode.component.postpatch === 'function') {
-        vnode.component.postpatch(oldVnode, vnode);
+      var component = vnode.component;
+
+      if (component && typeof component.postpatch === 'function') {
+        component.postpatch(oldVnode, vnode);
       }
     },
     remove: function remove(vnode, rm) {
-      if (typeof vnode.component.remove === 'function') {
-        vnode.component.remove(vnode, rm);
+      var component = vnode.component;
+
+      if (component && typeof component.remove === 'function') {
+        component.remove(vnode, rm);
       }
     },
     destroy: function destroy(vnode) {
-      if (typeof vnode.component.destroy === 'function') {
-        vnode.component.destroy(vnode);
+      var component = vnode.component;
+
+      if (component && typeof component.destroy === 'function') {
+        component.destroy(vnode);
       }
     }
   };
@@ -1512,7 +1545,7 @@ function () {
     value: function setState(partialState) {
       var key = this.cursor++;
 
-      if (this.state[key]) {
+      if (key in this.state) {
         return [this.state[key], key];
       }
 
@@ -1599,7 +1632,6 @@ function () {
         }
       } finally {
         this.cursor = 0;
-        this.updateQueue = 0;
         this.numberOfReRenders = 0;
         Target.component = undefined;
       }
@@ -1607,29 +1639,25 @@ function () {
   }, {
     key: "syncPatch",
     value: function syncPatch() {
-      var _this = this;
-
       if (this.updateVnode !== null) {
         this.rootVnode = patch(this.rootVnode, this.updateVnode);
         this.vnode.elm = this.rootVnode.elm;
         this.updateVnode = undefined;
-        enqueueTask(function () {
-          updateEffect(_this.effects);
-        });
+        updateEffect(this.effects);
       }
     }
   }, {
     key: "patch",
     value: function patch$1() {
-      var _this2 = this;
+      var _this = this;
 
       if (!this.updateVnode) {
         enqueueTask(function () {
-          if (_this2.updateVnode !== null) {
-            _this2.rootVnode = patch(_this2.rootVnode, _this2.updateVnode);
-            _this2.vnode.elm = _this2.rootVnode.elm;
-            _this2.updateVnode = undefined;
-            updateEffect(_this2.effects);
+          if (_this.updateVnode !== null) {
+            _this.rootVnode = patch(_this.rootVnode, _this.updateVnode);
+            _this.vnode.elm = _this.rootVnode.elm;
+            _this.updateVnode = undefined;
+            updateEffect(_this.effects);
           }
         });
       }
@@ -2285,6 +2313,7 @@ function useEffect(effect, deps) {
   var component = resolveTargetComponent();
   return component.useEffect(effect, deps);
 }
+function useLayoutEffect(create, deps) {}
 function useMemo(create, deps) {
   var component = resolveTargetComponent();
   return component.useMemo(create, deps);
@@ -2321,8 +2350,7 @@ function useRef(initialValue) {
   var component = resolveTargetComponent();
   return component.useRef(initialValue);
 }
-function useImperativeHandle(ref, create, inputs) {}
-function useLayoutEffect(create, inputs) {}
+function useImperativeHandle(ref, create, deps) {}
 
 var oops = {
   h: h,

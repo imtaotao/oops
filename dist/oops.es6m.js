@@ -925,6 +925,9 @@ function mergeProps({data, children}, needChildren) {
   }
   return res
 }
+function nextFrame$1(callback) {
+  setTimeout(() => requestAnimationFrame(callback));
+}
 function enqueueTask(callback) {
   const channel = new MessageChannel();
   channel.port1.onmessage = callback;
@@ -938,7 +941,7 @@ function equalDeps(a, b) {
   }
   return false
 }
-function callEffectCallback(create, destroy, effect) {
+function callEffectCallback([create, destroy, effect]) {
   if (typeof destroy === 'function') destroy();
   const cleanup = create();
   if (isDef(cleanup) && typeof cleanup !== 'function') {
@@ -947,45 +950,60 @@ function callEffectCallback(create, destroy, effect) {
   effect.destroy = cleanup;
 }
 function updateEffect(effects) {
+  const effectQueue = [];
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key];
     if (!equalDeps(deps, prevDeps)) {
-      callEffectCallback(create, destroy, effects[key]);
+      effectQueue.push([create, destroy, effects[key]]);
     }
+  }
+  if (effectQueue.length > 0) {
+    nextFrame$1(() => {
+      for (let i = 0; i < effectQueue.length; i++) {
+        callEffectCallback(effectQueue[i]);
+      }
+    });
   }
 }
 function commonHooksConfig(cfg) {
   const basicHooks = {
     initBefore(vnode) {
-      if (typeof vnode.component.initBefore === 'function') {
-        vnode.component.initBefore(vnode);
+      const component = vnode.component;
+      if (component && typeof component.initBefore === 'function') {
+        component.initBefore(vnode);
       }
     },
     prepatch(oldVnode, vnode) {
       const component = vnode.component = oldVnode.component;
-      component.vnode = vnode;
-      if (typeof component.prepatch === 'function') {
-        component.prepatch(oldVnode, vnode);
+      if (component) {
+        component.vnode = vnode;
+        if (typeof component.prepatch === 'function') {
+          component.prepatch(oldVnode, vnode);
+        }
       }
     },
     update(oldVnode, vnode) {
-      if (typeof vnode.component.update === 'function') {
-        vnode.component.update(oldVnode, vnode);
+      const component = vnode.component;
+      if (component && typeof component.update === 'function') {
+        component.update(oldVnode, vnode);
       }
     },
     postpatch(oldVnode, vnode) {
-      if (typeof vnode.component.postpatch === 'function') {
-        vnode.component.postpatch(oldVnode, vnode);
+      const component = vnode.component;
+      if (component && typeof component.postpatch === 'function') {
+        component.postpatch(oldVnode, vnode);
       }
     },
     remove(vnode, rm) {
-      if (typeof vnode.component.remove === 'function') {
-        vnode.component.remove(vnode, rm);
+      const component = vnode.component;
+      if (component && typeof component.remove === 'function') {
+        component.remove(vnode, rm);
       }
     },
     destroy(vnode) {
-      if (typeof vnode.component.destroy === 'function') {
-        vnode.component.destroy(vnode);
+      const component = vnode.component;
+      if (component && typeof component.destroy === 'function') {
+        component.destroy(vnode);
       }
     },
   };
@@ -1199,7 +1217,7 @@ class Component {
   }
   setState(partialState) {
     const key = this.cursor++;
-    if (this.state[key]) {
+    if (key in this.state) {
       return [this.state[key], key]
     }
     this.state[key] = partialState;
@@ -1263,7 +1281,6 @@ class Component {
       }
     } finally {
       this.cursor = 0;
-      this.updateQueue = 0;
       this.numberOfReRenders = 0;
       Target.component = undefined;
     }
@@ -1273,9 +1290,7 @@ class Component {
       this.rootVnode = patch(this.rootVnode, this.updateVnode);
       this.vnode.elm = this.rootVnode.elm;
       this.updateVnode = undefined;
-      enqueueTask(() => {
-        updateEffect(this.effects);
-      });
+      updateEffect(this.effects);
     }
   }
   patch() {
@@ -1839,6 +1854,8 @@ function useEffect(effect, deps) {
   const component = resolveTargetComponent();
   return component.useEffect(effect, deps)
 }
+function useLayoutEffect(create, deps) {
+}
 function useMemo(create, deps) {
   const component = resolveTargetComponent();
   return component.useMemo(create, deps)
@@ -1871,9 +1888,7 @@ function useRef(initialValue) {
   const component = resolveTargetComponent();
   return component.useRef(initialValue)
 }
-function useImperativeHandle(ref, create, inputs) {
-}
-function useLayoutEffect(create, inputs) {
+function useImperativeHandle(ref, create, deps) {
 }
 
 const oops = {

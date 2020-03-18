@@ -33,6 +33,14 @@
             console.log('Child Consumer');
             return (
               <Fragment>
+                <Context.Consumer>
+                  {
+                    ({index}) => {
+                      console.log('child 2');
+                      return <div>{index}</div>
+                    }
+                  }
+                </Context.Consumer>
                 <button onClick={() => changeIndex(index + 1)}>{index} +</button>
               </Fragment>
             ) 

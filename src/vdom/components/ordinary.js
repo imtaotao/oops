@@ -37,7 +37,7 @@ class Component {
   // 添加不重复的 state
   setState(partialState) {
     const key = this.cursor++
-    if (this.state[key]) {
+    if (key in this.state) {
       return [this.state[key], key]
     }
     this.state[key] = partialState
@@ -60,6 +60,8 @@ class Component {
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
     this.state[key] = newValue
+    // 以异步批量更新的方式可能会导致与 effect 执行有冲突
+    // 但是批量更新是很重要的一步优化措施，所以改为同步
     this.forceUpdate(false)
   }
 
@@ -109,7 +111,6 @@ class Component {
       }
     } finally {
       this.cursor = 0
-      this.updateQueue = 0
       this.numberOfReRenders = 0
       Target.component = undefined
     }
@@ -121,9 +122,7 @@ class Component {
       this.rootVnode = patch(this.rootVnode, this.updateVnode)
       this.vnode.elm = this.rootVnode.elm
       this.updateVnode = undefined
-      enqueueTask(() => {
-        updateEffect(this.effects)
-      })
+      updateEffect(this.effects)
     }
   }
 

@@ -15,6 +15,12 @@ export function useEffect(effect, deps) {
   return component.useEffect(effect, deps)
 }
 
+// create: () => (() => void) | void,
+// deps: Array<any> | void | null,
+export function useLayoutEffect(create, deps) {
+
+}
+
 // create: () => T,
 // deps: Array<any> | void | null
 export function useMemo(create, deps) {
@@ -62,13 +68,7 @@ export function useRef(initialValue) {
 
 // ref: {current: T | null} | ((inst: T | null) => any) | null | void,
 // create: () => T,
-// inputs: Array<any> | void | null,
-export function useImperativeHandle(ref, create, inputs) {
-
-}
-
-// create: () => (() => void) | void,
-// inputs: Array<any> | void | null,
-export function useLayoutEffect(create, inputs) {
+// deps: Array<any> | void | null,
+export function useImperativeHandle(ref, create, deps) {
 
 }

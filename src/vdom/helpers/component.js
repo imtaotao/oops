@@ -10,6 +10,10 @@ export function mergeProps({data, children}, needChildren) {
   return res
 }
 
+export function nextFrame(callback) {
+  setTimeout(() => requestAnimationFrame(callback))
+}
+
 export function enqueueTask(callback) {
   const channel = new MessageChannel()
   channel.port1.onmessage = callback
@@ -25,7 +29,7 @@ export function equalDeps(a, b) {
   return false
 }
 
-export function callEffectCallback(create, destroy, effect) {
+export function callEffectCallback([create, destroy, effect]) {
   if (typeof destroy === 'function') destroy()
   const cleanup = create()
   if (isDef(cleanup) && typeof cleanup !== 'function') {
@@ -35,12 +39,22 @@ export function callEffectCallback(create, destroy, effect) {
 }
 
 export function updateEffect(effects) {
+  const effectQueue = []
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
     // 如果依赖不相等才调用
     if (!equalDeps(deps, prevDeps)) {
-      callEffectCallback(create, destroy, effects[key])
+      effectQueue.push([create, destroy, effects[key]])
     }
+  }
+
+  // 依赖对比要以同步的方式进行，effect 的调用才是真正需要判断时机
+  if (effectQueue.length > 0) {
+    nextFrame(() => {
+      for (let i = 0; i < effectQueue.length; i++) {
+        callEffectCallback(effectQueue[i])
+      }
+    })
   }
 }
 
@@ -48,41 +62,48 @@ export function updateEffect(effects) {
 export function commonHooksConfig(cfg) {
   const basicHooks = {
     initBefore(vnode) {
-      if (typeof vnode.component.initBefore === 'function') {
-        vnode.component.initBefore(vnode)
+      const component = vnode.component
+      if (component && typeof component.initBefore === 'function') {
+        component.initBefore(vnode)
       }
     },
 
     prepatch(oldVnode, vnode) {
       // 换成新的 vnode，这样就会有新的 props
       const component = vnode.component = oldVnode.component
-      component.vnode = vnode
-      if (typeof component.prepatch === 'function') {
-        component.prepatch(oldVnode, vnode)
+      if (component) {
+        component.vnode = vnode
+        if (typeof component.prepatch === 'function') {
+          component.prepatch(oldVnode, vnode)
+        }
       }
     },
 
     update(oldVnode, vnode) {
-      if (typeof vnode.component.update === 'function') {
-        vnode.component.update(oldVnode, vnode)
+      const component = vnode.component
+      if (component && typeof component.update === 'function') {
+        component.update(oldVnode, vnode)
       }
     },
 
     postpatch(oldVnode, vnode) {
-      if (typeof vnode.component.postpatch === 'function') {
-        vnode.component.postpatch(oldVnode, vnode)
+      const component = vnode.component
+      if (component && typeof component.postpatch === 'function') {
+        component.postpatch(oldVnode, vnode)
       }
     },
   
     remove(vnode, rm) {
-      if (typeof vnode.component.remove === 'function') {
-        vnode.component.remove(vnode, rm)
+      const component = vnode.component
+      if (component && typeof component.remove === 'function') {
+        component.remove(vnode, rm)
       }
     },
   
     destroy(vnode) {
-      if (typeof vnode.component.destroy === 'function') {
-        vnode.component.destroy(vnode)
+      const component = vnode.component
+      if (component && typeof component.destroy === 'function') {
+        component.destroy(vnode)
       }
     },
   }
