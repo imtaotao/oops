@@ -1170,11 +1170,6 @@ function nextFrame$1(callback) {
     return requestAnimationFrame(callback);
   });
 }
-function enqueueTask(callback) {
-  var channel = new MessageChannel();
-  channel.port1.onmessage = callback;
-  channel.port2.postMessage(undefined);
-}
 function equalDeps(a, b) {
   if (isArray(a) && isArray(b)) {
     if (a.length === 0 && b.length === 0) return true;
@@ -1201,7 +1196,7 @@ function callEffectCallback(_ref2) {
 
   effect.destroy = cleanup;
 }
-function updateEffect(effects) {
+function obtainUpdateList(effects) {
   var effectQueue = [];
 
   for (var key in effects) {
@@ -1216,15 +1211,21 @@ function updateEffect(effects) {
     }
   }
 
-  if (effectQueue.length > 0) {
-    nextFrame$1(function () {
+  return function () {
+    if (effectQueue.length > 0) {
       for (var i = 0; i < effectQueue.length; i++) {
         callEffectCallback(effectQueue[i]);
       }
-    });
-  }
+    }
+  };
 }
-function commonHooksConfig(cfg) {
+function updateEffect(effects) {
+  nextFrame$1(obtainUpdateList(effects));
+}
+function updateLayoutEffect(effects) {
+  obtainUpdateList(effects)();
+}
+function commonHooksConfig(config) {
   var basicHooks = {
     initBefore: function initBefore(vnode) {
       var component = vnode.component;
@@ -1273,7 +1274,7 @@ function commonHooksConfig(cfg) {
       }
     }
   };
-  return cfg ? Object.assign(basicHooks, cfg) : basicHooks;
+  return config ? Object.assign(basicHooks, config) : basicHooks;
 }
 
 function defaultCompare(oldProps, newProps) {
@@ -1538,6 +1539,7 @@ function () {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
+    this.layoutEffects = Object.create(null);
   }
 
   _createClass(Component, [{
@@ -1553,19 +1555,19 @@ function () {
       return [partialState, key];
     }
   }, {
-    key: "useEffect",
-    value: function useEffect(create, deps) {
+    key: "pushEffect",
+    value: function pushEffect(flag, create, deps) {
       var destroy = undefined;
       var prevDeps = undefined;
       var key = this.cursor++;
-      var prevEffect = this.effects[key];
+      var prevEffect = this[flag][key];
 
       if (prevEffect) {
         destroy = prevEffect.destroy;
         prevDeps = prevEffect.deps;
       }
 
-      this.effects[key] = {
+      this[flag][key] = {
         deps: deps,
         prevDeps: prevDeps,
         create: create,
@@ -1577,7 +1579,7 @@ function () {
     value: function useReducer(payload, key, reducer) {
       var newValue = reducer(this.state[key], payload);
       this.state[key] = newValue;
-      this.forceUpdate(false);
+      this.forceUpdate();
     }
   }, {
     key: "useMemo",
@@ -1602,23 +1604,13 @@ function () {
       return current;
     }
   }, {
-    key: "inspectReRender",
-    value: function inspectReRender() {
-      if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-        throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.');
-      }
-    }
-  }, {
     key: "createVnodeByRender",
-    value: function createVnodeByRender(isSync) {
-      this.numberOfReRenders++;
-      this.inspectReRender();
+    value: function createVnodeByRender() {
+      if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
+        throw new Error('Too many re-renders. ' + 'oops limits the number of renders to prevent an infinite loop.');
+      }
 
       try {
-        if (!isSync) {
-          this.patch();
-        }
-
         Target.component = this;
         this.props = mergeProps(this.vnode, true);
         this.updateVnode = formatPatchRootVnode(this.render(this.props));
@@ -1627,56 +1619,34 @@ function () {
           throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
         }
 
-        if (isSync) {
-          this.syncPatch();
+        if (this.updateVnode !== null) {
+          this.rootVnode = patch(this.rootVnode, this.updateVnode);
+          this.vnode.elm = this.rootVnode.elm;
+          this.updateVnode = undefined;
         }
       } finally {
         this.cursor = 0;
         this.numberOfReRenders = 0;
         Target.component = undefined;
-      }
-    }
-  }, {
-    key: "syncPatch",
-    value: function syncPatch() {
-      if (this.updateVnode !== null) {
-        this.rootVnode = patch(this.rootVnode, this.updateVnode);
-        this.vnode.elm = this.rootVnode.elm;
-        this.updateVnode = undefined;
         updateEffect(this.effects);
-      }
-    }
-  }, {
-    key: "patch",
-    value: function patch$1() {
-      var _this = this;
-
-      if (!this.updateVnode) {
-        enqueueTask(function () {
-          if (_this.updateVnode !== null) {
-            _this.rootVnode = patch(_this.rootVnode, _this.updateVnode);
-            _this.vnode.elm = _this.rootVnode.elm;
-            _this.updateVnode = undefined;
-            updateEffect(_this.effects);
-          }
-        });
+        updateLayoutEffect(this.layoutEffects);
       }
     }
   }, {
     key: "forceUpdate",
-    value: function forceUpdate(isSync) {
-      this.createVnodeByRender(isSync);
+    value: function forceUpdate() {
+      this.createVnodeByRender();
     }
   }, {
     key: "init",
     value: function init() {
-      this.createVnodeByRender(true);
+      this.createVnodeByRender();
     }
   }, {
     key: "update",
     value: function update(oldVnode, vnode) {
       this.vnode = vnode;
-      this.createVnodeByRender(true);
+      this.createVnodeByRender();
     }
   }, {
     key: "remove",
@@ -1690,10 +1660,7 @@ function () {
 
       for (var key in this.effects) {
         var destroy = this.effects[key].destroy;
-
-        if (typeof destroy === 'function') {
-          destroy();
-        }
+        if (typeof destroy === 'function') destroy();
       }
 
       removedInDeps(this);
@@ -1749,7 +1716,7 @@ function () {
 
           if (this.updateDuplicate.indexOf(consumer) === -1) {
             if (!consumer.destroyed) {
-              consumer.forceUpdate(true);
+              consumer.forceUpdate();
             }
           }
         }
@@ -2309,11 +2276,14 @@ function resolveTargetComponent() {
   return Target.component;
 }
 
-function useEffect(effect, deps) {
+function useEffect(create, deps) {
   var component = resolveTargetComponent();
-  return component.useEffect(effect, deps);
+  return component.pushEffect('effects', create, deps);
 }
-function useLayoutEffect(create, deps) {}
+function useLayoutEffect(create, deps) {
+  var component = resolveTargetComponent();
+  return component.pushEffect('layoutEffects', create, deps);
+}
 function useMemo(create, deps) {
   var component = resolveTargetComponent();
   return component.useMemo(create, deps);

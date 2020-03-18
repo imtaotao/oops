@@ -63,8 +63,7 @@ export function calculateChangedBits(context, newValue, oldValue) {
     if ((changedBits & MAX_SIGNED_31_BIT_INT) !== changedBits) {
       console.error(
         'calculateChangedBits: Expected the return value to be a ' +
-          '31-bit integer. Instead received: %s',
-        changedBits,
+          `31-bit integer. Instead received: ${changedBits}`
       )
     }
     return changedBits | 0
@@ -146,7 +145,7 @@ export function createContext(defaultValue, calculateChangedBits) {
       get() {
         console.error(
           'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Provider> instead?',
+            'a future major release. Did you mean to render <Context.Provider> instead?'
         )
         return context.Provider
       },
@@ -168,7 +167,7 @@ export function createContext(defaultValue, calculateChangedBits) {
       get() {
         console.error(
           'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Consumer> instead?',
+            'a future major release. Did you mean to render <Context.Consumer> instead?'
         )
         return context.Consumer
       },

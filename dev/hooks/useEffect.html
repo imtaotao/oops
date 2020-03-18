@@ -16,8 +16,8 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      // const { Fragment, useState, useEffect } = React;
-      const { Fragment, useEffect, useState, render } = oops
+      // const { Fragment, useState, useLayoutEffect, useEffect } = React;
+      const { Fragment, useEffect, useLayoutEffect, useState, render } = oops
       ReactDOM.render = oops.render
       React.createElement = oops.h
 
@@ -32,10 +32,12 @@
           return () => console.log('clean')
         }, [count])
 
-        return [
-          <div>{count}</div>,
-          <button onClick={() => setCount(0)}>click</button>
-        ]
+        return (
+          <Fragment>
+            <div>{count}</div>
+            <button onClick={() => setCount(0)}>click</button>
+          </Fragment>
+        )
       }
 
       ReactDOM.render(<App />, root)

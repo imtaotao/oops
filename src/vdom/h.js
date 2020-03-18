@@ -42,7 +42,7 @@ export function h(tag, props, ...children) {
   if (typeof tag === 'function' && props && 'ref' in props) {
     throw new Error(
       'Function components cannot be given refs. ' +
-      'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
+        'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
     )
   }
 

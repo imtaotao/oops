@@ -38,7 +38,7 @@ export function callEffectCallback([create, destroy, effect]) {
   effect.destroy = cleanup
 }
 
-export function updateEffect(effects) {
+export function obtainUpdateList(effects) {
   const effectQueue = []
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
@@ -47,19 +47,23 @@ export function updateEffect(effects) {
       effectQueue.push([create, destroy, effects[key]])
     }
   }
-
-  // effect 的调用才是真正需要判断时机
-  if (effectQueue.length > 0) {
-    nextFrame(() => {
+  return () => {
+    if (effectQueue.length > 0) {
       for (let i = 0; i < effectQueue.length; i++) {
         callEffectCallback(effectQueue[i])
       }
-    })
+    }
   }
 }
 
+export function updateEffect(effects) {
+  // effect 需要在浏览器绘制时的下一帧触发
+  nextFrame(obtainUpdateList(effects))
+}
+
 export function updateLayoutEffect(effects) {
-  
+  // layoutEffect 在 dom 更新后同步执行
+  obtainUpdateList(effects)()
 }
 
 // 通用的 component vnode hooks

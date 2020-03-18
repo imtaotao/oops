@@ -928,11 +928,6 @@ function mergeProps({data, children}, needChildren) {
 function nextFrame$1(callback) {
   setTimeout(() => requestAnimationFrame(callback));
 }
-function enqueueTask(callback) {
-  const channel = new MessageChannel();
-  channel.port1.onmessage = callback;
-  channel.port2.postMessage(undefined);
-}
 function equalDeps(a, b) {
   if (isArray(a) && isArray(b)) {
     if (a.length === 0 && b.length === 0) return true
@@ -949,7 +944,7 @@ function callEffectCallback([create, destroy, effect]) {
   }
   effect.destroy = cleanup;
 }
-function updateEffect(effects) {
+function obtainUpdateList(effects) {
   const effectQueue = [];
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key];
@@ -957,15 +952,21 @@ function updateEffect(effects) {
       effectQueue.push([create, destroy, effects[key]]);
     }
   }
-  if (effectQueue.length > 0) {
-    nextFrame$1(() => {
+  return () => {
+    if (effectQueue.length > 0) {
       for (let i = 0; i < effectQueue.length; i++) {
         callEffectCallback(effectQueue[i]);
       }
-    });
+    }
   }
 }
-function commonHooksConfig(cfg) {
+function updateEffect(effects) {
+  nextFrame$1(obtainUpdateList(effects));
+}
+function updateLayoutEffect(effects) {
+  obtainUpdateList(effects)();
+}
+function commonHooksConfig(config) {
   const basicHooks = {
     initBefore(vnode) {
       const component = vnode.component;
@@ -1007,8 +1008,8 @@ function commonHooksConfig(cfg) {
       }
     },
   };
-  return cfg
-    ? Object.assign(basicHooks, cfg)
+  return config
+    ? Object.assign(basicHooks, config)
     : basicHooks
 }
 
@@ -1165,7 +1166,7 @@ function createContext(defaultValue, calculateChangedBits) {
       get() {
         console.error(
           'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Provider> instead?',
+            'a future major release. Did you mean to render <Context.Provider> instead?'
         );
         return context.Provider
       },
@@ -1185,7 +1186,7 @@ function createContext(defaultValue, calculateChangedBits) {
       get() {
         console.error(
           'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' +
-            'a future major release. Did you mean to render <Context.Consumer> instead?',
+            'a future major release. Did you mean to render <Context.Consumer> instead?'
         );
         return context.Consumer
       },
@@ -1214,6 +1215,7 @@ class Component {
     this.state = Object.create(null);
     this.memos = Object.create(null);
     this.effects = Object.create(null);
+    this.layoutEffects = Object.create(null);
   }
   setState(partialState) {
     const key = this.cursor++;
@@ -1223,21 +1225,21 @@ class Component {
     this.state[key] = partialState;
     return [partialState, key]
   }
-  useEffect(create, deps) {
+  pushEffect(flag, create, deps) {
     let destroy = undefined;
     let prevDeps = undefined;
     const key = this.cursor++;
-    const prevEffect = this.effects[key];
+    const prevEffect = this[flag][key];
     if (prevEffect) {
       destroy = prevEffect.destroy;
       prevDeps = prevEffect.deps;
     }
-    this.effects[key] = { deps, prevDeps, create, destroy };
+    this[flag][key] = { deps, prevDeps, create, destroy };
   }
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload);
     this.state[key] = newValue;
-    this.forceUpdate(false);
+    this.forceUpdate();
   }
   useMemo(create, deps) {
     const key = this.cursor++;
@@ -1254,66 +1256,46 @@ class Component {
     const current = this.refs[key] || (this.refs[key] = { current: initialValue });
     return current
   }
-  inspectReRender() {
-    if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
+  createVnodeByRender() {
+    if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
+      throw new Error(
+        'Too many re-renders. ' +
+          'oops limits the number of renders to prevent an infinite loop.'
+      )
     }
-  }
-  createVnodeByRender(isSync) {
-    this.numberOfReRenders++;
-    this.inspectReRender();
     try {
-      if (!isSync) {
-        this.patch();
-      }
       Target.component = this;
       this.props = mergeProps(this.vnode, true);
       this.updateVnode = formatPatchRootVnode(this.render(this.props));
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +
-          'This usually means a return statement is missing.' +
-          'Or, to render nothing, return null.'
+            'This usually means a return statement is missing.' +
+              'Or, to render nothing, return null.'
         )
       }
-      if (isSync) {
-        this.syncPatch();
+      if (this.updateVnode !== null) {
+        this.rootVnode = patch(this.rootVnode, this.updateVnode);
+        this.vnode.elm = this.rootVnode.elm;
+        this.updateVnode = undefined;
       }
     } finally {
       this.cursor = 0;
       this.numberOfReRenders = 0;
       Target.component = undefined;
-    }
-  }
-  syncPatch() {
-    if (this.updateVnode !== null) {
-      this.rootVnode = patch(this.rootVnode, this.updateVnode);
-      this.vnode.elm = this.rootVnode.elm;
-      this.updateVnode = undefined;
       updateEffect(this.effects);
+      updateLayoutEffect(this.layoutEffects);
     }
   }
-  patch() {
-    if (!this.updateVnode) {
-      enqueueTask(() => {
-        if (this.updateVnode !== null) {
-          this.rootVnode = patch(this.rootVnode, this.updateVnode);
-          this.vnode.elm = this.rootVnode.elm;
-          this.updateVnode = undefined;
-          updateEffect(this.effects);
-        }
-      });
-    }
-  }
-  forceUpdate(isSync) {
-    this.createVnodeByRender(isSync);
+  forceUpdate() {
+    this.createVnodeByRender();
   }
   init() {
-    this.createVnodeByRender(true);
+    this.createVnodeByRender();
   }
   update(oldVnode, vnode) {
     this.vnode = vnode;
-    this.createVnodeByRender(true);
+    this.createVnodeByRender();
   }
   remove(vnode, remove) {
     remove();
@@ -1322,9 +1304,7 @@ class Component {
     this.destroyed = true;
     for (const key in this.effects) {
       const { destroy } = this.effects[key];
-      if (typeof destroy === 'function') {
-        destroy();
-      }
+      if (typeof destroy === 'function') destroy();
     }
     removedInDeps(this);
   }
@@ -1359,7 +1339,7 @@ class ProviderComponent {
         const consumer = consumerQueue[i].consumer;
         if (this.updateDuplicate.indexOf(consumer) === -1) {
           if (!consumer.destroyed) {
-            consumer.forceUpdate(true);
+            consumer.forceUpdate();
           }
         }
       }
@@ -1391,9 +1371,9 @@ class ConsumerComponent {
     if (typeof render !== 'function') {
       throw new Error(
         'A context consumer was rendered with multiple children, or a child ' +
-        "that isn't a function. A context consumer expects a single child " +
-        'that is a function. If you did pass a function, make sure there ' +
-        'is no trailing or leading whitespace around it.'
+          "that isn't a function. A context consumer expects a single child " +
+            'that is a function. If you did pass a function, make sure there ' +
+              'is no trailing or leading whitespace around it.'
       )
     }
     return render
@@ -1637,7 +1617,7 @@ function h(tag, props, ...children) {
   if (typeof tag === 'function' && props && 'ref' in props) {
     throw new Error(
       'Function components cannot be given refs. ' +
-      'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
+        'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
     )
   }
   children = flat(children, v => (
@@ -1815,7 +1795,7 @@ function memo(tag, compare) {
   if (!isValidElementType(tag)) {
     throw new Error(
       'memo: The first argument must be a component. Instead received: ' +
-        (tag === null ? 'null' : typeof tag),
+        (tag === null ? 'null' : typeof tag)
     )
   }
   return {
@@ -1850,11 +1830,13 @@ function resolveTargetComponent() {
   }
   return Target.component
 }
-function useEffect(effect, deps) {
+function useEffect(create, deps) {
   const component = resolveTargetComponent();
-  return component.useEffect(effect, deps)
+  return component.pushEffect('effects', create, deps)
 }
 function useLayoutEffect(create, deps) {
+  const component = resolveTargetComponent();
+  return component.pushEffect('layoutEffects', create, deps)
 }
 function useMemo(create, deps) {
   const component = resolveTargetComponent();

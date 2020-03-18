@@ -7,7 +7,6 @@ import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import {
   equalDeps,
   mergeProps,
-  enqueueTask,
   updateEffect,
   updateLayoutEffect,
 } from '../helpers/component.js'
@@ -62,9 +61,7 @@ class Component {
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
     this.state[key] = newValue
-    // 以异步批量更新的方式可能会导致与 effect 执行有冲突
-    // 但是批量更新是很重要的一步优化措施，所以改为同步
-    this.forceUpdate(false)
+    this.forceUpdate()
   }
 
   useMemo(create, deps) {
@@ -85,76 +82,53 @@ class Component {
     return current
   }
 
-  inspectReRender() {
-    if (this.numberOfReRenders > RE_RENDER_LIMIT) {
-      throw new Error('Too many re-renders. oops limits the number of renders to prevent an infinite loop.')
+  createVnodeByRender() {
+    if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
+      throw new Error(
+        'Too many re-renders. ' +
+          'oops limits the number of renders to prevent an infinite loop.'
+      )
     }
-  }
-
-  createVnodeByRender(isSync) {
-    this.numberOfReRenders++
-    this.inspectReRender()
     try {
-      if (!isSync) {
-        this.patch()
-      }
       Target.component = this
       this.props = mergeProps(this.vnode, true)
       this.updateVnode = formatPatchRootVnode(this.render(this.props))
+
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +
-          'This usually means a return statement is missing.' +
-          'Or, to render nothing, return null.'
+            'This usually means a return statement is missing.' +
+              'Or, to render nothing, return null.'
         )
       }
-      if (isSync) {
-        this.syncPatch()
+
+      if (this.updateVnode !== null) {
+        this.rootVnode = patch(this.rootVnode, this.updateVnode)
+        this.vnode.elm = this.rootVnode.elm
+        this.updateVnode = undefined
       }
     } finally {
       this.cursor = 0
       this.numberOfReRenders = 0
       Target.component = undefined
-    }
-  }
-
-  syncPatch() {
-    // 如果为 null，则 vnode.elm 为 undefined，需要在 patch 的时候处理
-    if (this.updateVnode !== null) {
-      this.rootVnode = patch(this.rootVnode, this.updateVnode)
-      this.vnode.elm = this.rootVnode.elm
-      this.updateVnode = undefined
       updateEffect(this.effects)
+      updateLayoutEffect(this.layoutEffects)
     }
   }
 
-  patch() {
-    if (!this.updateVnode) {
-      // 异步的 patch 减少对 dom 的操作
-      enqueueTask(() => {
-        if (this.updateVnode !== null) {
-          this.rootVnode = patch(this.rootVnode, this.updateVnode)
-          this.vnode.elm = this.rootVnode.elm
-          this.updateVnode = undefined
-          updateEffect(this.effects)
-        }
-      })
-    }
-  }
-
-  forceUpdate(isSync) {
-    this.createVnodeByRender(isSync)
+  forceUpdate() {
+    this.createVnodeByRender()
   }
 
   // 生命周期方法
   init() {
-    this.createVnodeByRender(true)
+    this.createVnodeByRender()
   }
 
   // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
     this.vnode = vnode
-    this.createVnodeByRender(true)
+    this.createVnodeByRender()
   }
 
   remove(vnode, remove) {
@@ -165,9 +139,7 @@ class Component {
     this.destroyed = true
     for (const key in this.effects) {
       const { destroy } = this.effects[key]
-      if (typeof destroy === 'function') {
-        destroy()
-      }
+      if (typeof destroy === 'function') destroy()
     }
     removedInDeps(this)
   }
