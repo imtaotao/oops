@@ -1598,9 +1598,9 @@ function () {
     key: "useRef",
     value: function useRef(initialValue) {
       var key = this.cursor++;
-      var current = this.refs[key] || (this.refs[key] = {
+      var current = this.refs[key] || (this.refs[key] = Object.seal({
         current: initialValue
-      });
+      }));
       return current;
     }
   }, {
@@ -2268,6 +2268,23 @@ function render(vnode, app, callback) {
   }
 }
 
+function createRef() {
+  return Object.seal({
+    current: null
+  });
+}
+function forwardRef() {}
+
+function forEachChildren(children, fn, context) {}
+
+function mapChildren(children, fn, context) {}
+
+function countChildren(children) {}
+
+function toArray(children) {}
+
+function onlyChild(children) {}
+
 function resolveTargetComponent() {
   if (Target.component === undefined) {
     throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.');
@@ -2322,11 +2339,22 @@ function useRef(initialValue) {
 }
 function useImperativeHandle(ref, create, deps) {}
 
+var Children = {
+  map: mapChildren,
+  only: onlyChild,
+  count: countChildren,
+  forEach: forEachChildren,
+  toArray: toArray
+};
 var oops = {
   h: h,
   jsx: jsx,
   memo: memo,
   render: render,
+  Children: Children,
+  createRef: createRef,
+  forwardRef: forwardRef,
+  createContext: createContext,
   Fragment: FRAGMENTS_TYPE,
   useRef: useRef,
   useMemo: useMemo,
@@ -2335,14 +2363,16 @@ var oops = {
   useContext: useContext,
   useReducer: useReducer,
   useCallback: useCallback,
-  createContext: createContext,
   useLayoutEffect: useLayoutEffect,
   useImperativeHandle: useImperativeHandle
 };
 
+exports.Children = Children;
 exports.Fragment = FRAGMENTS_TYPE;
 exports.createContext = createContext;
+exports.createRef = createRef;
 exports.default = oops;
+exports.forwardRef = forwardRef;
 exports.h = h;
 exports.jsx = jsx;
 exports.memo = memo;

@@ -3,7 +3,15 @@ import { jsx } from './jsx/index.js'
 import { memo} from './api/memo.js'
 import { render } from './api/render.js'
 import { createContext } from './api/context.js'
+import { createRef, forwardRef } from './api/ref.js'
 import { FRAGMENTS_TYPE as Fragment } from './api/symbols.js'
+import {
+  map,
+  only,
+  count,
+  forEach,
+  toArray,
+} from './api/children.js'
 import {
   useRef,
   useMemo,
@@ -16,11 +24,23 @@ import {
   useImperativeHandle,
 } from './hooks.js'
 
+const Children = {
+  map,
+  only,
+  count,
+  forEach,
+  toArray,
+}
+
 const oops = {
   h,
   jsx,
   memo,
   render,
+  Children,
+  createRef,
+  forwardRef,
+  createContext,
   Fragment,
   useRef,
   useMemo,
@@ -29,7 +49,6 @@ const oops = {
   useContext,
   useReducer,
   useCallback,
-  createContext,
   useLayoutEffect,
   useImperativeHandle,
 }
@@ -39,6 +58,10 @@ export {
   jsx,
   memo,
   render,
+  Children,
+  createRef,
+  forwardRef,
+  createContext,
   Fragment,
   useRef,
   useMemo,
@@ -47,7 +70,6 @@ export {
   useContext,
   useReducer,
   useCallback,
-  createContext,
   useLayoutEffect,
   useImperativeHandle,
   oops as default,

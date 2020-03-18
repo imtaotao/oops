@@ -78,7 +78,7 @@ class Component {
 
   useRef(initialValue) {
     const key = this.cursor++
-    const current = this.refs[key] || (this.refs[key] = { current: initialValue })
+    const current = this.refs[key] || (this.refs[key] = Object.seal({ current: initialValue }))
     return current
   }
 

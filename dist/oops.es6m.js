@@ -1253,7 +1253,7 @@ class Component {
   }
   useRef(initialValue) {
     const key = this.cursor++;
-    const current = this.refs[key] || (this.refs[key] = { current: initialValue });
+    const current = this.refs[key] || (this.refs[key] = Object.seal({ current: initialValue }));
     return current
   }
   createVnodeByRender() {
@@ -1824,6 +1824,23 @@ function render(vnode, app, callback) {
   }
 }
 
+function createRef() {
+  return Object.seal({ current: null })
+}
+function forwardRef() {
+}
+
+function forEachChildren(children, fn, context) {
+}
+function mapChildren(children, fn, context) {
+}
+function countChildren(children) {
+}
+function toArray(children) {
+}
+function onlyChild(children) {
+}
+
 function resolveTargetComponent() {
   if (Target.component === undefined) {
     throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.')
@@ -1873,11 +1890,22 @@ function useRef(initialValue) {
 function useImperativeHandle(ref, create, deps) {
 }
 
+const Children = {
+  map: mapChildren,
+  only: onlyChild,
+  count: countChildren,
+  forEach: forEachChildren,
+  toArray,
+};
 const oops = {
   h,
   jsx,
   memo,
   render,
+  Children,
+  createRef,
+  forwardRef,
+  createContext,
   Fragment: FRAGMENTS_TYPE,
   useRef,
   useMemo,
@@ -1886,10 +1914,9 @@ const oops = {
   useContext,
   useReducer,
   useCallback,
-  createContext,
   useLayoutEffect,
   useImperativeHandle,
 };
 
 export default oops;
-export { FRAGMENTS_TYPE as Fragment, createContext, h, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, createRef, forwardRef, h, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

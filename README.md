@@ -30,9 +30,18 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `memo`
 + [x] `render`
 + [x] `createContext`
++ [x] `createRef`
 + [ ] `forwardRef`
++ [ ] `lazy`
++ `Children`
+  + [ ] `map`
+  + [ ] `forEach`
+  + [ ] `count`
+  + [ ] `toArray`
+  + [ ] `only`
 
 ## Built-in components
 + [x] `<Fragment/>`
++ [ ] `<Suspense/>`
 + [x] `<Context.Provider/>`
 + [x] `<Context.Consumer/>`
