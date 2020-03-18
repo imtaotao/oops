@@ -37,7 +37,6 @@ export function createFragmentVnode(children) {
 }
 
 export function h(tag, props, ...children) {
-  if (tag === '') tag = FRAGMENTS_TYPE
   // 组件不支持 ref
   if (typeof tag === 'function' && props && 'ref' in props) {
     throw new Error(

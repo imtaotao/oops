@@ -1618,7 +1618,6 @@ function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children)
 }
 function h(tag, props, ...children) {
-  if (tag === '') tag = FRAGMENTS_TYPE;
   if (typeof tag === 'function' && props && 'ref' in props) {
     throw new Error(
       'Function components cannot be given refs. ' +
@@ -1770,7 +1769,7 @@ function evaluate(h, built, fields, args) {
       args.push(
         h.apply(
           null,
-          evaluate(h, value, fields, ['', null]),
+          evaluate(h, value, fields, [FRAGMENTS_TYPE, null]),
         ),
       );
     } else if (type === CHILD_APPEND) {

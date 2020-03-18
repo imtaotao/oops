@@ -1,3 +1,5 @@
+import { FRAGMENTS_TYPE } from '../api/symbols.js'
+
 const MODE_SLASH = 0
 const MODE_TEXT = 1
 const MODE_WHITESPACE = 2
@@ -175,8 +177,8 @@ export function evaluate(h, built, fields, args) {
       args.push(
         h.apply(
           null,
-          // tag 默认为 '', props 默认为 null
-          evaluate(h, value, fields, ['', null]),
+          // tag 默认为 FRAGMENTS_TYPE, props 默认为 null
+          evaluate(h, value, fields, [FRAGMENTS_TYPE, null]),
         ),
       )
     } else if (type === CHILD_APPEND) {

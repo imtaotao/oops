@@ -294,14 +294,14 @@
 
     function App() {
       return jsx`
-        <${Fragment}>
+        <>
           <${List} />
           <${InspectableElements} />
         </>
       `
     }
 
-    render(App, app, elm => console.log(elm))
+    render(jsx`<${App}/>`, app, elm => console.log(elm))
   </script>
 </body>
 </html>

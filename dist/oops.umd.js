@@ -2033,8 +2033,6 @@
       children[_key - 2] = arguments[_key];
     }
 
-    if (tag === '') tag = FRAGMENTS_TYPE;
-
     if (typeof tag === 'function' && props && 'ref' in props) {
       throw new Error('Function components cannot be given refs. ' + 'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?');
     }
@@ -2201,7 +2199,7 @@
       } else if (type === PROP_APPEND) {
         args[1][name] += value + '';
       } else if (type === CHILD_RECURSE) {
-        args.push(h.apply(null, evaluate(h, value, fields, ['', null])));
+        args.push(h.apply(null, evaluate(h, value, fields, [FRAGMENTS_TYPE, null])));
       } else if (type === CHILD_APPEND) {
         args.push(value);
       }
