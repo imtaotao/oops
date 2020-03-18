@@ -8,17 +8,18 @@ function resolveTargetComponent() {
   return Target.component
 }
 
-// effect: () => (() => void) | void
+// create: () => (() => void) | void
 // deps: Array<any> | void | null
-export function useEffect(effect, deps) {
+export function useEffect(create, deps) {
   const component = resolveTargetComponent()
-  return component.useEffect(effect, deps)
+  return component.pushEffect('effects', create, deps)
 }
 
 // create: () => (() => void) | void,
 // deps: Array<any> | void | null,
 export function useLayoutEffect(create, deps) {
-
+  const component = resolveTargetComponent()
+  return component.pushEffect('layoutEffects', create, deps)
 }
 
 // create: () => T,

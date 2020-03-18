@@ -58,6 +58,10 @@ export function updateEffect(effects) {
   }
 }
 
+export function updateLayoutEffect(effects) {
+  
+}
+
 // 通用的 component vnode hooks
 export function commonHooksConfig(config) {
   const basicHooks = {

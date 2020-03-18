@@ -9,6 +9,7 @@ import {
   mergeProps,
   enqueueTask,
   updateEffect,
+  updateLayoutEffect,
 } from '../helpers/component.js'
 
 const RE_RENDER_LIMIT = 25
@@ -32,6 +33,7 @@ class Component {
     this.state = Object.create(null)
     this.memos = Object.create(null)
     this.effects = Object.create(null)
+    this.layoutEffects = Object.create(null)
   }
 
   // 添加不重复的 state
@@ -44,17 +46,17 @@ class Component {
     return [partialState, key]
   }
 
-  useEffect(create, deps) {
+  pushEffect(flag, create, deps) {
     let destroy = undefined
     let prevDeps = undefined
     const key = this.cursor++
-    const prevEffect = this.effects[key]
+    const prevEffect = this[flag][key]
 
     if (prevEffect) {
       destroy = prevEffect.destroy
       prevDeps = prevEffect.deps
     }
-    this.effects[key] = { deps, prevDeps, create, destroy }
+    this[flag][key] = { deps, prevDeps, create, destroy }
   }
 
   useReducer(payload, key, reducer) {
