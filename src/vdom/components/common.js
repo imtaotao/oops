@@ -60,8 +60,11 @@ class Component {
 
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
-    this.state[key] = newValue
-    this.forceUpdate()
+    // react 此处的处理为新旧俩值全等则不更新，后续此处如何处理，待定...
+    if (this.state[key] !== newValue) {
+      this.state[key] = newValue
+      this.forceUpdate()
+    }
   }
 
   useMemo(create, deps) {

@@ -1575,8 +1575,11 @@ function () {
     key: "useReducer",
     value: function useReducer(payload, key, reducer) {
       var newValue = reducer(this.state[key], payload);
-      this.state[key] = newValue;
-      this.forceUpdate();
+
+      if (this.state[key] !== newValue) {
+        this.state[key] = newValue;
+        this.forceUpdate();
+      }
     }
   }, {
     key: "useMemo",

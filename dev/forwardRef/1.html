@@ -16,13 +16,17 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, createRef, forwardRef } = React;
-      // const { render, Fragment, useState, createRef, forwardRef } = oops
-      // ReactDOM.render = oops.render
-      // React.createElement = oops.h
+      // const { Fragment, useState, createRef, forwardRef } = React;
+      const { render, Fragment, useState, createRef, forwardRef } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
 
       function App() {
-        return 1
+        const [count, setCount] = useState(0)
+        return <div onClick={e => {
+          console.log(e);
+          setCount(count + 1)
+        }}>{count + Math.random()}</div>
       }
 
       ReactDOM.render(<App />, root)

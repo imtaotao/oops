@@ -26,6 +26,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `useLayoutEffect`
 
 ## API
++ [x] `h`
 + [x] `jsx`
 + [x] `memo`
 + [x] `render`

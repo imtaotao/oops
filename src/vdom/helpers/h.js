@@ -1,7 +1,7 @@
 import { createVnode } from '../h.js'
 import { isDef, isUndef } from '../../shared.js'
 import { memoVNodeHooks } from '../components/memo.js'
-import { componentVNodeHooks } from '../components/ordinary.js'
+import { componentVNodeHooks } from '../components/common.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
 import {
