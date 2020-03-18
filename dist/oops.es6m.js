@@ -7,6 +7,7 @@ const MEMO_TYPE = Symbol.for('oops.memo');
 const CONTEXT_TYPE = Symbol.for('oops.context');
 const PROVIDER_TYPE = Symbol.for('oops.provider');
 const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
+const FORWARD_REF_TYPE = Symbol.for('oops.forwardRef');
 
 const isArray = Array.isArray;
 function isDef(v) {
@@ -1271,7 +1272,7 @@ class Component {
         throw new Error(
           'Nothing was returned from render.' +
             'This usually means a return statement is missing.' +
-              'Or, to render nothing, return null.'
+            'Or, to render nothing, return null.'
         )
       }
       if (this.updateVnode !== null) {
@@ -1372,8 +1373,8 @@ class ConsumerComponent {
       throw new Error(
         'A context consumer was rendered with multiple children, or a child ' +
           "that isn't a function. A context consumer expects a single child " +
-            'that is a function. If you did pass a function, make sure there ' +
-              'is no trailing or leading whitespace around it.'
+          'that is a function. If you did pass a function, make sure there ' +
+          'is no trailing or leading whitespace around it.'
       )
     }
     return render
@@ -1827,7 +1828,35 @@ function render(vnode, app, callback) {
 function createRef() {
   return Object.seal({ current: null })
 }
-function forwardRef() {
+function forwardRef(render) {
+  if (__DEV__) {
+    if (render != null && render.$$typeof === MEMO_TYPE) {
+      throw new Error(
+        'forwardRef requires a render function but received a `memo` ' +
+          'component. Instead of forwardRef(memo(...)), use ' +
+          'memo(forwardRef(...)).'
+      )
+    } else if (typeof render !== 'function') {
+      throw new Error(
+        'forwardRef requires a render function but was given ' +
+          (render === null ? 'null' : typeof render)
+      )
+    } else {
+      if (render.length === 0 || render.length === 2) {
+        throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
+          (
+            render.length === 1
+              ? 'Did you forget to use the ref parameter?'
+              : 'Any additional parameter will be undefined.'
+          )
+        )
+      }
+    }
+  }
+  return {
+    render,
+    $$typeof: FORWARD_REF_TYPE,
+  }
 }
 
 function forEachChildren(children, fn, context) {

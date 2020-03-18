@@ -98,7 +98,7 @@ class Component {
         throw new Error(
           'Nothing was returned from render.' +
             'This usually means a return statement is missing.' +
-              'Or, to render nothing, return null.'
+            'Or, to render nothing, return null.'
         )
       }
 
