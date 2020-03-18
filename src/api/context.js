@@ -1,19 +1,6 @@
-
-// defaultValue: T,
-// calculateChangedBits: ?(a: T, b: T) => number,
 import { CONTEXT_TYPE, PROVIDER_TYPE } from './symbols.js'
 
 export const MAX_SIGNED_31_BIT_INT = 1073741823
-
-// let isDisallowedContextRead = false
-
-// export function enterDisallowedContextRead() {
-//   isDisallowedContextRead = true
-// }
-
-// export function exitDisallowedContextRead() {
-//   isDisallowedContextRead = false
-// }
 
 class ContextStack {
   constructor(context, defaultValue) {
@@ -72,14 +59,6 @@ export function calculateChangedBits(context, newValue, oldValue) {
 
 // 读取 context，这个方法给 Consumer 和 useContext 使用
 export function readContext(consumer, context, observedBits) {
-  // if (isDisallowedContextRead) {
-  //   console.error(
-  //     'Context can only be read while oops is rendering. ' +
-  //       'You can read it directly in the function body, but not ' +
-  //       'inside Hooks like useReducer() or useMemo().',
-  //   )
-  // }
-  
   const currentProvider = context._contextStack.getCurrentProvider()
   const queue = currentProvider.consumerQueue
   const item = {
@@ -111,6 +90,8 @@ export function removedInDeps(consumer) {
   }
 }
 
+// defaultValue: T,
+// calculateChangedBits: ?(a: T, b: T) => number,
 export function createContext(defaultValue, calculateChangedBits) {
   if (calculateChangedBits === undefined) {
     calculateChangedBits = null
