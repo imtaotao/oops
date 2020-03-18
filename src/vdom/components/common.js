@@ -85,7 +85,7 @@ class Component {
     return current
   }
 
-  createVnodeByRender() {
+  forceUpdate() {
     if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
       throw new Error(
         'Too many re-renders. ' +
@@ -119,19 +119,15 @@ class Component {
     }
   }
 
-  forceUpdate() {
-    this.createVnodeByRender()
-  }
-
   // 生命周期方法
   init() {
-    this.createVnodeByRender()
+    this.forceUpdate()
   }
 
   // 更新当前组件节点，同步更新
   update(oldVnode, vnode) {
     this.vnode = vnode
-    this.createVnodeByRender()
+    this.forceUpdate()
   }
 
   remove(vnode, remove) {
