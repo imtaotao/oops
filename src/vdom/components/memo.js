@@ -3,8 +3,16 @@ import { cloneVnode } from '../h.js'
 import { isArray } from '../../shared.js'
 import { mergeProps } from '../helpers/component.js'
 import { commonHooksConfig } from '../helpers/component.js'
-import { isMemo, isCommonVnode, isFilterVnode } from '../helpers/patch/is.js'
-import { separateProps, installHooks, inspectChildren } from '../helpers/h.js'
+import {
+  isMemo,
+  isCommonVnode,
+  isFilterVnode,
+} from '../helpers/patch/is.js'
+import {
+  installHooks,
+  separateProps,
+  inspectChildren,
+} from '../helpers/h.js'
 
 function defaultCompare(oldProps, newProps) {
   const oks = Object.keys(oldProps)
