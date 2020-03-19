@@ -9,15 +9,13 @@ export function mergeProps({data, children}, needChildren) {
         ? vnode
         : vnode.text
     ))
-    // 如果只有一个子元素时，不用数组，保持与 react 行为一致
     if (props.children.length === 1) {
       props.children = props.children[0]
     }
   }
-
   for (const key in data) {
     if (key !== 'hook') {
-      if (!(key === 'children' && 'children' in props)) {
+      if (key !== 'children' || !('children' in props)) {
         props[key] = data[key]
       }
     }
