@@ -35,6 +35,7 @@ function isValidElementType(type) {
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
+        type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE))
   )
 }
@@ -240,8 +241,15 @@ function updateAttrs(oldVnode, vnode) {
       if (typeof ref === 'function') {
         ref(elm);
       } else if (typeof ref === 'object') {
-        if (ref && 'current' in ref) {
-          ref.current = elm;
+        if (ref) {
+          if (!ref.hasOwnProperty('current')) {
+            throw new Error(
+              'Unexpected ref object provided for button. ' +
+                'Use either a ref-setter function or createRef().'
+            )
+          } else {
+            ref.current = elm;
+          }
         }
       }
     }
@@ -731,7 +739,7 @@ function createElm(vnode, insertedVnodeQueue) {
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {
         const chVNode = children[i];
-        if (chVNode != null) {
+        if (!isFilterVnode(chVNode)) {
           appendChild$1(elm, createElm(chVNode, insertedVnodeQueue));
         }
       }
@@ -918,13 +926,25 @@ function patch(oldVnode, vnode) {
 }
 
 function mergeProps({data, children}, needChildren) {
-  const res = needChildren ? { children } : {};
-  for (const key in data) {
-    if (key !== 'hook') {
-      res[key] = data[key];
+  const props =  {};
+  if (needChildren && children.length > 0) {
+    props.children = children.map(vnode => (
+      isFilterVnode(vnode) || isDef(vnode.tag)
+        ? vnode
+        : vnode.text
+    ));
+    if (props.children.length === 1) {
+      props.children = props.children[0];
     }
   }
-  return res
+  for (const key in data) {
+    if (key !== 'hook') {
+      if (!(key === 'children' && 'children' in props)) {
+        props[key] = data[key];
+      }
+    }
+  }
+  return props
 }
 function nextFrame$1(callback) {
   setTimeout(() => requestAnimationFrame(callback));
@@ -1578,9 +1598,6 @@ function formatVnode(tag, data, children) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitiveVnode(children[i])) {
         children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
-      } else if (isFilterVnode(children[i])) {
-        children.splice(i, 1);
-        i--;
       }
     }
   }
@@ -1832,28 +1849,26 @@ function createRef() {
   return Object.seal({ current: null })
 }
 function forwardRef(render) {
-  if (__DEV__) {
-    if (render != null && render.$$typeof === MEMO_TYPE) {
-      throw new Error(
-        'forwardRef requires a render function but received a `memo` ' +
-          'component. Instead of forwardRef(memo(...)), use ' +
-          'memo(forwardRef(...)).'
-      )
-    } else if (typeof render !== 'function') {
-      throw new Error(
-        'forwardRef requires a render function but was given ' +
-          (render === null ? 'null' : typeof render)
-      )
-    } else {
-      if (render.length === 0 || render.length === 2) {
-        throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
-          (
-            render.length === 1
-              ? 'Did you forget to use the ref parameter?'
-              : 'Any additional parameter will be undefined.'
-          )
+  if (render != null && render.$$typeof === MEMO_TYPE) {
+    throw new Error(
+      'forwardRef requires a render function but received a `memo` ' +
+        'component. Instead of forwardRef(memo(...)), use ' +
+        'memo(forwardRef(...)).'
+    )
+  } else if (typeof render !== 'function') {
+    throw new Error(
+      'forwardRef requires a render function but was given ' +
+        (render === null ? 'null' : typeof render)
+    )
+  } else {
+    if (render.length === 0 || render.length === 2) {
+      throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
+        (
+          render.length === 1
+            ? 'Did you forget to use the ref parameter?'
+            : 'Any additional parameter will be undefined.'
         )
-      }
+      )
     }
   }
   return {

@@ -3,6 +3,8 @@ const colonChar = 58
 const xlinkNS = 'http://www.w3.org/1999/xlink'
 const xmlNS = 'http://www.w3.org/XML/1998/namespace'
 
+// Unexpected ref object provided for button. Use either a ref-setter function or React.createRef().
+
 function updateAttrs(oldVnode, vnode) {
   const elm = vnode.elm
   if (elm) {
@@ -15,8 +17,15 @@ function updateAttrs(oldVnode, vnode) {
       if (typeof ref === 'function') {
         ref(elm)
       } else if (typeof ref === 'object') {
-        if (ref && 'current' in ref) {
-          ref.current = elm
+        if (ref) {
+          if (!ref.hasOwnProperty('current')) {
+            throw new Error(
+              'Unexpected ref object provided for button. ' +
+                'Use either a ref-setter function or createRef().'
+            )
+          } else {
+            ref.current = elm
+          }
         }
       }
     }

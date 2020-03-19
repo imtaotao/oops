@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fre"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -21,15 +20,22 @@
       ReactDOM.render = oops.render
       React.createElement = oops.h
 
+      function FancyButton(props, ref) {
+        return (
+          <button className="FancyButton">
+            {props.children}
+          </button>
+        )
+      }
+      FancyButton = forwardRef(FancyButton)
+
+      const ref = createRef();
       function App() {
-        const [count, setCount] = useState(0)
-        return <div onClick={e => {
-          console.log(e);
-          setCount(count + 1)
-        }}>{count + Math.random()}</div>
+        return <FancyButton></FancyButton>;
       }
 
       ReactDOM.render(<App />, root)
+      console.log(ref)
     </script>
   </body>
 </html>

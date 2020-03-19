@@ -7,7 +7,7 @@ import {
   emptyNode,
   isFragment,
   isProvider,
-  isConsumer,
+  isFilterVnode,
   isPrimitiveVnode,
 } from './is.js'
 
@@ -170,7 +170,8 @@ export function createElm(vnode, insertedVnodeQueue) {
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {
         const chVNode = children[i]
-        if (chVNode != null) {
+        // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
+        if (!isFilterVnode(chVNode)) {
           appendChild(elm, createElm(chVNode, insertedVnodeQueue))
         }
       }

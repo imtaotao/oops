@@ -1,13 +1,28 @@
+import { isFilterVnode } from './patch/is.js'
 import { isDef, isArray } from '../../shared.js'
 
 export function mergeProps({data, children}, needChildren) {
-  const res = needChildren ? { children } : {}
-  for (const key in data) {
-    if (key !== 'hook') {
-      res[key] = data[key]
+  const props =  {} 
+  if (needChildren && children.length > 0) {
+    props.children = children.map(vnode => (
+      isFilterVnode(vnode) || isDef(vnode.tag)
+        ? vnode
+        : vnode.text
+    ))
+    // 如果只有一个子元素时，不用数组，保持与 react 行为一致
+    if (props.children.length === 1) {
+      props.children = props.children[0]
     }
   }
-  return res
+
+  for (const key in data) {
+    if (key !== 'hook') {
+      if (!(key === 'children' && 'children' in props)) {
+        props[key] = data[key]
+      }
+    }
+  }
+  return props
 }
 
 export function nextFrame(callback) {

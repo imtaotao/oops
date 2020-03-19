@@ -9,7 +9,6 @@ import {
   isConsumer,
   isProvider,
   isComponent,
-  isFilterVnode,
   isPrimitiveVnode,
 } from './patch/is.js'
 
@@ -188,10 +187,6 @@ export function formatVnode(tag, data, children) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitiveVnode(children[i])) {
         children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
-      } else if (isFilterVnode(children[i])) {
-        // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
-        children.splice(i, 1)
-        i--
       }
     }
   }
