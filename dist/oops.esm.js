@@ -132,6 +132,38 @@ function isValidElementType(type) {
   return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 
+var emptyNode = createVnode('', {}, [], undefined, undefined);
+function isVnode(vnode) {
+  return vnode.tag !== undefined;
+}
+function isCommonVnode(tag) {
+  return typeof tag === 'string' || tag === FRAGMENTS_TYPE;
+}
+function isComponent(vnode) {
+  return typeof vnode.tag === 'function';
+}
+function isConsumer(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
+}
+function isProvider(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
+}
+function isMemo(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
+}
+function isFragment(vnode) {
+  return vnode.tag === FRAGMENTS_TYPE;
+}
+function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag;
+}
+function isFilterVnode(vnode) {
+  return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
+}
+function isPrimitiveVnode(vnode) {
+  return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
+}
+
 function updateClass(oldVnode, vnode) {
   var elm = vnode.elm;
 
@@ -561,35 +593,6 @@ function setTextContent(node, text) {
   node.textContent = text;
 }
 
-var emptyNode = createVnode('', {}, [], undefined, undefined);
-function isVnode(vnode) {
-  return vnode.tag !== undefined;
-}
-function isComponent(vnode) {
-  return typeof vnode.tag === 'function';
-}
-function isConsumer(vnode) {
-  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
-}
-function isProvider(vnode) {
-  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
-}
-function isMemo(vnode) {
-  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
-}
-function isFragment(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE;
-}
-function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag;
-}
-function isFilterVnode(vnode) {
-  return vnode === null || typeof vnode === 'boolean' || typeof vnode === 'undefined';
-}
-function isPrimitiveVnode(vnode) {
-  return typeof vnode === 'string' || typeof vnode === 'number' || _typeof(vnode) === 'symbol';
-}
-
 var classList = ['add', 'remove'];
 var style = ['setProperty', 'removeProperty'];
 var namespaces = ['setAttribute', 'setAttributeNS', 'removeAttribute', 'addEventListener', 'removeEventListener'];
@@ -926,7 +929,7 @@ function createElm(vnode, insertedVnodeQueue) {
       for (var i = 0; i < children.length; i++) {
         var chVNode = children[i];
 
-        if (!isFilterVnode(chVNode)) {
+        if (chVNode != null) {
           appendChild$1(elm, createElm(chVNode, insertedVnodeQueue));
         }
       }
@@ -1168,7 +1171,7 @@ function mergeProps(_ref, needChildren) {
 
   for (var key in data) {
     if (key !== 'hook') {
-      if (!(key === 'children' && 'children' in props)) {
+      if (key !== 'children' || !('children' in props)) {
         props[key] = data[key];
       }
     }
@@ -1313,6 +1316,32 @@ function defaultCompare(oldProps, newProps) {
   return true;
 }
 
+function dealwithChildren(_ref) {
+  var tag = _ref.tag,
+      data = _ref.data,
+      children = _ref.children;
+  children = !isArray(children) ? children : children.filter(function (child) {
+    return !isFilterVnode(child);
+  });
+
+  if (!children || children.length === 0) {
+    if (data.attrs) {
+      if (data.attrs.hasOwnProperty('children')) {
+        children = data.attrs.children;
+
+        if (!isArray(children)) {
+          children = [children];
+        }
+
+        inspectChildren(tag, children);
+      }
+    }
+  }
+
+  delete data.attrs.children;
+  return children;
+}
+
 var MemoComponent =
 /*#__PURE__*/
 function () {
@@ -1326,16 +1355,17 @@ function () {
   }
 
   _createClass(MemoComponent, [{
-    key: "createVnodeAndPatch",
-    value: function createVnodeAndPatch() {
+    key: "replaceAndRender",
+    value: function replaceAndRender() {
       var tag = this.memoInfo.tag;
       var updateVnode = cloneVnode(this.vnode);
       updateVnode.tag = tag;
       updateVnode.component = undefined;
       updateVnode.data.hook = undefined;
 
-      if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+      if (isCommonVnode(tag)) {
         updateVnode.data = separateProps(updateVnode.data);
+        updateVnode.children = dealwithChildren(updateVnode);
       } else {
         updateVnode.data = installHooks(tag, updateVnode.data);
       }
@@ -1354,7 +1384,7 @@ function () {
         compare: compare
       };
       this.prevProps = mergeProps(this.vnode, false);
-      this.createVnodeAndPatch();
+      this.replaceAndRender();
     }
   }, {
     key: "update",
@@ -1379,7 +1409,7 @@ function () {
           compare: compare
         };
         this.vnode = vnode;
-        this.createVnodeAndPatch();
+        this.replaceAndRender();
         this.prevProps = newProps;
       }
     }
@@ -2001,14 +2031,22 @@ function installHooks(tag, data) {
 
   return data;
 }
-function formatVnode(tag, data, children) {
+function inspectChildren(tag, children) {
   if (children.length > 0) {
     for (var i = 0; i < children.length; i++) {
       if (isPrimitiveVnode(children[i])) {
         children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
+      } else if (isCommonVnode(tag)) {
+        if (isFilterVnode(children[i])) {
+          children.splice(i, 1);
+          i--;
+        }
       }
     }
   }
+}
+function formatVnode(tag, data, children) {
+  inspectChildren(tag, children);
 
   if (tag === 'svg') {
     addNS(data, children, tag);
@@ -2050,15 +2088,7 @@ function h(tag, props) {
   children = flat(children, function (v) {
     return v !== null && _typeof(v) === 'object' && typeof v[Symbol.iterator] === 'function';
   });
-  var data;
-
-  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-    data = separateProps(props);
-  } else {
-    data = installHooks(tag, props);
-  }
-
-  return formatVnode(tag, data, children);
+  return formatVnode(tag, isCommonVnode(tag) ? separateProps(props) : installHooks(tag, props), children);
 }
 
 var MODE_SLASH = 0;

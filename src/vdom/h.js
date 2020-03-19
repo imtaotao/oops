@@ -1,5 +1,6 @@
 import { flat } from '../shared.js'
 import { FRAGMENTS_TYPE } from '../api/symbols.js'
+import { isCommonVnode } from './helpers/patch/is.js'
 import {
   formatVnode,
   installHooks,
@@ -52,11 +53,11 @@ export function h(tag, props, ...children) {
     typeof v[Symbol.iterator] === 'function'
   ))
 
-  let data
-  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-    data = separateProps(props)
-  } else {
-    data = installHooks(tag, props)
-  }
-  return formatVnode(tag, data, children)
+  return formatVnode(
+    tag,
+    isCommonVnode(tag)
+      ? separateProps(props)
+      : installHooks(tag, props),
+    children,
+  )
 }

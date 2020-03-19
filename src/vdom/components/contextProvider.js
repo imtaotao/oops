@@ -47,5 +47,5 @@ export const providerVNodeHooks = commonHooksConfig({
       vnode.component = new ProviderComponent(vnode)
       tag._context._contextStack.push(data.value, vnode.component)
     }
-  }
+  },
 })

@@ -1,10 +1,10 @@
 import { patch } from '../patch.js'
 import { cloneVnode } from '../h.js'
-import { isMemo } from '../helpers/patch/is.js'
+import { isArray } from '../../shared.js'
 import { mergeProps } from '../helpers/component.js'
-import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { commonHooksConfig } from '../helpers/component.js'
-import { separateProps, installHooks } from '../helpers/h.js'
+import { isMemo, isCommonVnode, isFilterVnode } from '../helpers/patch/is.js'
+import { separateProps, installHooks, inspectChildren } from '../helpers/h.js'
 
 function defaultCompare(oldProps, newProps) {
   const oks = Object.keys(oldProps)
@@ -19,6 +19,31 @@ function defaultCompare(oldProps, newProps) {
   return true
 }
 
+// 对普通节点的 children 做处理
+function dealwithChildren({tag, data, children}) {
+  // 由于 memo 组件创建的时候，不会过滤，但是会对 primitive 的值进行包装
+  // 所以这里只需要过滤就好
+  children = !isArray(children)
+    ? children
+    : children.filter(child => !isFilterVnode(child))
+
+  if (!children || children.length === 0) {
+    if (data.attrs) {
+      if (data.attrs.hasOwnProperty('children')) {
+        children = data.attrs.children
+        if (!isArray(children)) {
+          children = [children]
+        }
+        // 用户自己传入的 children 没有过滤，也没有包装，所以需要走这里检查一遍
+        inspectChildren(tag, children)
+      }
+    }
+  }
+
+  delete data.attrs.children
+  return children
+}
+
 class MemoComponent {
   constructor(vnode) {
     this.vnode = vnode
@@ -27,15 +52,16 @@ class MemoComponent {
     this.rootVnode = undefined
   }
 
-  createVnodeAndPatch() {
+  replaceAndRender() {
     const { tag } = this.memoInfo
     const updateVnode = cloneVnode(this.vnode)
     updateVnode.tag = tag
     updateVnode.component = undefined
     updateVnode.data.hook = undefined
 
-    if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+    if (isCommonVnode(tag)) {
       updateVnode.data = separateProps(updateVnode.data)
+      updateVnode.children = dealwithChildren(updateVnode)
     } else {
       updateVnode.data = installHooks(tag, updateVnode.data)
     }
@@ -48,7 +74,7 @@ class MemoComponent {
     const { tag, compare } = this.vnode.tag
     this.memoInfo = { tag, compare }
     this.prevProps = mergeProps(this.vnode, false)
-    this.createVnodeAndPatch()
+    this.replaceAndRender()
   }
 
   update(oldVnode, vnode) {
@@ -67,7 +93,7 @@ class MemoComponent {
     if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare }
       this.vnode = vnode
-      this.createVnodeAndPatch()
+      this.replaceAndRender()
       this.prevProps = newProps
     }
   }

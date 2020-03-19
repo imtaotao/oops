@@ -151,5 +151,5 @@ export const componentVNodeHooks = commonHooksConfig({
       vnode.component = new Component(vnode)
       vnode.component.init()
     }
-  }
+  },
 })

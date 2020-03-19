@@ -40,6 +40,55 @@ function isValidElementType(type) {
   )
 }
 
+const emptyNode = createVnode('', {}, [], undefined, undefined);
+function isVnode(vnode) {
+  return vnode.tag !== undefined
+}
+function isCommonVnode(tag) {
+  return typeof tag === 'string' || tag === FRAGMENTS_TYPE
+}
+function isComponent(vnode) {
+  return typeof vnode.tag === 'function'
+}
+function isConsumer(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === CONTEXT_TYPE
+  )
+}
+function isProvider(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === PROVIDER_TYPE
+  )
+}
+function isMemo(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === MEMO_TYPE
+  )
+}
+function isFragment(vnode) {
+  return vnode.tag === FRAGMENTS_TYPE
+}
+function sameVnode(a, b) {
+  return a.key === b.key && a.tag === b.tag
+}
+function isFilterVnode(vnode) {
+  return (
+    vnode === null ||
+    typeof vnode === 'boolean' ||
+    typeof vnode === 'undefined'
+  )
+}
+function isPrimitiveVnode(vnode) {
+  return (
+    typeof vnode === 'string' ||
+    typeof vnode === 'number' ||
+    typeof vnode === 'symbol'
+  )
+}
+
 function updateClass(oldVnode, vnode) {
   const elm = vnode.elm;
   if (elm) {
@@ -414,52 +463,6 @@ function setTextContent(node, text) {
   node.textContent = text;
 }
 
-const emptyNode = createVnode('', {}, [], undefined, undefined);
-function isVnode(vnode) {
-  return vnode.tag !== undefined
-}
-function isComponent(vnode) {
-  return typeof vnode.tag === 'function'
-}
-function isConsumer(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === CONTEXT_TYPE
-  )
-}
-function isProvider(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === PROVIDER_TYPE
-  )
-}
-function isMemo(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === MEMO_TYPE
-  )
-}
-function isFragment(vnode) {
-  return vnode.tag === FRAGMENTS_TYPE
-}
-function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
-}
-function isFilterVnode(vnode) {
-  return (
-    vnode === null ||
-    typeof vnode === 'boolean' ||
-    typeof vnode === 'undefined'
-  )
-}
-function isPrimitiveVnode(vnode) {
-  return (
-    typeof vnode === 'string' ||
-    typeof vnode === 'number' ||
-    typeof vnode === 'symbol'
-  )
-}
-
 const classList = [
   'add',
   'remove',
@@ -739,7 +742,7 @@ function createElm(vnode, insertedVnodeQueue) {
     if (isArray(children)) {
       for (let i = 0; i < children.length; i++) {
         const chVNode = children[i];
-        if (!isFilterVnode(chVNode)) {
+        if (chVNode != null) {
           appendChild$1(elm, createElm(chVNode, insertedVnodeQueue));
         }
       }
@@ -939,7 +942,7 @@ function mergeProps({data, children}, needChildren) {
   }
   for (const key in data) {
     if (key !== 'hook') {
-      if (!(key === 'children' && 'children' in props)) {
+      if (key !== 'children' || !('children' in props)) {
         props[key] = data[key];
       }
     }
@@ -1055,6 +1058,24 @@ function defaultCompare(oldProps, newProps) {
   }
   return true
 }
+function dealwithChildren({tag, data, children}) {
+  children = !isArray(children)
+    ? children
+    : children.filter(child => !isFilterVnode(child));
+  if (!children || children.length === 0) {
+    if (data.attrs) {
+      if (data.attrs.hasOwnProperty('children')) {
+        children = data.attrs.children;
+        if (!isArray(children)) {
+          children = [children];
+        }
+        inspectChildren(tag, children);
+      }
+    }
+  }
+  delete data.attrs.children;
+  return children
+}
 class MemoComponent {
   constructor(vnode) {
     this.vnode = vnode;
@@ -1062,14 +1083,15 @@ class MemoComponent {
     this.memoInfo = null;
     this.rootVnode = undefined;
   }
-  createVnodeAndPatch() {
+  replaceAndRender() {
     const { tag } = this.memoInfo;
     const updateVnode = cloneVnode(this.vnode);
     updateVnode.tag = tag;
     updateVnode.component = undefined;
     updateVnode.data.hook = undefined;
-    if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
+    if (isCommonVnode(tag)) {
       updateVnode.data = separateProps(updateVnode.data);
+      updateVnode.children = dealwithChildren(updateVnode);
     } else {
       updateVnode.data = installHooks(tag, updateVnode.data);
     }
@@ -1080,7 +1102,7 @@ class MemoComponent {
     const { tag, compare } = this.vnode.tag;
     this.memoInfo = { tag, compare };
     this.prevProps = mergeProps(this.vnode, false);
-    this.createVnodeAndPatch();
+    this.replaceAndRender();
   }
   update(oldVnode, vnode) {
     let { tag, compare } = vnode.tag;
@@ -1094,7 +1116,7 @@ class MemoComponent {
     if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare };
       this.vnode = vnode;
-      this.createVnodeAndPatch();
+      this.replaceAndRender();
       this.prevProps = newProps;
     }
   }
@@ -1345,7 +1367,7 @@ const componentVNodeHooks = commonHooksConfig({
       vnode.component = new Component(vnode);
       vnode.component.init();
     }
-  }
+  },
 });
 
 class ProviderComponent {
@@ -1385,7 +1407,7 @@ const providerVNodeHooks = commonHooksConfig({
       vnode.component = new ProviderComponent(vnode);
       tag._context._contextStack.push(data.value, vnode.component);
     }
-  }
+  },
 });
 
 class ConsumerComponent {
@@ -1434,7 +1456,7 @@ const consumerVNodeHooks = commonHooksConfig({
       vnode.component = new ConsumerComponent(vnode);
       vnode.component.render();
     }
-  }
+  },
 });
 
 function cached(fn) {
@@ -1593,14 +1615,22 @@ function installHooks(tag, data) {
   }
   return data
 }
-function formatVnode(tag, data, children) {
+function inspectChildren(tag, children) {
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isPrimitiveVnode(children[i])) {
         children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
+      } else if (isCommonVnode(tag)) {
+        if (isFilterVnode(children[i])) {
+          children.splice(i, 1);
+          i--;
+        }
       }
     }
   }
+}
+function formatVnode(tag, data, children) {
+  inspectChildren(tag, children);
   if (tag === 'svg') {
     addNS(data, children, tag);
   }
@@ -1646,13 +1676,13 @@ function h(tag, props, ...children) {
     typeof v === 'object' &&
     typeof v[Symbol.iterator] === 'function'
   ));
-  let data;
-  if (typeof tag === 'string' || tag === FRAGMENTS_TYPE) {
-    data = separateProps(props);
-  } else {
-    data = installHooks(tag, props);
-  }
-  return formatVnode(tag, data, children)
+  return formatVnode(
+    tag,
+    isCommonVnode(tag)
+      ? separateProps(props)
+      : installHooks(tag, props),
+    children,
+  )
 }
 
 const MODE_SLASH = 0;

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>useEffect</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import oops from '../../src/index.js'
+      window.oops = oops
+    </script>
+    <script type="text/babel">
+      const { Fragment, useState, memo } = React;
+      // const { render, Fragment, useState, memo } = oops
+      // ReactDOM.render = oops.render
+      // React.createElement = oops.h
+
+      function Child(props) {
+        console.log(props)
+        return (
+          <div>
+            {props.children}
+          </div>
+        )
+      }
+
+      // Child = memo('div', () => true)
+      Child = memo(Child, () => false)
+
+      function App() {
+        const [count, setCount] = useState(0)
+
+        return (
+          <div>
+            <div onClick={e => setCount(count + 1)}>click</div>
+            <Child children={<div>A {false}</div>}>
+              { count }
+              { false }
+            </Child>
+          </div>
+        )
+      }
+
+      ReactDOM.render(<App />, root)
+    </script>
+  </body>
+</html>

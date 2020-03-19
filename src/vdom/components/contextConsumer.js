@@ -56,5 +56,5 @@ export const consumerVNodeHooks = commonHooksConfig({
       vnode.component = new ConsumerComponent(vnode)
       vnode.component.render()
     }
-  }
+  },
 })

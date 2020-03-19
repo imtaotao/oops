@@ -4,12 +4,17 @@ import {
   CONTEXT_TYPE,
   PROVIDER_TYPE,
   FRAGMENTS_TYPE,
+  FORWARD_REF_TYPE,
 } from '../../../api/symbols.js'
 
 export const emptyNode = createVnode('', {}, [], undefined, undefined)
 
 export function isVnode(vnode) {
   return vnode.tag !== undefined
+}
+
+export function isCommonVnode(tag) {
+  return typeof tag === 'string' || tag === FRAGMENTS_TYPE
 }
 
 export function isComponent(vnode) {
@@ -39,6 +44,10 @@ export function isMemo(vnode) {
 
 export function isFragment(vnode) {
   return vnode.tag === FRAGMENTS_TYPE
+}
+
+export function isForwardRef(vnode) {
+  return vnode.tag === FORWARD_REF_TYPE
 }
 
 export function sameVnode(a, b) {
