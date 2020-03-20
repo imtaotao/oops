@@ -1,5 +1,4 @@
-import { flat } from '../shared.js'
-import { FRAGMENTS_TYPE } from '../api/symbols.js'
+import { isArray } from '../shared.js'
 import { isCommonVnode } from './helpers/patch/is.js'
 import {
   formatVnode,
@@ -33,26 +32,24 @@ export function cloneVnode(vnode) {
   return cloned
 }
 
-export function createFragmentVnode(children) {
-  return formatVnode(FRAGMENTS_TYPE, {}, children)
-}
-
 export function h(tag, props, ...children) {
   // 组件不支持 ref
-  if (typeof tag === 'function' && props && 'ref' in props) {
+  if (typeof tag === 'function' && props && props.hasOwnProperty('ref')) {
     throw new Error(
       'Function components cannot be given refs. ' +
         'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
     )
   }
-
-  // 平铺数组，这将导致数组中的子数组中的元素 key 值是在同一层级的
-  children = flat(children, v => (
-    v !== null &&
-    typeof v === 'object' &&
-    typeof v[Symbol.iterator] === 'function'
-  ))
-
+  if (props && props.hasOwnProperty('children')) {
+    if (children.length === 0) {
+      if (props.children) {
+        children = isArray(props.children)
+          ? props.children
+          : [props.children]
+      }
+    }
+    delete props.children
+  }
   return formatVnode(
     tag,
     isCommonVnode(tag)

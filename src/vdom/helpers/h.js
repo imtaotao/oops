@@ -1,6 +1,7 @@
 import { createVnode } from '../h.js'
-import { isDef, isUndef } from '../../shared.js'
+import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { memoVNodeHooks } from '../components/memo.js'
+import { isDef, isUndef, isIterator } from '../../shared.js'
 import { componentVNodeHooks } from '../components/common.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
@@ -184,10 +185,16 @@ export function installHooks(tag, data) {
   return data
 }
 
-export function inspectChildren(tag, children) {
+export function createFragmentVnode(children) {
+  return formatVnode(FRAGMENTS_TYPE, {}, children)
+}
+
+export function formatVnode(tag, data, children) {
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
-      if (isPrimitiveVnode(children[i])) {
+      if (isIterator(children[i])) {
+        children[i] = createFragmentVnode(Array.from(children[i]))
+      } else if (isPrimitiveVnode(children[i])) {
         children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
       } else if (isCommonVnode(tag)) {
         if (isFilterVnode(children[i])) {
@@ -198,10 +205,6 @@ export function inspectChildren(tag, children) {
       }
     }
   }
-}
-
-export function formatVnode(tag, data, children) {
-  inspectChildren(tag, children)
   if (tag === 'svg') {
     addNS(data, children, tag)
   }

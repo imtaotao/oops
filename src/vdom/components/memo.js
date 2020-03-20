@@ -1,17 +1,14 @@
 import { patch } from '../patch.js'
 import { cloneVnode } from '../h.js'
-import { isArray } from '../../shared.js'
 import { mergeProps } from '../helpers/component.js'
 import { commonHooksConfig } from '../helpers/component.js'
 import {
   isMemo,
   isCommonVnode,
-  isFilterVnode,
 } from '../helpers/patch/is.js'
 import {
   installHooks,
   separateProps,
-  inspectChildren,
 } from '../helpers/h.js'
 
 function defaultCompare(oldProps, newProps) {
@@ -25,31 +22,6 @@ function defaultCompare(oldProps, newProps) {
     if (oldProps[key] !== newProps[key]) return false
   }
   return true
-}
-
-// 对普通节点的 children 做处理
-function dealwithChildren({tag, data, children}) {
-  // 由于 memo 组件创建的时候，不会过滤，但是会对 primitive 的值进行包装
-  // 所以这里只需要过滤就好
-  children = !isArray(children)
-    ? children
-    : children.filter(child => !isFilterVnode(child))
-
-  if (!children || children.length === 0) {
-    if (data.attrs) {
-      if (data.attrs.hasOwnProperty('children')) {
-        children = data.attrs.children
-        if (!isArray(children)) {
-          children = [children]
-        }
-        // 用户自己传入的 children 没有过滤，也没有包装，所以需要走这里检查一遍
-        inspectChildren(tag, children)
-      }
-    }
-  }
-
-  delete data.attrs.children
-  return children
 }
 
 class MemoComponent {
@@ -67,12 +39,9 @@ class MemoComponent {
     updateVnode.component = undefined
     updateVnode.data.hook = undefined
 
-    if (isCommonVnode(tag)) {
-      updateVnode.data = separateProps(updateVnode.data)
-      updateVnode.children = dealwithChildren(updateVnode)
-    } else {
-      updateVnode.data = installHooks(tag, updateVnode.data)
-    }
+    updateVnode.data = isCommonVnode(tag)
+      ? separateProps(updateVnode.data)
+      : installHooks(tag, updateVnode.data)
 
     this.rootVnode = patch(this.rootVnode, updateVnode)
     this.vnode.elm = this.rootVnode.elm

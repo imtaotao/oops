@@ -1,23 +1,31 @@
-import { isFilterVnode } from './patch/is.js'
+import { isFragment } from './patch/is.js'
 import { isDef, isArray } from '../../shared.js'
 
+function realChildren(vnode) {
+  if (!vnode) return vnode
+  if (isDef(vnode.text)) return vnode.text
+
+  if (isFragment(vnode)) {
+    return isArray(vnode.children)
+      ? vnode.children.map(realChildren)
+      : vnode.children
+  }
+  return vnode
+}
+
 export function mergeProps({data, children}, needChildren) {
-  const props =  {} 
+  const props =  {}
+
   if (needChildren && children.length > 0) {
-    props.children = children.map(vnode => (
-      isFilterVnode(vnode) || isDef(vnode.tag)
-        ? vnode
-        : vnode.text
-    ))
+    // text 需要还原成初始值
+    props.children = children.map(realChildren)
     if (props.children.length === 1) {
       props.children = props.children[0]
     }
   }
   for (const key in data) {
     if (key !== 'hook') {
-      if (key !== 'children' || !('children' in props)) {
-        props[key] = data[key]
-      }
+      props[key] = data[key]
     }
   }
   return props

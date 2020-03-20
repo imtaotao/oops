@@ -1,8 +1,9 @@
 import * as api from './domApi.js'
+import { createVnode } from '../../h.js'
 import { cbs } from '../../modules/index.js'
 import { FragmentNode } from './fragment.js'
+import { createFragmentVnode } from '../h.js'
 import { isDef, isArray } from '../../../shared.js'
-import { createVnode, createFragmentVnode } from '../../h.js'
 import {
   emptyNode,
   isFragment,

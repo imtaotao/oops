@@ -16,6 +16,14 @@ export function isUndef(v) {
   return v === undefined
 }
 
+export function isIterator(obj) {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    typeof obj[Symbol.iterator] === 'function'
+  )
+}
+
 export function flat(array, condition = isArray, result = []) {
   for (const item of array) {
     if (condition(item)) {

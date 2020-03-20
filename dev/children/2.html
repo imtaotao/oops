@@ -29,15 +29,17 @@
         )
       }
 
+      Child = memo(Child, () => false)
+
       function App() {
         const [count, setCount] = useState(0)
 
         return (
           <div>
             <div onClick={e => setCount(count + 1)}>click</div>
-            <div children={<div>A {false} { count}</div>}>
+            <Child children={[<div>A {false} { count }</div>, 2, [1,2]]}>
              
-            </div>
+            </Child>
           </div>
         )
       }
