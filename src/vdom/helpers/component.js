@@ -3,6 +3,21 @@ import {
   isArray,
 } from '../../shared.js'
 
+// key 和 ref 被内部占用，如果使用需要给出错误警告
+function defineSpecialPropsWarningGetter(props, key) {
+  Object.defineProperty(props, key, {
+    get() {
+      console.error(
+        `'${key}' is not a prop. Trying to access it will result ` +
+          'in `undefined` being returned. If you need to access the same ' +
+          'value within the child component, you should pass it as a different ' +
+          'prop. (https://fb.me/react-special-props)',
+      )
+    },
+    configurable: true,
+  })
+}
+
 export function mergeProps({data, duplicateChildren}) {
   const props =  {}
   if (duplicateChildren.length > 0) {
@@ -11,8 +26,13 @@ export function mergeProps({data, duplicateChildren}) {
       props.children = props.children[0]
     }
   }
+
   for (const key in data) {
-    if (key !== 'hook') {
+    if (key === 'key') {
+      defineSpecialPropsWarningGetter(props, 'key')
+    } else if (key === 'ref') {
+      defineSpecialPropsWarningGetter(props, 'ref')
+    } else if (key !== 'hook') {
       props[key] = data[key]
     }
   }
@@ -87,53 +107,42 @@ export function addToProviderUpdateDuplicate(consumer) {
   }
 }
 
+function callLifetimeMethod(vnode, method) {
+  return function() {
+    const component = vnode.component
+    if (component && typeof component[method] === 'function') {
+      component[method].apply(component, arguments)
+    }
+  }
+}
+
 // 通用的 component vnode hooks
 export function commonHooksConfig(config) {
   const basicHooks = {
     initBefore(vnode) {
-      const component = vnode.component
-      if (component && typeof component.initBefore === 'function') {
-        component.initBefore(vnode)
-      }
+      callLifetimeMethod(vnode, 'initBefore')(vnode)
     },
 
     prepatch(oldVnode, vnode) {
       // 换成新的 vnode，这样就会有新的 props
-      const component = vnode.component = oldVnode.component
-      if (component) {
-        component.vnode = vnode
-        if (typeof component.prepatch === 'function') {
-          component.prepatch(oldVnode, vnode)
-        }
-      }
+      vnode.component = oldVnode.component
+      callLifetimeMethod(vnode, 'prepatch')(oldVnode, vnode)
     },
 
     update(oldVnode, vnode) {
-      const component = vnode.component
-      if (component && typeof component.update === 'function') {
-        component.update(oldVnode, vnode)
-      }
+      callLifetimeMethod(vnode, 'update')(oldVnode, vnode)
     },
 
     postpatch(oldVnode, vnode) {
-      const component = vnode.component
-      if (component && typeof component.postpatch === 'function') {
-        component.postpatch(oldVnode, vnode)
-      }
+      callLifetimeMethod(vnode, 'postpatch')(oldVnode, vnode)
     },
   
     remove(vnode, rm) {
-      const component = vnode.component
-      if (component && typeof component.remove === 'function') {
-        component.remove(vnode, rm)
-      }
+      callLifetimeMethod(vnode, 'remove')(vnode, rm)
     },
   
     destroy(vnode) {
-      const component = vnode.component
-      if (component && typeof component.destroy === 'function') {
-        component.destroy(vnode)
-      }
+      callLifetimeMethod(vnode, 'destroy')(vnode)
     },
   }
 

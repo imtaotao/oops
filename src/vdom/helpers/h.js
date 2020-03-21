@@ -1,6 +1,7 @@
 import { createVnode } from '../h.js'
 import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { memoVNodeHooks } from '../components/memo.js'
+import { forwardRefHooks } from '../components/forwardRef.js'
 import { componentVNodeHooks } from '../components/common.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
@@ -15,6 +16,7 @@ import {
   isConsumer,
   isProvider,
   isComponent,
+  isForwardRef,
   isFilterVnode,
   isCommonVnode,
   isPrimitiveVnode,
@@ -180,6 +182,8 @@ export function installHooks(tag, data) {
     vnodeHooks = componentVNodeHooks
   } else if (isMemo(simulateVnode)) {
     vnodeHooks = memoVNodeHooks
+  } else if (isForwardRef(simulateVnode)) {
+    vnodeHooks = forwardRefHooks
   }
 
   if (vnodeHooks) {

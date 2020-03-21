@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>useEffect</title>
+    <title>forwardRef1</title>
     <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
@@ -21,17 +21,18 @@
       React.createElement = oops.h
 
       function FancyButton(props, ref) {
+        console.log(props, ref);
         return (
           <button className="FancyButton">
             {props.children}
           </button>
         )
       }
-      FancyButton = forwardRef(FancyButton)
+      // FancyButton = forwardRef(FancyButton)
 
       const ref = createRef();
       function App() {
-        return <FancyButton></FancyButton>;
+        return <FancyButton children={[2,3]} key="21" ></FancyButton>;
       }
 
       ReactDOM.render(<App />, root)

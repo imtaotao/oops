@@ -9,6 +9,7 @@ import {
   isConsumer,
   isComponent,
   sameVnode,
+  isForwardRef,
 } from './helpers/patch/is.js'
 import {
   createElm,
@@ -149,7 +150,12 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode)
   }
 
-  if (isComponent(vnode) || isMemo(vnode) || isConsumer(vnode)) {
+  if (
+    isMemo(vnode) ||
+    isConsumer(vnode) ||
+    isComponent(vnode) ||
+    isForwardRef(vnode)
+  ) {
     // 如果是组件，则不需要对组件的 elm 进行diff，组件内部会调用 update 钩子 diff
   } else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {

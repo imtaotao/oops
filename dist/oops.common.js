@@ -130,6 +130,9 @@ function isMemo(vnode) {
 function isFragment(vnode) {
   return vnode.tag === FRAGMENTS_TYPE;
 }
+function isForwardRef(vnode) {
+  return vnode.tag === FORWARD_REF_TYPE;
+}
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag;
 }
@@ -1065,7 +1068,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
 
-  if (isComponent(vnode) || isMemo(vnode) || isConsumer(vnode)) ; else if (isUndef(vnode.text)) {
+  if (isMemo(vnode) || isConsumer(vnode) || isComponent(vnode) || isForwardRef(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -1129,6 +1132,15 @@ function patch(oldVnode, vnode) {
   return vnode;
 }
 
+function defineSpecialPropsWarningGetter(props, key) {
+  Object.defineProperty(props, key, {
+    get: function get() {
+      console.error("'".concat(key, "' is not a prop. Trying to access it will result ") + 'in `undefined` being returned. If you need to access the same ' + 'value within the child component, you should pass it as a different ' + 'prop. (https://fb.me/react-special-props)');
+    },
+    configurable: true
+  });
+}
+
 function mergeProps(_ref) {
   var data = _ref.data,
       duplicateChildren = _ref.duplicateChildren;
@@ -1143,7 +1155,11 @@ function mergeProps(_ref) {
   }
 
   for (var key in data) {
-    if (key !== 'hook') {
+    if (key === 'key') {
+      defineSpecialPropsWarningGetter(props, 'key');
+    } else if (key === 'ref') {
+      defineSpecialPropsWarningGetter(props, 'ref');
+    } else if (key !== 'hook') {
       props[key] = data[key];
     }
   }
@@ -1221,53 +1237,37 @@ function addToProviderUpdateDuplicate(consumer) {
     }
   }
 }
+
+function callLifetimeMethod(vnode, method) {
+  return function () {
+    var component = vnode.component;
+
+    if (component && typeof component[method] === 'function') {
+      component[method].apply(component, arguments);
+    }
+  };
+}
+
 function commonHooksConfig(config) {
   var basicHooks = {
     initBefore: function initBefore(vnode) {
-      var component = vnode.component;
-
-      if (component && typeof component.initBefore === 'function') {
-        component.initBefore(vnode);
-      }
+      callLifetimeMethod(vnode, 'initBefore')(vnode);
     },
     prepatch: function prepatch(oldVnode, vnode) {
-      var component = vnode.component = oldVnode.component;
-
-      if (component) {
-        component.vnode = vnode;
-
-        if (typeof component.prepatch === 'function') {
-          component.prepatch(oldVnode, vnode);
-        }
-      }
+      vnode.component = oldVnode.component;
+      callLifetimeMethod(vnode, 'prepatch')(oldVnode, vnode);
     },
     update: function update(oldVnode, vnode) {
-      var component = vnode.component;
-
-      if (component && typeof component.update === 'function') {
-        component.update(oldVnode, vnode);
-      }
+      callLifetimeMethod(vnode, 'update')(oldVnode, vnode);
     },
     postpatch: function postpatch(oldVnode, vnode) {
-      var component = vnode.component;
-
-      if (component && typeof component.postpatch === 'function') {
-        component.postpatch(oldVnode, vnode);
-      }
+      callLifetimeMethod(vnode, 'postpatch')(oldVnode, vnode);
     },
     remove: function remove(vnode, rm) {
-      var component = vnode.component;
-
-      if (component && typeof component.remove === 'function') {
-        component.remove(vnode, rm);
-      }
+      callLifetimeMethod(vnode, 'remove')(vnode, rm);
     },
     destroy: function destroy(vnode) {
-      var component = vnode.component;
-
-      if (component && typeof component.destroy === 'function') {
-        component.destroy(vnode);
-      }
+      callLifetimeMethod(vnode, 'destroy')(vnode);
     }
   };
   return config ? Object.assign(basicHooks, config) : basicHooks;
@@ -1360,6 +1360,34 @@ var memoVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode);
+      vnode.component.init();
+    }
+  }
+});
+
+var ForwardRefComponent =
+/*#__PURE__*/
+function () {
+  function ForwardRefComponent(vnode) {
+    _classCallCheck(this, ForwardRefComponent);
+
+    this.vnode = vnode;
+  }
+
+  _createClass(ForwardRefComponent, [{
+    key: "init",
+    value: function init() {
+      console.log(this);
+    }
+  }]);
+
+  return ForwardRefComponent;
+}();
+
+var forwardRefHooks = commonHooksConfig({
+  init: function init(vnode) {
+    if (isForwardRef(vnode)) {
+      vnode.component = new ForwardRefComponent(vnode);
       vnode.component.init();
     }
   }
@@ -1959,6 +1987,8 @@ function installHooks(tag, data) {
     vnodeHooks = componentVNodeHooks;
   } else if (isMemo(simulateVnode)) {
     vnodeHooks = memoVNodeHooks;
+  } else if (isForwardRef(simulateVnode)) {
+    vnodeHooks = forwardRefHooks;
   }
 
   if (vnodeHooks) {
@@ -2036,7 +2066,7 @@ function h(tag, props) {
   if (props && props.hasOwnProperty('children')) {
     if (children.length === 0) {
       if (props.children) {
-        children = isArray() ? props.children : [props.children];
+        children = isArray(props.children) ? props.children : [props.children];
       }
     }
 
