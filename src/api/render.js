@@ -1,6 +1,9 @@
 import { patch } from '../vdom/patch.js'
 import { isVnode } from '../vdom/helpers/patch/is.js'
-import { appendChild, formatPatchRootVnode } from '../vdom/helpers/patch/util.js'
+import {
+  appendChild,
+  formatPatchRootVnode,
+} from '../vdom/helpers/patch/util.js'
 
 export function render(vnode, app, callback) {
   if (app) {

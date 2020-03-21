@@ -5,10 +5,12 @@ const classList = [
   'add',
   'remove',
 ]
+
 const style = [
   'setProperty',
   'removeProperty',
 ]
+
 const namespaces = [
   'setAttribute',
   'setAttributeNS',
@@ -20,6 +22,7 @@ const namespaces = [
 const empty = () => {
   console.error('Cannot operate on fragment element.')
 }
+
 const installMethods = (obj, methods) => {
   methods.forEach(name => obj[name] = empty)
 }

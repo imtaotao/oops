@@ -1,8 +1,14 @@
 import { patch } from '../patch.js'
 import { isConsumer } from '../helpers/patch/is.js'
 import { formatPatchRootVnode } from '../helpers/patch/util.js'
-import { readContext, removedInDeps } from '../../api/context.js'
-import { addToProviderUpdateDuplicate, commonHooksConfig } from '../helpers/component.js'
+import {
+  readContext,
+  removedInDeps,
+} from '../../api/context.js'
+import {
+  commonHooksConfig,
+  addToProviderUpdateDuplicate,
+} from '../helpers/component.js'
 
 class ConsumerComponent {
   constructor(vnode) {

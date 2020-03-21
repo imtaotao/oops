@@ -1,4 +1,7 @@
-import { isDef, isArray } from '../../shared.js'
+import {
+  isDef,
+  isArray,
+} from '../../shared.js'
 
 export function mergeProps({data, duplicateChildren}) {
   const props =  {}

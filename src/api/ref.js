@@ -1,4 +1,7 @@
-import { MEMO_TYPE, FORWARD_REF_TYPE } from './symbols.js'
+import {
+  MEMO_TYPE,
+  FORWARD_REF_TYPE,
+} from './symbols.js'
 
 export function createRef() {
   return Object.seal({ current: null })

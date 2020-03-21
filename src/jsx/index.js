@@ -1,5 +1,8 @@
 import { h } from '../vdom/h.js'
-import { build, evaluate } from './parse.js'
+import {
+  build,
+  evaluate,
+} from './parse.js'
 
 const CACHE = new Map()
 const getCache = statics => {
