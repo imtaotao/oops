@@ -105,7 +105,7 @@ function isValidElementType(type) {
   return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 function isInsertComponent(type) {
-  return typeof type === 'function' || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
+  return _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 
 var emptyNode = createVnode('', {}, [], undefined, undefined);
@@ -1996,7 +1996,9 @@ function formatVnode(tag, data, children) {
 
   var vnode = createVnode(tag, data, children, undefined, undefined);
 
-  if (isInsertComponent(tag)) {
+  if (isComponent({
+    tag: tag
+  }) || isInsertComponent(tag)) {
     vnode.duplicateChildren = duplicateChildren;
   }
 

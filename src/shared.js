@@ -40,12 +40,11 @@ export function isValidElementType(type) {
 
 export function isInsertComponent(type) {
   return (
-    typeof type === 'function' ||
-    (typeof type === 'object' &&
+    typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
-        type.$$typeof === MEMO_TYPE))
+        type.$$typeof === MEMO_TYPE)
   )
 }

@@ -217,7 +217,7 @@ export function formatVnode(tag, data, children) {
 
   const vnode = createVnode(tag, data, children, undefined, undefined)
   // 组件需要得到最原始的 children 数据
-  if (isInsertComponent(tag)) {
+  if (isComponent({ tag }) || isInsertComponent(tag)) {
     vnode.duplicateChildren = duplicateChildren
   }
   return vnode
