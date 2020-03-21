@@ -45,7 +45,7 @@ export function h(tag, props, ...children) {
   if (props && props.hasOwnProperty('children')) {
     if (children.length === 0) {
       if (props.children) {
-        children = isArray()
+        children = isArray(props.children)
           ? props.children
           : [props.children]
       }
