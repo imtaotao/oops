@@ -12,7 +12,7 @@ function updateAttrs(oldVnode, vnode) {
     let oldAttrs = oldVnode.data.attrs
     
     // 处理 ref，每次都赋值新的 elm 就好
-    if (attrs && 'ref' in attrs) {
+    if (attrs && attrs.hasOwnProperty('ref')) {
       const ref = attrs.ref
       if (typeof ref === 'function') {
         ref(elm)
@@ -38,7 +38,7 @@ function updateAttrs(oldVnode, vnode) {
 
     // 更新有修改的 attributes，和增加新的 attributes
     for (const key in attrs) {
-      if (key === 'ref') continue
+      if (key === 'ref' || key === 'key') continue
       const cur = attrs[key]
       const old = oldAttrs[key]
       if (old !== cur) {
@@ -64,7 +64,7 @@ function updateAttrs(oldVnode, vnode) {
 
     // 移除需要移除的属性
     for (const key in oldAttrs) {
-      if (key === 'ref') continue
+      if (key === 'ref' || key === 'key') continue
       if (!(key in attrs)) {
         elm.removeAttribute(key)
       }

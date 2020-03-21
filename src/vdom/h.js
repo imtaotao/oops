@@ -27,8 +27,9 @@ export function cloneVnode(vnode) {
     vnode.elm,
   )
   cloned.key = vnode.key
-  cloned.component = vnode.component
   cloned.isClone = true
+  cloned.component = vnode.component
+  cloned.duplicateChildren = vnode.duplicateChildren && vnode.duplicateChildren.slice()
   return cloned
 }
 
@@ -40,16 +41,18 @@ export function h(tag, props, ...children) {
         'Attempts to access this ref will fail. Did you mean to use Oops.forwardRef()?'
     )
   }
+
   if (props && props.hasOwnProperty('children')) {
     if (children.length === 0) {
       if (props.children) {
-        children = isArray(props.children)
+        children = isArray()
           ? props.children
           : [props.children]
       }
     }
     delete props.children
   }
+
   return formatVnode(
     tag,
     isCommonVnode(tag)

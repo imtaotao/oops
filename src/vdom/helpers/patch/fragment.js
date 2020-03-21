@@ -17,15 +17,14 @@ const namespaces = [
   'removeEventListener',
 ]
 
-const empty = key => {
-  if (key === 'key') return
+const empty = () => {
   console.error('Cannot operate on fragment element.')
 }
 const installMethods = (obj, methods) => {
   methods.forEach(name => obj[name] = empty)
 }
 
-// 创建 FragmentNode 参与整个 diff patch 的过程，在真实的 dom 节点变化中承上启下
+// 创建 FragmentNode 参与整个 diff patch 的过程
 export class FragmentNode {
   constructor() {
     this._children = []

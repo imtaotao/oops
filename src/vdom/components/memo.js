@@ -32,7 +32,7 @@ class MemoComponent {
     this.rootVnode = undefined
   }
 
-  replaceAndRender() {
+  transferAndRender() {
     const { tag } = this.memoInfo
     const updateVnode = cloneVnode(this.vnode)
     updateVnode.tag = tag
@@ -50,8 +50,8 @@ class MemoComponent {
   init() {
     const { tag, compare } = this.vnode.tag
     this.memoInfo = { tag, compare }
-    this.prevProps = mergeProps(this.vnode, false)
-    this.replaceAndRender()
+    this.prevProps = mergeProps(this.vnode)
+    this.transferAndRender()
   }
 
   update(oldVnode, vnode) {
@@ -64,13 +64,12 @@ class MemoComponent {
       throw new TypeError('compare is not a function.')
     }
 
-    // children 不应该作为对比的 props 传入
-    const newProps = mergeProps(vnode, false)
     // 如果不等才需要更新
+    const newProps = mergeProps(vnode)
     if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare }
       this.vnode = vnode
-      this.replaceAndRender()
+      this.transferAndRender()
       this.prevProps = newProps
     }
   }

@@ -1,24 +1,9 @@
-import { isFragment } from './patch/is.js'
 import { isDef, isArray } from '../../shared.js'
 
-function realChildren(vnode) {
-  if (!vnode) return vnode
-  if (isDef(vnode.text)) return vnode.text
-
-  if (isFragment(vnode)) {
-    return isArray(vnode.children)
-      ? vnode.children.map(realChildren)
-      : vnode.children
-  }
-  return vnode
-}
-
-export function mergeProps({data, children}, needChildren) {
+export function mergeProps({data, duplicateChildren}) {
   const props =  {}
-
-  if (needChildren && children.length > 0) {
-    // text 需要还原成初始值
-    props.children = children.map(realChildren)
+  if (duplicateChildren.length > 0) {
+    props.children = duplicateChildren
     if (props.children.length === 1) {
       props.children = props.children[0]
     }

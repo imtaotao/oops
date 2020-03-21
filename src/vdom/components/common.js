@@ -95,7 +95,7 @@ class Component {
     }
     try {
       Target.component = this
-      this.props = mergeProps(this.vnode, true)
+      this.props = mergeProps(this.vnode)
       this.updateVnode = formatPatchRootVnode(this.render(this.props))
 
       if (isUndef(this.updateVnode)) {

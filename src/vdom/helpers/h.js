@@ -1,10 +1,15 @@
 import { createVnode } from '../h.js'
 import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { memoVNodeHooks } from '../components/memo.js'
-import { isDef, isUndef, isIterator } from '../../shared.js'
 import { componentVNodeHooks } from '../components/common.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
+import {
+  isDef,
+  isUndef,
+  isIterator,
+  isInsertComponent,
+} from '../../shared.js'
 import {
   isMemo,
   isConsumer,
@@ -190,6 +195,7 @@ export function createFragmentVnode(children) {
 }
 
 export function formatVnode(tag, data, children) {
+  const duplicateChildren = children.slice()
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       if (isIterator(children[i])) {
@@ -208,5 +214,11 @@ export function formatVnode(tag, data, children) {
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
-  return createVnode(tag, data, children, undefined, undefined)
+
+  const vnode = createVnode(tag, data, children, undefined, undefined)
+  // 组件需要得到最原始的 children 数据
+  if (isInsertComponent(tag)) {
+    vnode.duplicateChildren = duplicateChildren
+  }
+  return vnode
 }
