@@ -25,6 +25,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `useLayoutEffect`
 + [x] `useImperativeHandle`
 + [ ] `useTransition`
++ [ ] `useDeferredValue`
 
 ## API
 + [x] `h`
