@@ -28,10 +28,8 @@ export function mergeProps({data, children}) {
   }
 
   for (const key in data) {
-    if (key === 'key') {
-      defineSpecialPropsWarningGetter(props, 'key')
-    } else if (key === 'ref') {
-      defineSpecialPropsWarningGetter(props, 'ref')
+    if (key === 'key' || key === 'ref') {
+      defineSpecialPropsWarningGetter(props, key)
     } else if (key !== 'hook') {
       props[key] = data[key]
     }
