@@ -79,13 +79,13 @@ export function createRmCb(childElm, listeners) {
   }
 }
 
-export function formatPatchRootVnode(vnode) {
+export function formatRootVnode(vnode) {
   if (isPrimitiveVnode(vnode)) {
     vnode = createVnode(undefined, undefined, undefined, vnode, undefined)
   }
   if (isArray(vnode)) {
     vnode = createFragmentVnode(vnode)
-    console.error('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
+    console.warn('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
   }
   return vnode
 }

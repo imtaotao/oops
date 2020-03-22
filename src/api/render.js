@@ -2,12 +2,12 @@ import { patch } from '../vdom/patch.js'
 import { isVnode } from '../vdom/helpers/patch/is.js'
 import {
   appendChild,
-  formatPatchRootVnode,
+  formatRootVnode,
 } from '../vdom/helpers/patch/util.js'
 
 export function render(vnode, app, callback) {
   if (app) {
-    vnode = formatPatchRootVnode(vnode)
+    vnode = formatRootVnode(vnode)
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode, app)
       const elm = vnode.elm || null

@@ -2,8 +2,8 @@ import { patch } from '../patch.js'
 import { isUndef } from '../../shared.js'
 import { isComponent } from '../helpers/patch/is.js'
 import { removedInDeps } from '../../api/context.js'
+import { formatRootVnode } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
-import { formatPatchRootVnode } from '../helpers/patch/util.js'
 import {
   equalDeps,
   mergeProps,
@@ -20,11 +20,12 @@ export const Target = {
 }
 
 class Component {
-  constructor(vnode) {
+  constructor(vnode, refObject) {
     this.cursor = 0
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
     this.destroyed = false
+    this.refObject = refObject // 组件的 ref
     this.numberOfReRenders = 0 // 重复渲染计数
     this.rootVnode = undefined // 组件返回的根节点
     this.updateVnode = undefined // 新的 vnode
@@ -95,8 +96,12 @@ class Component {
     }
     try {
       Target.component = this
-      this.props = mergeProps(this.vnode)
-      this.updateVnode = formatPatchRootVnode(this.render(this.props))
+      this.updateVnode = formatRootVnode(
+        this.render(
+          mergeProps(this.vnode),
+          this.refObject,
+        )
+      )
 
       if (isUndef(this.updateVnode)) {
         throw new Error(
@@ -148,7 +153,7 @@ class Component {
 export const componentVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isComponent(vnode)) {
-      vnode.component = new Component(vnode)
+      vnode.component = new Component(vnode, {})
       vnode.component.init()
     }
   },

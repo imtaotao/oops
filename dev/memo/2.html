@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>memo2</title>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+</head>
+<body>
+  <div id='app'></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    // const { useState, memo, createContext } = React;
+    const { useState, memo, createContext } = oops
+    ReactDOM.render = oops.render
+    React.createElement = oops.h
+    
+    const context = createContext({ name: 'chentao' })
+
+    /**
+     * Memoized component
+     * Only updates when message changes
+     */
+    let ScotchyComponent = props => {
+      console.log('scotchy render');
+      return <div>{props.message}</div>;
+    }
+
+    console.log(context);
+    // create a version that only renders on prop changes
+    ScotchyComponent = memo(context.Consumer, () => true);
+
+    // ScotchyComponent = memo(ScotchyComponent, (o, n) => {
+    //   console.log(o, n, 2)
+    //   return false
+    // });
+
+
+    // ScotchyComponent = memo('span', () => false)
+    // ScotchyComponent = memo(ScotchyComponent, () => false)
+
+    // counter component
+    // we need a second moving component to trigger a render on our app
+    const Counter = props => <strong>{props.count}</strong>;
+
+    /**
+     * Main App component
+     */
+    function App () {
+      const [count, setCount] = useState(0)
+      const [value, setValue] = useState('my message goes here')
+      const handleClick = () => setCount(count + 1)
+      const handleChange = e => setValue(e.target.value)
+
+      return (
+        <div className="hero is-fullheight has-text-centered">
+          <div className="hero-body">
+            <div className="container">
+              <h1 className="title">
+                React.memo(): <Counter count={count} />
+              </h1>
+
+              <button
+                type="button"
+                className="button is-warning"
+                onClick={handleClick}
+              >
+                Increase Count
+              </button>
+
+              {/* two columns to show components */}
+              <input
+                type="text"
+                className="input"
+                value={value}
+                onChange={handleChange}
+                style={{ marginTop: "30px", marginBottom: "30px" }}
+              />
+
+              {/* two columns to show components */}
+              <div className="columns is-mobile">
+                <context.Provider value={value + 222}>
+                  <div className="column">
+                    <ScotchyComponent message={value} children={(value) => {
+                      return <div>{value}</div>
+                    }} />
+                  </div>
+                </context.Provider>
+                <div className="column">
+                  <ScotchyComponent message={value} children={() => <div>{value + 1}</div>}/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById("app");
+    ReactDOM.render(<App />, rootElement);
+   
+  </script>
+</body>
+</html>

@@ -123,13 +123,10 @@ export function commonHooksConfig(config) {
       callLifetimeMethod(vnode, 'initBefore')(vnode)
     },
 
-    prepatch(oldVnode, vnode) {
-      // 换成新的 vnode，这样就会有新的 props
-      vnode.component = oldVnode.component
-      callLifetimeMethod(vnode, 'prepatch')(oldVnode, vnode)
-    },
-
     update(oldVnode, vnode) {
+      // 更新 vnode 和 component 的状态
+      vnode.component = oldVnode.component
+      vnode.component.vnode = vnode
       callLifetimeMethod(vnode, 'update')(oldVnode, vnode)
     },
 
