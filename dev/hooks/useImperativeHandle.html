@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>useImperativeHandle</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <style>
+    .App {
+      font-family: sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id='root'></div>
+  <script type="module">
+    import * as oops from '../../src/index.js'
+    window.oops = oops
+  </script>
+  <script type="text/babel">
+    const { Fragment, useRef, forwardRef, useState, useEffect, useImperativeHandle } = React;
+    // const { Fragment, useRef, forwardRef, useState, useEffect, useImperativeHandle } = oops
+    // ReactDOM.render = oops.render
+    // React.createElement = oops.h
+
+    function Alert(prop, ref) {
+      const [number, setNumber] = useState(11);
+      useEffect(() => {
+        console.log(number);
+        document.title = "123";
+      });
+
+      const changeUserNumber = () => {
+        setNumber(number + 10);
+        prop.parentFunction();
+      };
+
+      const childRef = useRef();
+      useImperativeHandle(ref, () => ({
+        showNumber: () => {
+          console.log("子组件方法：显示number", number);
+        },
+        showProp: () => {
+          console.log("子组件方法：显示prop.name", prop.name);
+        }
+      }));
+
+      return (
+        <div ref={childRef} onClick={changeUserNumber}>{`${
+          prop.name
+        } is ${number}`}</div>
+      );
+    }
+
+    Alert = forwardRef(Alert)
+
+    function App() {
+      const childRef = useRef(null);
+
+      const parentFunction = () => {
+        console.log("子组件执行父组件方法：make more effect");
+      };
+
+      console.log(childRef);
+
+      return (
+        <div className="App">
+          <Alert name={"Emily"} parentFunction={parentFunction} ref={childRef} />
+          <p
+            onClick={() => {
+              childRef.current.showNumber();
+            }}
+          >
+            点击调用子组件showNumber方法
+          </p>
+          <p
+            onClick={() => {
+              childRef.current.showProp();
+            }}
+          >
+            点击调用子组件showProp方法
+          </p>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>

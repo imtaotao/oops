@@ -16,6 +16,9 @@ function isDef(v) {
 function isUndef(v) {
   return v === undefined
 }
+function isVoid(v) {
+  return v === undefined || v === null
+}
 function isIterator(obj) {
   return (
     obj !== null &&
@@ -1123,6 +1126,41 @@ const memoVNodeHooks = commonHooksConfig({
   }
 });
 
+function initRefObject(initialValue) {
+  return Object.seal({ current: initialValue })
+}
+function createRef() {
+  return initRefObject(null)
+}
+function forwardRef(render) {
+  if (render != null && render.$$typeof === MEMO_TYPE) {
+    throw new Error(
+      'forwardRef requires a render function but received a `memo` ' +
+        'component. Instead of forwardRef(memo(...)), use ' +
+        'memo(forwardRef(...)).'
+    )
+  } else if (typeof render !== 'function') {
+    throw new Error(
+      'forwardRef requires a render function but was given ' +
+        (render === null ? 'null' : typeof render)
+    )
+  } else {
+    if (render.length !== 0 && render.length !== 2) {
+      throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
+        (
+          render.length === 1
+            ? 'Did you forget to use the ref parameter?'
+            : 'Any additional parameter will be undefined.'
+        )
+      )
+    }
+  }
+  return {
+    render,
+    $$typeof: FORWARD_REF_TYPE,
+  }
+}
+
 const MAX_SIGNED_31_BIT_INT = 1073741823;
 class ContextStack {
   constructor(context, defaultValue) {
@@ -1302,8 +1340,41 @@ class Component {
   }
   useRef(initialValue) {
     const key = this.cursor++;
-    const current = this.refs[key] || (this.refs[key] = Object.seal({ current: initialValue }));
+    const current = this.refs[key] || (this.refs[key] = initRefObject(initialValue));
     return current
+  }
+  useImperativeHandle(ref, create, deps) {
+    this.pushEffect(
+      'layoutEffects',
+      () => {
+        if (typeof ref === 'function') {
+          const refCallback = ref;
+          const inst = create();
+          refCallback(inst);
+          return () => {
+            refCallback(null);
+          }
+        } else if (!isVoid(ref)) {
+          const refObject = ref;
+          if (!refObject.hasOwnProperty('current')) {
+            console.error(
+              'Expected useImperativeHandle() first argument to either be a ' +
+                'ref callback or React.createRef() object. Instead received: %s.',
+              'an object with keys {' + Object.keys(refObject).join(', ') + '}',
+            );
+          }
+          const inst = create();
+          refObject.current = inst;
+          return () => {
+            refObject.current = null;
+          }
+        }
+      },
+      !isVoid(deps)
+        ? deps.concat([ref])
+        : null
+      ,
+    );
   }
   forceUpdate() {
     if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
@@ -1915,38 +1986,6 @@ function render(vnode, app, callback) {
   }
 }
 
-function createRef() {
-  return Object.seal({ current: null })
-}
-function forwardRef(render) {
-  if (render != null && render.$$typeof === MEMO_TYPE) {
-    throw new Error(
-      'forwardRef requires a render function but received a `memo` ' +
-        'component. Instead of forwardRef(memo(...)), use ' +
-        'memo(forwardRef(...)).'
-    )
-  } else if (typeof render !== 'function') {
-    throw new Error(
-      'forwardRef requires a render function but was given ' +
-        (render === null ? 'null' : typeof render)
-    )
-  } else {
-    if (render.length !== 0 && render.length !== 2) {
-      throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
-        (
-          render.length === 1
-            ? 'Did you forget to use the ref parameter?'
-            : 'Any additional parameter will be undefined.'
-        )
-      )
-    }
-  }
-  return {
-    render,
-    $$typeof: FORWARD_REF_TYPE,
-  }
-}
-
 function forEachChildren(children, fn, context) {
 }
 function mapChildren(children, fn, context) {
@@ -2005,6 +2044,8 @@ function useRef(initialValue) {
   return component.useRef(initialValue)
 }
 function useImperativeHandle(ref, create, deps) {
+  const component = resolveTargetComponent();
+  return component.useImperativeHandle(ref, create, deps)
 }
 
 const Children = {

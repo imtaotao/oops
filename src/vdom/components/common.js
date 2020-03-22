@@ -1,10 +1,13 @@
 import { patch } from '../patch.js'
-import { isUndef } from '../../shared.js'
 import { initRefObject } from '../../api/ref.js'
 import { isComponent } from '../helpers/patch/is.js'
 import { removedInDeps } from '../../api/context.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
+import {
+  isVoid,
+  isUndef,
+} from '../../shared.js'
 import {
   equalDeps,
   mergeProps,
@@ -86,6 +89,41 @@ export class Component {
     const key = this.cursor++
     const current = this.refs[key] || (this.refs[key] = initRefObject(initialValue))
     return current
+  }
+
+  useImperativeHandle(ref, create, deps) {
+    // 等 dom 渲染后给 current 赋值，使用 layoutEffects 是因为 react 中使用的是这个
+    this.pushEffect(
+      'layoutEffects',
+      () => {
+        if (typeof ref === 'function') {
+          const refCallback = ref
+          const inst = create()
+          refCallback(inst)
+          return () => {
+            refCallback(null)
+          }
+        } else if (!isVoid(ref)) {
+          const refObject = ref
+          if (!refObject.hasOwnProperty('current')) {
+            console.error(
+              'Expected useImperativeHandle() first argument to either be a ' +
+                'ref callback or React.createRef() object. Instead received: %s.',
+              'an object with keys {' + Object.keys(refObject).join(', ') + '}',
+            )
+          }
+          const inst = create()
+          refObject.current = inst
+          return () => {
+            refObject.current = null
+          }
+        }
+      },
+      !isVoid(deps)
+        ? deps.concat([ref])
+        : null
+      ,
+    )
   }
 
   forceUpdate() {

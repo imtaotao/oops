@@ -16,6 +16,10 @@ export function isUndef(v) {
   return v === undefined
 }
 
+export function isVoid(v) {
+  return v === undefined || v === null
+}
+
 export function isIterator(obj) {
   return (
     obj !== null &&

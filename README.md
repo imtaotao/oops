@@ -23,7 +23,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `useMemo`
 + [x] `useRef`
 + [x] `useLayoutEffect`
-+ [ ] `useImperativeHandle`
++ [x] `useImperativeHandle`
 + [ ] `useTransition`
 
 ## API

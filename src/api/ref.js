@@ -4,7 +4,7 @@ import {
 } from './symbols.js'
 
 export function initRefObject(initialValue) {
-  Object.seal({ current: initialValue })
+  return Object.seal({ current: initialValue })
 }
 
 export function createRef() {

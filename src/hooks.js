@@ -71,5 +71,6 @@ export function useRef(initialValue) {
 // create: () => T,
 // deps: Array<any> | void | null,
 export function useImperativeHandle(ref, create, deps) {
-
+  const component = resolveTargetComponent()
+  return component.useImperativeHandle(ref, create, deps)
 }
