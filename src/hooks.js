@@ -71,6 +71,13 @@ export function useRef(initialValue) {
 // create: () => T,
 // deps: Array<any> | void | null,
 export function useImperativeHandle(ref, create, deps) {
+  if (typeof create !== 'function') {
+    console.error(
+      'Expected useImperativeHandle() second argument to be a function ' +
+        'that creates a handle. Instead received: %s.',
+      create !== null ? typeof create : 'null',
+    )
+  }
   const component = resolveTargetComponent()
   return component.useImperativeHandle(ref, create, deps)
 }
