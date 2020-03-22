@@ -1,5 +1,6 @@
 import { patch } from '../patch.js'
 import { isUndef } from '../../shared.js'
+import { initRefObject } from '../../api/ref.js'
 import { isComponent } from '../helpers/patch/is.js'
 import { removedInDeps } from '../../api/context.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
@@ -83,7 +84,7 @@ export class Component {
 
   useRef(initialValue) {
     const key = this.cursor++
-    const current = this.refs[key] || (this.refs[key] = Object.seal({ current: initialValue }))
+    const current = this.refs[key] || (this.refs[key] = initRefObject(initialValue))
     return current
   }
 

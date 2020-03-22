@@ -3,8 +3,12 @@ import {
   FORWARD_REF_TYPE,
 } from './symbols.js'
 
+export function initRefObject(initialValue) {
+  Object.seal({ current: initialValue })
+}
+
 export function createRef() {
-  return Object.seal({ current: null })
+  return initRefObject(null)
 }
 
 export function forwardRef(render) {

@@ -211,7 +211,8 @@ export function formatVnode(tag, data, children, checkKey) {
             )
           }
         }
-  
+        
+        // 现在不确定 children 需不需要深拷贝
         if (isIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]))
         } else if (isPrimitiveVnode(children[i])) {
