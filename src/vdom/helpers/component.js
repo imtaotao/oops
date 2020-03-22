@@ -18,10 +18,10 @@ function defineSpecialPropsWarningGetter(props, key) {
   })
 }
 
-export function mergeProps({data, duplicateChildren}) {
+export function mergeProps({data, children}) {
   const props =  {}
-  if (duplicateChildren.length > 0) {
-    props.children = duplicateChildren
+  if (children.length > 0) {
+    props.children = children
     if (props.children.length === 1) {
       props.children = props.children[0]
     }

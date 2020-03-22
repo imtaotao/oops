@@ -29,7 +29,6 @@ export function cloneVnode(vnode) {
   cloned.key = vnode.key
   cloned.isClone = true
   cloned.component = vnode.component
-  cloned.duplicateChildren = vnode.duplicateChildren && vnode.duplicateChildren.slice()
   return cloned
 }
 

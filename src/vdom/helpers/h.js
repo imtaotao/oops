@@ -199,27 +199,29 @@ export function createFragmentVnode(children) {
 }
 
 export function formatVnode(tag, data, children, checkKey) {
-  const duplicateChildren = children.slice()
-  if (children.length > 0) {
-    for (let i = 0; i < children.length; i++) {
-      if (checkKey) {
-        if (!data.hasOwnProperty('key')) {
-          console.warn(
-            'Warning: Each child in a list should have a unique "key" prop. ' + 
-              'See https://fb.me/react-warning-keys for more information.'
-          )
+  // 组件需要得到最原始的 children 数据
+  if (!isComponent({ tag }) && !isInsertComponent(tag)) {
+    if (children.length > 0) {
+      for (let i = 0; i < children.length; i++) {
+        if (checkKey) {
+          if (!data.hasOwnProperty('key')) {
+            console.warn(
+              'Warning: Each child in a list should have a unique "key" prop. ' + 
+                'See https://fb.me/react-warning-keys for more information.'
+            )
+          }
         }
-      }
-
-      if (isIterator(children[i])) {
-        children[i] = createFragmentVnode(Array.from(children[i]))
-      } else if (isPrimitiveVnode(children[i])) {
-        children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
-      } else if (isCommonVnode(tag)) {
-        if (isFilterVnode(children[i])) {
-          // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
-          children.splice(i, 1)
-          i--
+  
+        if (isIterator(children[i])) {
+          children[i] = createFragmentVnode(Array.from(children[i]))
+        } else if (isPrimitiveVnode(children[i])) {
+          children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
+        } else if (isCommonVnode(tag)) {
+          if (isFilterVnode(children[i])) {
+            // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
+            children.splice(i, 1)
+            i--
+          }
         }
       }
     }
@@ -228,11 +230,5 @@ export function formatVnode(tag, data, children, checkKey) {
   if (tag === 'svg') {
     addNS(data, children, tag)
   }
-
-  const vnode = createVnode(tag, data, children, undefined, undefined)
-  // 组件需要得到最原始的 children 数据
-  if (isComponent({ tag }) || isInsertComponent(tag)) {
-    vnode.duplicateChildren = duplicateChildren
-  }
-  return vnode
+  return createVnode(tag, data, children, undefined, undefined)
 }

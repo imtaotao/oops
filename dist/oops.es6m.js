@@ -164,7 +164,7 @@ const nextFrame = function(fn) {
     raf(fn);
   });
 };
-var reflowForced = false;
+let reflowForced = false;
 function setNextFrame(obj, prop, val) {
   nextFrame(function() {
     obj[prop] = val;
@@ -368,7 +368,7 @@ function invokeHandler(handler, vnode, event) {
         handler[0].apply(vnode, args);
       }
     } else {
-      for (var i = 0; i < handler.length; i++) {
+      for (let i = 0; i < handler.length; i++) {
         invokeHandler(handler[i], vnode, event);
       }
     }
@@ -958,10 +958,10 @@ function defineSpecialPropsWarningGetter(props, key) {
     configurable: true,
   });
 }
-function mergeProps({data, duplicateChildren}) {
+function mergeProps({data, children}) {
   const props =  {};
-  if (duplicateChildren.length > 0) {
-    props.children = duplicateChildren;
+  if (children.length > 0) {
+    props.children = children;
     if (props.children.length === 1) {
       props.children = props.children[0];
     }
@@ -1644,25 +1644,26 @@ function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children, true)
 }
 function formatVnode(tag, data, children, checkKey) {
-  const duplicateChildren = children.slice();
-  if (children.length > 0) {
-    for (let i = 0; i < children.length; i++) {
-      if (checkKey) {
-        if (!data.hasOwnProperty('key')) {
-          console.warn(
-            'Warning: Each child in a list should have a unique "key" prop. ' +
-              'See https://fb.me/react-warning-keys for more information.'
-          );
+  if (!isComponent({ tag }) && !isInsertComponent(tag)) {
+    if (children.length > 0) {
+      for (let i = 0; i < children.length; i++) {
+        if (checkKey) {
+          if (!data.hasOwnProperty('key')) {
+            console.warn(
+              'Warning: Each child in a list should have a unique "key" prop. ' +
+                'See https://fb.me/react-warning-keys for more information.'
+            );
+          }
         }
-      }
-      if (isIterator(children[i])) {
-        children[i] = createFragmentVnode(Array.from(children[i]));
-      } else if (isPrimitiveVnode(children[i])) {
-        children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
-      } else if (isCommonVnode(tag)) {
-        if (isFilterVnode(children[i])) {
-          children.splice(i, 1);
-          i--;
+        if (isIterator(children[i])) {
+          children[i] = createFragmentVnode(Array.from(children[i]));
+        } else if (isPrimitiveVnode(children[i])) {
+          children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
+        } else if (isCommonVnode(tag)) {
+          if (isFilterVnode(children[i])) {
+            children.splice(i, 1);
+            i--;
+          }
         }
       }
     }
@@ -1670,11 +1671,7 @@ function formatVnode(tag, data, children, checkKey) {
   if (tag === 'svg') {
     addNS(data, children, tag);
   }
-  const vnode = createVnode(tag, data, children, undefined, undefined);
-  if (isComponent({ tag }) || isInsertComponent(tag)) {
-    vnode.duplicateChildren = duplicateChildren;
-  }
-  return vnode
+  return createVnode(tag, data, children, undefined, undefined)
 }
 
 function createVnode(tag, data, children, text, elm) {
@@ -1699,7 +1696,6 @@ function cloneVnode(vnode) {
   cloned.key = vnode.key;
   cloned.isClone = true;
   cloned.component = vnode.component;
-  cloned.duplicateChildren = vnode.duplicateChildren && vnode.duplicateChildren.slice();
   return cloned
 }
 function h(tag, props, ...children) {
