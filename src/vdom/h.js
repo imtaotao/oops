@@ -59,5 +59,6 @@ export function h(tag, props, ...children) {
       ? separateProps(props)
       : installHooks(tag, props),
     children,
+    false,
   )
 }

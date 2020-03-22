@@ -39,6 +39,83 @@ function _createClass(Constructor, protoProps, staticProps) {
   return Constructor;
 }
 
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (typeof call === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _superPropBase(object, property) {
+  while (!Object.prototype.hasOwnProperty.call(object, property)) {
+    object = _getPrototypeOf(object);
+    if (object === null) break;
+  }
+
+  return object;
+}
+
+function _get(target, property, receiver) {
+  if (typeof Reflect !== "undefined" && Reflect.get) {
+    _get = Reflect.get;
+  } else {
+    _get = function _get(target, property, receiver) {
+      var base = _superPropBase(target, property);
+
+      if (!base) return;
+      var desc = Object.getOwnPropertyDescriptor(base, property);
+
+      if (desc.get) {
+        return desc.get.call(receiver);
+      }
+
+      return desc.value;
+    };
+  }
+
+  return _get(target, property, receiver || target);
+}
+
 function _slicedToArray(arr, i) {
   return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
 }
@@ -127,7 +204,7 @@ function isFragment(vnode) {
   return vnode.tag === FRAGMENTS_TYPE;
 }
 function isForwardRef(vnode) {
-  return vnode.tag === FORWARD_REF_TYPE;
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === FORWARD_REF_TYPE;
 }
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag;
@@ -573,7 +650,7 @@ var style = ['setProperty', 'removeProperty'];
 var namespaces = ['setAttribute', 'setAttributeNS', 'removeAttribute', 'addEventListener', 'removeEventListener'];
 
 var empty = function empty() {
-  console.error('Cannot operate on fragment element.');
+  console.warn('Waring: Cannot operate on fragment element.');
 };
 
 var installMethods = function installMethods(obj, methods) {
@@ -813,14 +890,14 @@ function createRmCb(childElm, listeners) {
     }
   };
 }
-function formatPatchRootVnode(vnode) {
+function formatRootVnode(vnode) {
   if (isPrimitiveVnode(vnode)) {
     vnode = createVnode(undefined, undefined, undefined, vnode, undefined);
   }
 
   if (isArray(vnode)) {
     vnode = createFragmentVnode(vnode);
-    console.error('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
+    console.warn('Warning: Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
   }
 
   return vnode;
@@ -1131,7 +1208,7 @@ function patch(oldVnode, vnode) {
 function defineSpecialPropsWarningGetter(props, key) {
   Object.defineProperty(props, key, {
     get: function get() {
-      console.error("'".concat(key, "' is not a prop. Trying to access it will result ") + 'in `undefined` being returned. If you need to access the same ' + 'value within the child component, you should pass it as a different ' + 'prop. (https://fb.me/react-special-props)');
+      console.error("Warning: '".concat(key, "' is not a prop. Trying to access it will result ") + 'in `undefined` being returned. If you need to access the same ' + 'value within the child component, you should pass it as a different ' + 'prop. (https://fb.me/react-special-props)');
     },
     configurable: true
   });
@@ -1249,11 +1326,9 @@ function commonHooksConfig(config) {
     initBefore: function initBefore(vnode) {
       callLifetimeMethod(vnode, 'initBefore')(vnode);
     },
-    prepatch: function prepatch(oldVnode, vnode) {
-      vnode.component = oldVnode.component;
-      callLifetimeMethod(vnode, 'prepatch')(oldVnode, vnode);
-    },
     update: function update(oldVnode, vnode) {
+      vnode.component = oldVnode.component;
+      vnode.component.vnode = vnode;
       callLifetimeMethod(vnode, 'update')(oldVnode, vnode);
     },
     postpatch: function postpatch(oldVnode, vnode) {
@@ -1356,34 +1431,6 @@ var memoVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode);
-      vnode.component.init();
-    }
-  }
-});
-
-var ForwardRefComponent =
-/*#__PURE__*/
-function () {
-  function ForwardRefComponent(vnode) {
-    _classCallCheck(this, ForwardRefComponent);
-
-    this.vnode = vnode;
-  }
-
-  _createClass(ForwardRefComponent, [{
-    key: "init",
-    value: function init() {
-      console.log(this);
-    }
-  }]);
-
-  return ForwardRefComponent;
-}();
-
-var forwardRefHooks = commonHooksConfig({
-  init: function init(vnode) {
-    if (isForwardRef(vnode)) {
-      vnode.component = new ForwardRefComponent(vnode);
       vnode.component.init();
     }
   }
@@ -1534,17 +1581,17 @@ var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
 };
-
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(vnode) {
+  function Component(vnode, refObject) {
     _classCallCheck(this, Component);
 
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
     this.destroyed = false;
+    this.refObject = refObject;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
@@ -1629,8 +1676,7 @@ function () {
 
       try {
         Target.component = this;
-        this.props = mergeProps(this.vnode);
-        this.updateVnode = formatPatchRootVnode(this.render(this.props));
+        this.updateVnode = formatRootVnode(this.render(mergeProps(this.vnode), this.refObject));
 
         if (isUndef(this.updateVnode)) {
           throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
@@ -1681,11 +1727,51 @@ function () {
 
   return Component;
 }();
-
 var componentVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isComponent(vnode)) {
-      vnode.component = new Component(vnode);
+      vnode.component = new Component(vnode, {});
+      vnode.component.init();
+    }
+  }
+});
+
+function abtainRefObject(vnode) {
+  return vnode.data.hasOwnProperty('ref') ? vnode.data.ref : null;
+}
+
+var ForwardRefComponent =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(ForwardRefComponent, _Component);
+
+  function ForwardRefComponent(vnode) {
+    var _this;
+
+    _classCallCheck(this, ForwardRefComponent);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ForwardRefComponent).call(this, vnode, abtainRefObject(vnode)));
+    _this.render = vnode.tag.render;
+    return _this;
+  }
+
+  _createClass(ForwardRefComponent, [{
+    key: "update",
+    value: function update(oldVnode, vnode) {
+      this.refObject = abtainRefObject(vnode);
+      this.render = vnode.tag.render;
+
+      _get(_getPrototypeOf(ForwardRefComponent.prototype), "update", this).call(this, oldVnode, vnode);
+    }
+  }]);
+
+  return ForwardRefComponent;
+}(Component);
+
+var forwardRefHooks = commonHooksConfig({
+  init: function init(vnode) {
+    if (isForwardRef(vnode)) {
+      vnode.component = new ForwardRefComponent(vnode);
       vnode.component.init();
     }
   }
@@ -1783,7 +1869,7 @@ function () {
     key: "render",
     value: function render() {
       var value = readContext(this, this.context);
-      var updateVnode = formatPatchRootVnode(this.rewardRender()(value));
+      var updateVnode = formatRootVnode(this.rewardRender()(value));
 
       if (updateVnode) {
         this.rootVnode = patch(this.rootVnode, updateVnode);
@@ -1996,13 +2082,19 @@ function installHooks(tag, data) {
   return data;
 }
 function createFragmentVnode(children) {
-  return formatVnode(FRAGMENTS_TYPE, {}, children);
+  return formatVnode(FRAGMENTS_TYPE, {}, children, true);
 }
-function formatVnode(tag, data, children) {
+function formatVnode(tag, data, children, checkKey) {
   var duplicateChildren = children.slice();
 
   if (children.length > 0) {
     for (var i = 0; i < children.length; i++) {
+      if (checkKey) {
+        if (!data.hasOwnProperty('key')) {
+          console.warn('Warning: Each child in a list should have a unique "key" prop. ' + 'See https://fb.me/react-warning-keys for more information.');
+        }
+      }
+
       if (isIterator(children[i])) {
         children[i] = createFragmentVnode(Array.from(children[i]));
       } else if (isPrimitiveVnode(children[i])) {
@@ -2069,7 +2161,7 @@ function h(tag, props) {
     delete props.children;
   }
 
-  return formatVnode(tag, isCommonVnode(tag) ? separateProps(props) : installHooks(tag, props), children);
+  return formatVnode(tag, isCommonVnode(tag) ? separateProps(props) : installHooks(tag, props), children, false);
 }
 
 var MODE_SLASH = 0;
@@ -2267,7 +2359,7 @@ function memo(tag, compare) {
 
 function render(vnode, app, callback) {
   if (app) {
-    vnode = formatPatchRootVnode(vnode);
+    vnode = formatRootVnode(vnode);
 
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode);
@@ -2298,7 +2390,7 @@ function forwardRef(render) {
   } else if (typeof render !== 'function') {
     throw new Error('forwardRef requires a render function but was given ' + (render === null ? 'null' : _typeof(render)));
   } else {
-    if (render.length === 0 || render.length === 2) {
+    if (render.length !== 0 && render.length !== 2) {
       throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' + (render.length === 1 ? 'Did you forget to use the ref parameter?' : 'Any additional parameter will be undefined.'));
     }
   }

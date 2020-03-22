@@ -33,7 +33,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `render`
 + [x] `createContext`
 + [x] `createRef`
-+ [ ] `forwardRef`
++ [x] `forwardRef`
 + [ ] `lazy`
 + `Children`
   + [ ] `map`

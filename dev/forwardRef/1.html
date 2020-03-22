@@ -15,29 +15,29 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, createRef, forwardRef } = React;
-      // const { render, Fragment, useState, createRef, forwardRef } = oops
-      // ReactDOM.render = oops.render
-      // React.createElement = oops.h
+      // const { Fragment, useState, createRef, forwardRef } = React;
+      const { render, Fragment, useState, createRef, forwardRef } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
 
       let a = null
       function FancyButton(props, ref) {
         console.log(props, ref, ref === a);
         a = ref
         return (
-          <button className="FancyButton">
+          <button className="FancyButton" ref={ref}>
             {props.children}
           </button>
         )
       }
-      // FancyButton = forwardRef(FancyButton)
+      FancyButton = forwardRef(FancyButton)
 
       const ref = createRef();
       function App() {
         const [count, setCount] = useState(0)
         return [
-          <FancyButton children={[2,3]} key="21" ></FancyButton>,
-          <div onClick={e => setCount(count + 1)}>click+{count}</div>
+          <FancyButton children={[2,3]} key="21" ref={ref}></FancyButton>,
+          <div onClick={e => setCount(count + 1)} key="2">click+{count}</div>
         ]
       }
 

@@ -47,7 +47,10 @@ export function isFragment(vnode) {
 }
 
 export function isForwardRef(vnode) {
-  return vnode.tag === FORWARD_REF_TYPE
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === FORWARD_REF_TYPE
+  )
 }
 
 export function sameVnode(a, b) {

@@ -13,7 +13,7 @@ function invokeHandler(handler, vnode, event) {
         handler[0].apply(vnode, args)
       }
     } else {
-      for (var i = 0; i < handler.length; i++) {
+      for (let i = 0; i < handler.length; i++) {
         invokeHandler(handler[i], vnode, event)
       }
     }

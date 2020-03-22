@@ -20,7 +20,7 @@ const namespaces = [
 ]
 
 const empty = () => {
-  console.error('Cannot operate on fragment element.')
+  console.warn('Waring: Cannot operate on fragment element.')
 }
 
 const installMethods = (obj, methods) => {

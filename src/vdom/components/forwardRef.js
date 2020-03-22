@@ -1,13 +1,24 @@
+import { Component } from './common.js'
 import { isForwardRef } from '../helpers/patch/is.js'
 import { commonHooksConfig } from '../helpers/component.js'
 
-class ForwardRefComponent {
+function abtainRefObject(vnode) {
+  return vnode.data.hasOwnProperty('ref')
+    ? vnode.data.ref
+    : null
+}
+
+// 其实原有的 component 就支持 ref，但是为了与 react 一致，添加了 forwardRef 组件
+class ForwardRefComponent extends Component {
   constructor(vnode) {
-    this.vnode = vnode
+    super(vnode, abtainRefObject(vnode))
+    this.render = vnode.tag.render
   }
 
-  init() {
-    console.log(this)
+  update(oldVnode, vnode) {
+    this.refObject = abtainRefObject(vnode)
+    this.render = vnode.tag.render
+    super.update(oldVnode, vnode)
   }
 }
 

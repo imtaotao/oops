@@ -79,7 +79,10 @@ function isFragment(vnode) {
   return vnode.tag === FRAGMENTS_TYPE
 }
 function isForwardRef(vnode) {
-  return vnode.tag === FORWARD_REF_TYPE
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === FORWARD_REF_TYPE
+  )
 }
 function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
@@ -489,7 +492,7 @@ const namespaces = [
   'removeEventListener',
 ];
 const empty = () => {
-  console.error('Cannot operate on fragment element.');
+  console.warn('Waring: Cannot operate on fragment element.');
 };
 const installMethods = (obj, methods) => {
   methods.forEach(name => obj[name] = empty);
@@ -668,13 +671,13 @@ function createRmCb(childElm, listeners) {
     }
   }
 }
-function formatPatchRootVnode(vnode) {
+function formatRootVnode(vnode) {
   if (isPrimitiveVnode(vnode)) {
     vnode = createVnode(undefined, undefined, undefined, vnode, undefined);
   }
   if (isArray(vnode)) {
     vnode = createFragmentVnode(vnode);
-    console.error('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
+    console.warn('Warning: Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?');
   }
   return vnode
 }
@@ -946,7 +949,7 @@ function defineSpecialPropsWarningGetter(props, key) {
   Object.defineProperty(props, key, {
     get() {
       console.error(
-        `'${key}' is not a prop. Trying to access it will result ` +
+        `Warning: '${key}' is not a prop. Trying to access it will result ` +
           'in `undefined` being returned. If you need to access the same ' +
           'value within the child component, you should pass it as a different ' +
           'prop. (https://fb.me/react-special-props)',
@@ -1038,11 +1041,9 @@ function commonHooksConfig(config) {
     initBefore(vnode) {
       callLifetimeMethod(vnode, 'initBefore')(vnode);
     },
-    prepatch(oldVnode, vnode) {
-      vnode.component = oldVnode.component;
-      callLifetimeMethod(vnode, 'prepatch')(oldVnode, vnode);
-    },
     update(oldVnode, vnode) {
+      vnode.component = oldVnode.component;
+      vnode.component.vnode = vnode;
       callLifetimeMethod(vnode, 'update')(oldVnode, vnode);
     },
     postpatch(oldVnode, vnode) {
@@ -1120,23 +1121,6 @@ const memoVNodeHooks = commonHooksConfig({
       vnode.component.init();
     }
   }
-});
-
-class ForwardRefComponent {
-  constructor(vnode) {
-    this.vnode = vnode;
-  }
-  init() {
-    console.log(this);
-  }
-}
-const forwardRefHooks = commonHooksConfig({
-  init(vnode) {
-    if (isForwardRef(vnode)) {
-      vnode.component = new ForwardRefComponent(vnode);
-      vnode.component.init();
-    }
-  },
 });
 
 const MAX_SIGNED_31_BIT_INT = 1073741823;
@@ -1264,11 +1248,12 @@ const Target = {
   component: undefined,
 };
 class Component {
-  constructor(vnode) {
+  constructor(vnode, refObject) {
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
     this.destroyed = false;
+    this.refObject = refObject;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
@@ -1329,8 +1314,12 @@ class Component {
     }
     try {
       Target.component = this;
-      this.props = mergeProps(this.vnode);
-      this.updateVnode = formatPatchRootVnode(this.render(this.props));
+      this.updateVnode = formatRootVnode(
+        this.render(
+          mergeProps(this.vnode),
+          this.refObject,
+        )
+      );
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +
@@ -1373,7 +1362,32 @@ class Component {
 const componentVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isComponent(vnode)) {
-      vnode.component = new Component(vnode);
+      vnode.component = new Component(vnode, {});
+      vnode.component.init();
+    }
+  },
+});
+
+function abtainRefObject(vnode) {
+  return vnode.data.hasOwnProperty('ref')
+    ? vnode.data.ref
+    : null
+}
+class ForwardRefComponent extends Component {
+  constructor(vnode) {
+    super(vnode, abtainRefObject(vnode));
+    this.render = vnode.tag.render;
+  }
+  update(oldVnode, vnode) {
+    this.refObject = abtainRefObject(vnode);
+    this.render = vnode.tag.render;
+    super.update(oldVnode, vnode);
+  }
+}
+const forwardRefHooks = commonHooksConfig({
+  init(vnode) {
+    if (isForwardRef(vnode)) {
+      vnode.component = new ForwardRefComponent(vnode);
       vnode.component.init();
     }
   },
@@ -1441,7 +1455,7 @@ class ConsumerComponent {
   }
   render() {
     const value = readContext(this, this.context);
-    const updateVnode = formatPatchRootVnode(this.rewardRender()(value));
+    const updateVnode = formatRootVnode(this.rewardRender()(value));
     if (updateVnode) {
       this.rootVnode = patch(this.rootVnode, updateVnode);
       this.vnode.elm = this.rootVnode.elm;
@@ -1627,12 +1641,20 @@ function installHooks(tag, data) {
   return data
 }
 function createFragmentVnode(children) {
-  return formatVnode(FRAGMENTS_TYPE, {}, children)
+  return formatVnode(FRAGMENTS_TYPE, {}, children, true)
 }
-function formatVnode(tag, data, children) {
+function formatVnode(tag, data, children, checkKey) {
   const duplicateChildren = children.slice();
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
+      if (checkKey) {
+        if (!data.hasOwnProperty('key')) {
+          console.warn(
+            'Warning: Each child in a list should have a unique "key" prop. ' +
+              'See https://fb.me/react-warning-keys for more information.'
+          );
+        }
+      }
       if (isIterator(children[i])) {
         children[i] = createFragmentVnode(Array.from(children[i]));
       } else if (isPrimitiveVnode(children[i])) {
@@ -1703,6 +1725,7 @@ function h(tag, props, ...children) {
       ? separateProps(props)
       : installHooks(tag, props),
     children,
+    false,
   )
 }
 
@@ -1879,7 +1902,7 @@ function memo(tag, compare) {
 
 function render(vnode, app, callback) {
   if (app) {
-    vnode = formatPatchRootVnode(vnode);
+    vnode = formatRootVnode(vnode);
     if (isVnode(vnode)) {
       vnode = patch(undefined, vnode);
       const elm = vnode.elm || null;
@@ -1912,7 +1935,7 @@ function forwardRef(render) {
         (render === null ? 'null' : typeof render)
     )
   } else {
-    if (render.length === 0 || render.length === 2) {
+    if (render.length !== 0 && render.length !== 2) {
       throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
         (
           render.length === 1

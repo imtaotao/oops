@@ -8,7 +8,7 @@ function defineSpecialPropsWarningGetter(props, key) {
   Object.defineProperty(props, key, {
     get() {
       console.error(
-        `'${key}' is not a prop. Trying to access it will result ` +
+        `Warning: '${key}' is not a prop. Trying to access it will result ` +
           'in `undefined` being returned. If you need to access the same ' +
           'value within the child component, you should pass it as a different ' +
           'prop. (https://fb.me/react-special-props)',

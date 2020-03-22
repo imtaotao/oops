@@ -195,13 +195,22 @@ export function installHooks(tag, data) {
 }
 
 export function createFragmentVnode(children) {
-  return formatVnode(FRAGMENTS_TYPE, {}, children)
+  return formatVnode(FRAGMENTS_TYPE, {}, children, true)
 }
 
-export function formatVnode(tag, data, children) {
+export function formatVnode(tag, data, children, checkKey) {
   const duplicateChildren = children.slice()
   if (children.length > 0) {
     for (let i = 0; i < children.length; i++) {
+      if (checkKey) {
+        if (!data.hasOwnProperty('key')) {
+          console.warn(
+            'Warning: Each child in a list should have a unique "key" prop. ' + 
+              'See https://fb.me/react-warning-keys for more information.'
+          )
+        }
+      }
+
       if (isIterator(children[i])) {
         children[i] = createFragmentVnode(Array.from(children[i]))
       } else if (isPrimitiveVnode(children[i])) {
@@ -215,6 +224,7 @@ export function formatVnode(tag, data, children) {
       }
     }
   }
+
   if (tag === 'svg') {
     addNS(data, children, tag)
   }

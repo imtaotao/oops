@@ -85,7 +85,7 @@ export function formatRootVnode(vnode) {
   }
   if (isArray(vnode)) {
     vnode = createFragmentVnode(vnode)
-    console.warn('Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
+    console.warn('Warning: Aadjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>?')
   }
   return vnode
 }

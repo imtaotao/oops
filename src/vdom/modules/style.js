@@ -5,7 +5,7 @@ const nextFrame = function(fn) {
     raf(fn)
   })
 }
-var reflowForced = false
+let reflowForced = false
 
 function setNextFrame(obj, prop, val) {
   nextFrame(function() {

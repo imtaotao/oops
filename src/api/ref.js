@@ -21,7 +21,7 @@ export function forwardRef(render) {
     )
   } else {
     // Do not warn for 0 arguments because it could be due to usage of the 'arguments' object
-    if (render.length === 0 || render.length === 2) {
+    if (render.length !== 0 && render.length !== 2) {
       throw new Error('forwardRef render functions accept exactly two parameters: props and ref. ' +
         (
           render.length === 1
