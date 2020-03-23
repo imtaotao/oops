@@ -49,8 +49,9 @@
       const appRoot = document.getElementById('app-root');
       const modalRoot = document.getElementById('modal-root');
 
+      const el = document.createElement('div')
+
       function Modal(props) {
-        const el = document.createElement('div')
         useEffect(() => {
           modalRoot.appendChild(el)
           return () => modalRoot.removeChild(el)
