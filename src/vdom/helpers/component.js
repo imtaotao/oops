@@ -98,6 +98,7 @@ export function addToProviderUpdateDuplicate(consumer) {
   const deps = consumer.providerDependencies
   if (deps && deps.length > 0) {
     for (let i = 0; i < deps.length; i++) {
+      // 只有在更新中的 provider.updateDuplicate 才是数组，未更新时为 null
       if (isArray(deps[i].updateDuplicate)) {
         deps[i].updateDuplicate.push(consumer)
       }

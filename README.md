@@ -10,8 +10,6 @@
 
 
 ## Hooks
-The `observedBits` function of `context` is not implemented yet.
-
 ### Basic Hooks
 + [x] `useState`
 + [x] `useEffect`
@@ -52,4 +50,6 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `<Context.Consumer/>`
 
 ## Notice
-  1. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event propation to parent node in vitualDOM tree. But `oops` uses native event system. our event propation behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`.
+  1. The `observedBits` function of `context` is not implemented yet.
+  
+  2. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event bubbling to parent node in vitualDOM tree. But `oops` uses native event system. our event bubbling behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`.
