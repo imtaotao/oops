@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>portal1</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+    <style>
+      #app-root {
+        height: 10em;
+        width: 10em;
+        background: lightblue;
+        overflow: hidden;
+      }
+
+      #modal-root {
+        position: relative;
+        z-index: 999;
+      }
+
+      .modal {
+        background-color: rgba(0,0,0,0.5);
+        position: fixed;
+        height: 100%;
+        width: 100%;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-root"></div>
+    <div id="modal-root"></div>
+    <script type="module">
+      import oops from '../../src/index.js'
+      window.oops = oops
+    </script>
+    <script type="text/babel">
+      const { Fragment, useState, memo, useEffect } = React;
+      // const { render, Fragment, useState, memo, useEffect } = oops
+      // ReactDOM.render = oops.render
+      // React.createElement = oops.h
+
+      const appRoot = document.getElementById('app-root');
+      const modalRoot = document.getElementById('modal-root');
+
+      function Modal(props) {
+        const el = document.createElement('div')
+        useEffect(() => {
+          modalRoot.appendChild(el)
+          return () => modalRoot.removeChild(el)
+        })
+
+        return ReactDOM.createPortal(
+          props.children,
+          el,
+        )
+      }
+
+      function Parent(props) {
+        const [clicks, handleClick] = useState(0)
+        return (
+          <div onClick={e => handleClick(clicks + 1)}>
+            <p>Number of clicks: {clicks}</p>
+            <p>
+              Open up the browser DevTools
+              to observe that the button
+              is not a child of the div
+              with the onClick handler.
+            </p>
+            <Modal>
+              <Child />
+            </Modal>
+          </div>
+        );
+      }
+
+      function Child() {
+        // The click event on this button will bubble up to parent,
+        // because there is no 'onClick' attribute defined
+        return (
+          <div className="modal">
+            <button>Click</button>
+          </div>
+        );
+      }
+
+      ReactDOM.render(<Parent />, appRoot);
+    </script>
+  </body>
+</html>

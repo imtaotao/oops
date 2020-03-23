@@ -57,6 +57,7 @@ export function sameVnode(a, b) {
   return a.key === b.key && a.tag === b.tag
 }
 
+// https://zh-hans.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored
 export function isFilterVnode(vnode) {
   return (
     vnode === null ||

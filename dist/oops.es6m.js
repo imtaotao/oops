@@ -4,6 +4,7 @@
  * Released under the MIT License.
  */
 const MEMO_TYPE = Symbol.for('oops.memo');
+const PORTAL_TYPE = Symbol.for('oops.portal');
 const CONTEXT_TYPE = Symbol.for('oops.context');
 const PROVIDER_TYPE = Symbol.for('oops.provider');
 const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
@@ -1995,6 +1996,15 @@ function render(vnode, app, callback) {
   }
 }
 
+function createPortal(children, containerInfo, key = null) {
+  return {
+    $$typeof: PORTAL_TYPE,
+    children,
+    containerInfo,
+    key: key == null ? null : '' + key,
+  }
+}
+
 function isValidElement(object) {
   return (
     typeof object === 'object' &&
@@ -2279,6 +2289,7 @@ const oops = {
   Children,
   createRef,
   forwardRef,
+  createPortal,
   createContext,
   isValidElement,
   Fragment: FRAGMENTS_TYPE,
@@ -2294,4 +2305,4 @@ const oops = {
 };
 
 export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

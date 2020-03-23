@@ -159,6 +159,7 @@ function _nonIterableRest() {
 }
 
 var MEMO_TYPE = Symbol["for"]('oops.memo');
+var PORTAL_TYPE = Symbol["for"]('oops.portal');
 var CONTEXT_TYPE = Symbol["for"]('oops.context');
 var PROVIDER_TYPE = Symbol["for"]('oops.provider');
 var FRAGMENTS_TYPE = Symbol["for"]('oops.fragments');
@@ -2440,6 +2441,16 @@ function render(vnode, app, callback) {
   }
 }
 
+function createPortal(children, containerInfo) {
+  var key = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+  return {
+    $$typeof: PORTAL_TYPE,
+    children: children,
+    containerInfo: containerInfo,
+    key: key == null ? null : '' + key
+  };
+}
+
 function isValidElement(object) {
   return _typeof(object) === 'object' && object !== null && isValidElementType(object.tag);
 }
@@ -2727,6 +2738,7 @@ var oops = {
   Children: Children,
   createRef: createRef,
   forwardRef: forwardRef,
+  createPortal: createPortal,
   createContext: createContext,
   isValidElement: isValidElement,
   Fragment: FRAGMENTS_TYPE,
@@ -2742,4 +2754,4 @@ var oops = {
 };
 
 export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

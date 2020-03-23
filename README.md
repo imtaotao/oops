@@ -36,6 +36,7 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `createRef`
 + [x] `forwardRef`
 + [x] `isValidElement`
++ [ ] `createPortal`
 + [ ] `lazy`
 + `Children`
   + [x] `map`
