@@ -21,16 +21,20 @@
       // React.createElement = oops.h
 
       function Child(props) {
-        console.log(Children.map(props.children, function(child) {
-          // console.log(child, this);
-          return child
-        }, 22));
+        console.log(props);
+        console.log(
+          Children.map(props.children, function(child) {
+            console.log(child, this);
+            return child
+          }, 22),
+          'chentao'
+        );
         return props.children
       }
 
       function App() {
         return (
-          <Child>
+          <Child id="1212">
             {
               [
                 <div>11</div>,

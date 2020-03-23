@@ -19,13 +19,6 @@ function isUndef(v) {
 function isVoid(v) {
   return v === undefined || v === null
 }
-function isIterator(obj) {
-  return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    typeof obj[Symbol.iterator] === 'function'
-  )
-}
 function isValidElementType(type) {
   return (
     typeof type === 'string' ||
@@ -48,6 +41,23 @@ function isInsertComponent(type) {
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE)
   )
+}
+const MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
+const FAUX_ITERATOR_SYMBOL = '@@iterator';
+function getIteratorFn(maybeIterable) {
+  if (maybeIterable === null || typeof maybeIterable !== 'object') {
+    return null
+  }
+  const maybeIterator =
+    (MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL]) ||
+    maybeIterable[FAUX_ITERATOR_SYMBOL];
+  if (typeof maybeIterator === 'function') {
+    return maybeIterator
+  }
+  return null
+}
+function hasIterator(maybeIterable) {
+  return typeof getIteratorFn(maybeIterable) === 'function'
 }
 
 const emptyNode = createVnode('', {}, [], undefined, undefined);
@@ -970,10 +980,8 @@ function mergeProps({data, children}) {
     }
   }
   for (const key in data) {
-    if (key === 'key') {
-      defineSpecialPropsWarningGetter(props, 'key');
-    } else if (key === 'ref') {
-      defineSpecialPropsWarningGetter(props, 'ref');
+    if (key === 'key' || key === 'ref') {
+      defineSpecialPropsWarningGetter(props, key);
     } else if (key !== 'hook') {
       props[key] = data[key];
     }
@@ -1717,6 +1725,7 @@ function createFragmentVnode(children) {
 function formatVnode(tag, data, children, checkKey) {
   if (!isComponent({ tag }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
+      children = children.slice();
       for (let i = 0; i < children.length; i++) {
         if (checkKey) {
           if (!data.hasOwnProperty('key')) {
@@ -1726,7 +1735,7 @@ function formatVnode(tag, data, children, checkKey) {
             );
           }
         }
-        if (isIterator(children[i])) {
+        if (hasIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]));
         } else if (isPrimitiveVnode(children[i])) {
           children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
@@ -1986,15 +1995,215 @@ function render(vnode, app, callback) {
   }
 }
 
+function isValidElement(object) {
+  return (
+    typeof object === 'object' &&
+    object !== null &&
+    isValidElementType(object.tag)
+  )
+}
+
+const SEPARATOR = '.';
+const SUBSEPARATOR = ':';
+const POOL_SIZE = 10;
+const traverseContextPool = [];
+function escape(key) {
+  const escapeRegex = /[=:]/g;
+  const escaperLookup = {
+    '=': '=0',
+    ':': '=2',
+  };
+  const escapedString = ('' + key).replace(
+    escapeRegex,
+    match => escaperLookup[match],
+  );
+  return '$' + escapedString
+}
+const userProvidedKeyEscapeRegex = /\/+/g;
+function escapeUserProvidedKey(text) {
+  return ('' + text).replace(userProvidedKeyEscapeRegex, '$&/')
+}
+function cloneAndReplaceKey(oldElm, newKey) {
+  const cloned = cloneVnode(oldElm);
+  cloned.key = newKey;
+  return cloned
+}
+function getComponentKey(component, index) {
+  return (
+    typeof component === 'object' &&
+    component !== null &&
+    component.key != null
+  )
+    ? escape(component.key)
+    : index.toString(36)
+}
+function getPooledTraverseContext(mapResult, keyPrefix, mapFunction, mapContext) {
+  if (traverseContextPool.length) {
+    const traverseContext = traverseContextPool.pop();
+    traverseContext.count = 0;
+    traverseContext.fn = mapFunction;
+    traverseContext.result = mapResult;
+    traverseContext.context = mapContext;
+    traverseContext.keyPrefix = keyPrefix;
+    return traverseContext
+  } else {
+    return {
+      count: 0,
+      fn: mapFunction,
+      result: mapResult,
+      context: mapContext,
+      keyPrefix: keyPrefix,
+    }
+  }
+}
+function releaseTraverseContext(traverseContext) {
+  traverseContext.result = null;
+  traverseContext.keyPrefix = null;
+  traverseContext.fn = null;
+  traverseContext.context = null;
+  traverseContext.count = 0;
+  if (traverseContextPool.length < POOL_SIZE) {
+    traverseContextPool.push(traverseContext);
+  }
+}
+function forEachSingleChild(bookKeeping, child, name) {
+  const { fn, context } = bookKeeping;
+  fn.call(context, child, bookKeeping.count++);
+}
+function mapSingleChildIntoContext(bookKeeping, child, childKey) {
+  const { fn, result, keyPrefix, context } = bookKeeping;
+  let mappedChild = fn.call(context, child, bookKeeping.count++);
+  if (isArray(mappedChild)) {
+    mapIntoWithKeyPrefixInternal(mappedChild, result, childKey, c => c);
+  } else if (mappedChild != null) {
+    if (isValidElement(mappedChild)) {
+      mappedChild = cloneAndReplaceKey(
+        mappedChild,
+        keyPrefix +
+          (mappedChild.key && (!child || child.key !== mappedChild.key)
+            ? escapeUserProvidedKey(mappedChild.key) + '/'
+            : '') +
+          childKey,
+      );
+    }
+    result.push(mappedChild);
+  }
+}
+function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext) {
+  const type = typeof children;
+  if (type === 'undefined' || type === 'boolean') {
+    children = null;
+  }
+  let invokeCallback = false;
+  if (children === null) {
+    invokeCallback = true;
+  } else {
+    switch (type) {
+      case 'string':
+      case 'number':
+        invokeCallback = true;
+        break
+      case 'object':
+        if (isValidElement(children)) {
+          invokeCallback = true;
+        }
+    }
+  }
+  if (invokeCallback) {
+    callback(
+      traverseContext,
+      children,
+      nameSoFar === '' ? SEPARATOR + getComponentKey(children, 0) : nameSoFar,
+    );
+    return 1
+  }
+  let child;
+  let nextName;
+  let subtreeCount = 0;
+  const nextNamePrefix = nameSoFar === ''
+    ? SEPARATOR
+    : nameSoFar + SUBSEPARATOR;
+  if (Array.isArray(children)) {
+    for (let i = 0; i < children.length; i++) {
+      child = children[i];
+      nextName = nextNamePrefix + getComponentKey(child, i);
+      subtreeCount += traverseAllChildrenImpl(
+        child,
+        nextName,
+        callback,
+        traverseContext,
+      );
+    }
+  } else {
+    const iteratorFn = getIteratorFn(children);
+    if (typeof iteratorFn === 'function') {
+      const iterator = iteratorFn.call(children);
+      let step;
+      let ii = 0;
+      while (!(step = iterator.next()).done) {
+        child = step.value;
+        nextName = nextNamePrefix + getComponentKey(child, ii++);
+        subtreeCount += traverseAllChildrenImpl(
+          child,
+          nextName,
+          callback,
+          traverseContext,
+        );
+      }
+    } else if (type === 'object') {
+      throw new Error('If you meant to render a collection of children, use an array instead.')
+    }
+  }
+  return subtreeCount
+}
+function traverseAllChildren(children, callback, traverseContext) {
+  if (children == null) return 0
+  return traverseAllChildrenImpl(children, '', callback, traverseContext)
+}
+function mapIntoWithKeyPrefixInternal(children, array, prefix, fn, context) {
+  let escapedPrefix = '';
+  if (prefix != null) {
+    escapedPrefix = escapeUserProvidedKey(prefix) + '/';
+  }
+  const traverseContext = getPooledTraverseContext(
+    array,
+    escapedPrefix,
+    fn,
+    context,
+  );
+  traverseAllChildren(children, mapSingleChildIntoContext, traverseContext);
+  releaseTraverseContext(traverseContext);
+}
 function forEachChildren(children, fn, context) {
+  if (children == null) return children
+  const traverseContext = getPooledTraverseContext(
+    null,
+    null,
+    fn,
+    context,
+  );
+  traverseAllChildren(children, forEachSingleChild, traverseContext);
+  releaseTraverseContext(traverseContext);
 }
 function mapChildren(children, fn, context) {
+  if (children == null)  return children
+  const result = [];
+  mapIntoWithKeyPrefixInternal(children, result, null, fn, context);
+  return result
 }
 function countChildren(children) {
+  return traverseAllChildren(children, () => null, null)
 }
 function toArray(children) {
+  const result = [];
+  mapIntoWithKeyPrefixInternal(children, result, null, child => child);
+  return result
 }
 function onlyChild(children) {
+  if (!isValidElement(children)) {
+    throw new Error('Oops.Children.only expected to receive a single React element child.')
+  }
+  return children
 }
 
 function resolveTargetComponent() {
@@ -2071,6 +2280,7 @@ const oops = {
   createRef,
   forwardRef,
   createContext,
+  isValidElement,
   Fragment: FRAGMENTS_TYPE,
   useRef,
   useMemo,
@@ -2084,4 +2294,4 @@ const oops = {
 };
 
 export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, createRef, forwardRef, h, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

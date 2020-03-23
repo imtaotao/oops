@@ -35,13 +35,14 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `createContext`
 + [x] `createRef`
 + [x] `forwardRef`
++ [x] `isValidElement`
 + [ ] `lazy`
 + `Children`
-  + [ ] `map`
-  + [ ] `forEach`
-  + [ ] `count`
-  + [ ] `toArray`
-  + [ ] `only`
+  + [x] `map`
+  + [x] `forEach`
+  + [x] `count`
+  + [x] `toArray`
+  + [x] `only`
 
 ## Built-in components
 + [x] `<Fragment/>`

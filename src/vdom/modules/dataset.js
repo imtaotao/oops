@@ -1,4 +1,4 @@
-const CAPS_REGEX = /[A-Z]/g;
+const CAPS_REGEX = /[A-Z]/g
 
 function updateDataset(oldVnode, vnode) {
   const elm = vnode.elm

@@ -178,14 +178,29 @@ function isUndef(v) {
 function isVoid(v) {
   return v === undefined || v === null;
 }
-function isIterator(obj) {
-  return obj !== null && _typeof(obj) === 'object' && typeof obj[Symbol.iterator] === 'function';
-}
 function isValidElementType(type) {
   return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 function isInsertComponent(type) {
   return _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
+}
+var MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
+var FAUX_ITERATOR_SYMBOL = '@@iterator';
+function getIteratorFn(maybeIterable) {
+  if (maybeIterable === null || _typeof(maybeIterable) !== 'object') {
+    return null;
+  }
+
+  var maybeIterator = MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL];
+
+  if (typeof maybeIterator === 'function') {
+    return maybeIterator;
+  }
+
+  return null;
+}
+function hasIterator(maybeIterable) {
+  return typeof getIteratorFn(maybeIterable) === 'function';
 }
 
 var emptyNode = createVnode('', {}, [], undefined, undefined);
@@ -1235,10 +1250,8 @@ function mergeProps(_ref) {
   }
 
   for (var key in data) {
-    if (key === 'key') {
-      defineSpecialPropsWarningGetter(props, 'key');
-    } else if (key === 'ref') {
-      defineSpecialPropsWarningGetter(props, 'ref');
+    if (key === 'key' || key === 'ref') {
+      defineSpecialPropsWarningGetter(props, key);
     } else if (key !== 'hook') {
       props[key] = data[key];
     }
@@ -2146,6 +2159,8 @@ function formatVnode(tag, data, children, checkKey) {
     tag: tag
   }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
+      children = children.slice();
+
       for (var i = 0; i < children.length; i++) {
         if (checkKey) {
           if (!data.hasOwnProperty('key')) {
@@ -2153,7 +2168,7 @@ function formatVnode(tag, data, children, checkKey) {
           }
         }
 
-        if (isIterator(children[i])) {
+        if (hasIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]));
         } else if (isPrimitiveVnode(children[i])) {
           children[i] = createVnode(undefined, undefined, undefined, children[i], undefined);
@@ -2429,15 +2444,216 @@ function render(vnode, app, callback) {
   }
 }
 
-function forEachChildren(children, fn, context) {}
+function isValidElement(object) {
+  return _typeof(object) === 'object' && object !== null && isValidElementType(object.tag);
+}
 
-function mapChildren(children, fn, context) {}
+var SEPARATOR = '.';
+var SUBSEPARATOR = ':';
+var POOL_SIZE = 10;
+var traverseContextPool = [];
 
-function countChildren(children) {}
+function escape(key) {
+  var escapeRegex = /[=:]/g;
+  var escaperLookup = {
+    '=': '=0',
+    ':': '=2'
+  };
+  var escapedString = ('' + key).replace(escapeRegex, function (match) {
+    return escaperLookup[match];
+  });
+  return '$' + escapedString;
+}
 
-function toArray(children) {}
+var userProvidedKeyEscapeRegex = /\/+/g;
 
-function onlyChild(children) {}
+function escapeUserProvidedKey(text) {
+  return ('' + text).replace(userProvidedKeyEscapeRegex, '$&/');
+}
+
+function cloneAndReplaceKey(oldElm, newKey) {
+  var cloned = cloneVnode(oldElm);
+  cloned.key = newKey;
+  return cloned;
+}
+
+function getComponentKey(component, index) {
+  return _typeof(component) === 'object' && component !== null && component.key != null ? escape(component.key) : index.toString(36);
+}
+
+function getPooledTraverseContext(mapResult, keyPrefix, mapFunction, mapContext) {
+  if (traverseContextPool.length) {
+    var traverseContext = traverseContextPool.pop();
+    traverseContext.count = 0;
+    traverseContext.fn = mapFunction;
+    traverseContext.result = mapResult;
+    traverseContext.context = mapContext;
+    traverseContext.keyPrefix = keyPrefix;
+    return traverseContext;
+  } else {
+    return {
+      count: 0,
+      fn: mapFunction,
+      result: mapResult,
+      context: mapContext,
+      keyPrefix: keyPrefix
+    };
+  }
+}
+
+function releaseTraverseContext(traverseContext) {
+  traverseContext.result = null;
+  traverseContext.keyPrefix = null;
+  traverseContext.fn = null;
+  traverseContext.context = null;
+  traverseContext.count = 0;
+
+  if (traverseContextPool.length < POOL_SIZE) {
+    traverseContextPool.push(traverseContext);
+  }
+}
+
+function forEachSingleChild(bookKeeping, child, name) {
+  var fn = bookKeeping.fn,
+      context = bookKeeping.context;
+  fn.call(context, child, bookKeeping.count++);
+}
+
+function mapSingleChildIntoContext(bookKeeping, child, childKey) {
+  var fn = bookKeeping.fn,
+      result = bookKeeping.result,
+      keyPrefix = bookKeeping.keyPrefix,
+      context = bookKeeping.context;
+  var mappedChild = fn.call(context, child, bookKeeping.count++);
+
+  if (isArray(mappedChild)) {
+    mapIntoWithKeyPrefixInternal(mappedChild, result, childKey, function (c) {
+      return c;
+    });
+  } else if (mappedChild != null) {
+    if (isValidElement(mappedChild)) {
+      mappedChild = cloneAndReplaceKey(mappedChild, keyPrefix + (mappedChild.key && (!child || child.key !== mappedChild.key) ? escapeUserProvidedKey(mappedChild.key) + '/' : '') + childKey);
+    }
+
+    result.push(mappedChild);
+  }
+}
+
+function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext) {
+  var type = _typeof(children);
+
+  if (type === 'undefined' || type === 'boolean') {
+    children = null;
+  }
+
+  var invokeCallback = false;
+
+  if (children === null) {
+    invokeCallback = true;
+  } else {
+    switch (type) {
+      case 'string':
+      case 'number':
+        invokeCallback = true;
+        break;
+
+      case 'object':
+        if (isValidElement(children)) {
+          invokeCallback = true;
+        }
+
+    }
+  }
+
+  if (invokeCallback) {
+    callback(traverseContext, children, nameSoFar === '' ? SEPARATOR + getComponentKey(children, 0) : nameSoFar);
+    return 1;
+  }
+
+  var child;
+  var nextName;
+  var subtreeCount = 0;
+  var nextNamePrefix = nameSoFar === '' ? SEPARATOR : nameSoFar + SUBSEPARATOR;
+
+  if (Array.isArray(children)) {
+    for (var i = 0; i < children.length; i++) {
+      child = children[i];
+      nextName = nextNamePrefix + getComponentKey(child, i);
+      subtreeCount += traverseAllChildrenImpl(child, nextName, callback, traverseContext);
+    }
+  } else {
+    var iteratorFn = getIteratorFn(children);
+
+    if (typeof iteratorFn === 'function') {
+      var iterator = iteratorFn.call(children);
+      var step;
+      var ii = 0;
+
+      while (!(step = iterator.next()).done) {
+        child = step.value;
+        nextName = nextNamePrefix + getComponentKey(child, ii++);
+        subtreeCount += traverseAllChildrenImpl(child, nextName, callback, traverseContext);
+      }
+    } else if (type === 'object') {
+      throw new Error('If you meant to render a collection of children, use an array instead.');
+    }
+  }
+
+  return subtreeCount;
+}
+
+function traverseAllChildren(children, callback, traverseContext) {
+  if (children == null) return 0;
+  return traverseAllChildrenImpl(children, '', callback, traverseContext);
+}
+
+function mapIntoWithKeyPrefixInternal(children, array, prefix, fn, context) {
+  var escapedPrefix = '';
+
+  if (prefix != null) {
+    escapedPrefix = escapeUserProvidedKey(prefix) + '/';
+  }
+
+  var traverseContext = getPooledTraverseContext(array, escapedPrefix, fn, context);
+  traverseAllChildren(children, mapSingleChildIntoContext, traverseContext);
+  releaseTraverseContext(traverseContext);
+}
+
+function forEachChildren(children, fn, context) {
+  if (children == null) return children;
+  var traverseContext = getPooledTraverseContext(null, null, fn, context);
+  traverseAllChildren(children, forEachSingleChild, traverseContext);
+  releaseTraverseContext(traverseContext);
+}
+
+function mapChildren(children, fn, context) {
+  if (children == null) return children;
+  var result = [];
+  mapIntoWithKeyPrefixInternal(children, result, null, fn, context);
+  return result;
+}
+
+function countChildren(children) {
+  return traverseAllChildren(children, function () {
+    return null;
+  }, null);
+}
+
+function toArray(children) {
+  var result = [];
+  mapIntoWithKeyPrefixInternal(children, result, null, function (child) {
+    return child;
+  });
+  return result;
+}
+
+function onlyChild(children) {
+  if (!isValidElement(children)) {
+    throw new Error('Oops.Children.only expected to receive a single React element child.');
+  }
+
+  return children;
+}
 
 function resolveTargetComponent() {
   if (Target.component === undefined) {
@@ -2516,6 +2732,7 @@ var oops = {
   createRef: createRef,
   forwardRef: forwardRef,
   createContext: createContext,
+  isValidElement: isValidElement,
   Fragment: FRAGMENTS_TYPE,
   useRef: useRef,
   useMemo: useMemo,
@@ -2535,6 +2752,7 @@ exports.createRef = createRef;
 exports.default = oops;
 exports.forwardRef = forwardRef;
 exports.h = h;
+exports.isValidElement = isValidElement;
 exports.jsx = jsx;
 exports.memo = memo;
 exports.render = render;

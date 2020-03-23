@@ -3,6 +3,7 @@ import { jsx } from './jsx/index.js'
 import { memo} from './api/memo.js'
 import { render } from './api/render.js'
 import { createContext } from './api/context.js'
+import { isValidElement } from './api/isValidElement.js'
 import { FRAGMENTS_TYPE as Fragment } from './api/symbols.js'
 import {
   createRef,
@@ -44,6 +45,7 @@ const oops = {
   createRef,
   forwardRef,
   createContext,
+  isValidElement,
   Fragment,
   useRef,
   useMemo,
@@ -65,6 +67,7 @@ export {
   createRef,
   forwardRef,
   createContext,
+  isValidElement,
   Fragment,
   useRef,
   useMemo,

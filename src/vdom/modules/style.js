@@ -86,7 +86,7 @@ function applyRemoveStyle(vnode, rm) {
 
   const props = compStyle['transition-property'].split(', ')
   for (; i < props.length; ++i) {
-    if(applied.indexOf(props[i]) !== -1) amount++;
+    if(applied.indexOf(props[i]) !== -1) amount++
   }
 
   elm.addEventListener('transitionend', function (ev) {

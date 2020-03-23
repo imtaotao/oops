@@ -20,14 +20,6 @@ export function isVoid(v) {
   return v === undefined || v === null
 }
 
-export function isIterator(obj) {
-  return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    typeof obj[Symbol.iterator] === 'function'
-  )
-}
-
 export function isValidElementType(type) {
   return (
     typeof type === 'string' ||
@@ -51,4 +43,24 @@ export function isInsertComponent(type) {
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE)
   )
+}
+
+const MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator
+const FAUX_ITERATOR_SYMBOL = '@@iterator' // 模拟的 iterator 接口
+
+export function getIteratorFn(maybeIterable) {
+  if (maybeIterable === null || typeof maybeIterable !== 'object') {
+    return null
+  }
+  const maybeIterator =
+    (MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL]) ||
+    maybeIterable[FAUX_ITERATOR_SYMBOL]
+  if (typeof maybeIterator === 'function') {
+    return maybeIterator
+  }
+  return null
+}
+
+export function hasIterator(maybeIterable) {
+  return typeof getIteratorFn(maybeIterable) === 'function'
 }

@@ -8,7 +8,7 @@ import { consumerVNodeHooks } from '../components/contextConsumer.js'
 import {
   isDef,
   isUndef,
-  isIterator,
+  hasIterator,
   isInsertComponent,
 } from '../../shared.js'
 import {
@@ -214,7 +214,7 @@ export function formatVnode(tag, data, children, checkKey) {
           }
         }
         
-        if (isIterator(children[i])) {
+        if (hasIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]))
         } else if (isPrimitiveVnode(children[i])) {
           children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
