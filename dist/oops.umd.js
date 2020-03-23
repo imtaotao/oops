@@ -1463,10 +1463,6 @@
     }
   });
 
-  function abtainPortalInfo(vnode) {
-    return [vnode.tag.containerInfo, vnode.children[0]];
-  }
-
   var PortalComponent =
   /*#__PURE__*/
   function () {
@@ -1480,11 +1476,8 @@
     _createClass(PortalComponent, [{
       key: "render",
       value: function render() {
-        var _abtainPortalInfo = abtainPortalInfo(this.vnode),
-            _abtainPortalInfo2 = _slicedToArray(_abtainPortalInfo, 2),
-            container = _abtainPortalInfo2[0],
-            updateVnode = _abtainPortalInfo2[1];
-
+        var updateVnode = this.vnode.children[0];
+        var container = this.vnode.tag.containerInfo;
         this.rootVnode = patch(this.rootVnode, updateVnode);
 
         if (!container) {

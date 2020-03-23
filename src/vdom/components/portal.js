@@ -3,11 +3,6 @@ import { isPortal } from '../helpers/patch/is.js'
 import { appendChild } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
 
-// children 在 h 函数被包装成一个数组，所以取第一个
-function abtainPortalInfo(vnode) {
-  return [vnode.tag.containerInfo, vnode.children[0]]
-}
-
 class PortalComponent {
   constructor(vnode) {
     this.vnode = vnode
@@ -15,7 +10,10 @@ class PortalComponent {
   }
 
   render() {
-    const [container, updateVnode] = abtainPortalInfo(this.vnode)
+    // children 在 h 函数被包装成一个数组，所以取第一个
+    const updateVnode = this.vnode.children[0]
+    const container = this.vnode.tag.containerInfo
+
     this.rootVnode = patch(this.rootVnode, updateVnode)
     if (!container) {
       throw new Error('Target container is not a DOM element.')

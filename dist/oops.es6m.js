@@ -1145,16 +1145,14 @@ const memoVNodeHooks = commonHooksConfig({
   }
 });
 
-function abtainPortalInfo(vnode) {
-  return [vnode.tag.containerInfo, vnode.children[0]]
-}
 class PortalComponent {
   constructor(vnode) {
     this.vnode = vnode;
     this.rootVnode = undefined;
   }
   render() {
-    const [container, updateVnode] = abtainPortalInfo(this.vnode);
+    const updateVnode = this.vnode.children[0];
+    const container = this.vnode.tag.containerInfo;
     this.rootVnode = patch(this.rootVnode, updateVnode);
     if (!container) {
       throw new Error('Target container is not a DOM element.')
