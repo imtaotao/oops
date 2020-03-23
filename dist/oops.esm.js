@@ -2216,12 +2216,14 @@ function formatVnode(tag, data, children, checkKey) {
     tag: tag
   }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
+      var didWarned = false;
       children = children.slice();
 
       for (var i = 0; i < children.length; i++) {
-        if (checkKey) {
+        if (checkKey && !didWarned) {
           if (!data.hasOwnProperty('key')) {
             console.warn('Warning: Each child in a list should have a unique "key" prop. ' + 'See https://fb.me/react-warning-keys for more information.');
+            didWarned = true;
           }
         }
 

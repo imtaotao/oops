@@ -206,18 +206,20 @@ export function formatVnode(tag, data, children, checkKey) {
   // 组件需要得到最原始的 children 数据
   if (!isComponent({ tag }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
+      let didWarned = false
       children = children.slice()
 
       for (let i = 0; i < children.length; i++) {
-        if (checkKey) {
+        if (checkKey && !didWarned) {
           if (!data.hasOwnProperty('key')) {
             console.warn(
               'Warning: Each child in a list should have a unique "key" prop. ' + 
                 'See https://fb.me/react-warning-keys for more information.'
             )
+            didWarned = true
           }
         }
-        
+
         if (hasIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]))
         } else if (isPrimitiveVnode(children[i])) {

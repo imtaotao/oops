@@ -28,7 +28,6 @@ class ProviderComponent {
       for (let i = 0; i < consumerQueue.length; i++) {
         const consumer = consumerQueue[i].consumer // 还有 observedBits
         if (this.updateDuplicate.indexOf(consumer) === -1) {
-          // 同步更新，否则会导致，context 的值获取不到
           if (!consumer.destroyed) {
             consumer.forceUpdate()
           }

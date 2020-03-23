@@ -18,6 +18,7 @@ class PortalComponent {
     if (!container) {
       throw new Error('Target container is not a DOM element.')
     }
+    // 此处不用给 this.vnode.elm 赋值
     if (this.rootVnode.elm) {
       appendChild(container, this.rootVnode.elm)
     }
