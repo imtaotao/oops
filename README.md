@@ -52,4 +52,4 @@ The `observedBits` function of `context` is not implemented yet.
 + [x] `<Context.Consumer/>`
 
 ## Notice
-  1. Beacase the React event system is customized, so, the dom created by the `createPortal` methods create allow event propation to parent node in vitualDOM tree. But oops used native event system. our event propation behavior exist in real dom tree that result we can't achieve same behavior with the React.
+  1. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods create allow event propation to parent node in vitualDOM tree. But the `oops` useing native event system. our event propation behavior exist in real dom tree that result we can't achieve same behavior with the `React`.
