@@ -202,6 +202,8 @@ export function formatVnode(tag, data, children, checkKey) {
   // 组件需要得到最原始的 children 数据
   if (!isComponent({ tag }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
+      children = children.slice()
+
       for (let i = 0; i < children.length; i++) {
         if (checkKey) {
           if (!data.hasOwnProperty('key')) {
@@ -212,7 +214,6 @@ export function formatVnode(tag, data, children, checkKey) {
           }
         }
         
-        // 现在不确定 children 需不需要深拷贝
         if (isIterator(children[i])) {
           children[i] = createFragmentVnode(Array.from(children[i]))
         } else if (isPrimitiveVnode(children[i])) {

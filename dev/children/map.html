@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>map</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import oops from '../../src/index.js'
+      window.oops = oops
+    </script>
+    <script type="text/babel">
+      // const { Fragment, useState, Children } = React;
+      const { render, Fragment, useState, Children } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
+
+      function App() {
+        
+      }
+
+      ReactDOM.render(<App />, root)
+    </script>
+  </body>
+</html>
