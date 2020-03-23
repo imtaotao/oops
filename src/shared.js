@@ -34,6 +34,7 @@ export function isValidElementType(type) {
   )
 }
 
+// portal 组件不算在里面
 export function isInsertComponent(type) {
   return (
     typeof type === 'object' &&

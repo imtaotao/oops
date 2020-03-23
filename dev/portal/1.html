@@ -41,10 +41,11 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, memo, useEffect } = React;
-      // const { render, Fragment, useState, memo, useEffect } = oops
-      // ReactDOM.render = oops.render
-      // React.createElement = oops.h
+      // const { Fragment, useState, memo, useEffect } = React;
+      const { render, Fragment, useState, createPortal, memo, useEffect } = oops
+      ReactDOM.render = oops.render
+      ReactDOM.createPortal = createPortal
+      React.createElement = oops.h
 
       const appRoot = document.getElementById('app-root');
       const modalRoot = document.getElementById('modal-root');

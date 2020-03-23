@@ -1,6 +1,6 @@
 import { patch } from '../patch.js'
 import { initRefObject } from '../../api/ref.js'
-import { isComponent } from '../helpers/patch/is.js'
+import { isComponent, isPortal } from '../helpers/patch/is.js'
 import { removedInDeps } from '../../api/context.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
@@ -141,7 +141,7 @@ export class Component {
           this.refObject,
         )
       )
-
+      
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +

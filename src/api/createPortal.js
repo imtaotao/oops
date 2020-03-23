@@ -1,10 +1,11 @@
+import { h } from '../vdom/h.js'
 import { PORTAL_TYPE } from './symbols.js'
 
 export function createPortal(children, containerInfo, key = null) {
-  return {
+  const tag = {
     $$typeof: PORTAL_TYPE,
-    children,
     containerInfo,
     key: key == null ? null : '' + key,
   }
+  return h(tag, {}, children)
 }

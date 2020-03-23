@@ -210,6 +210,9 @@ function isCommonVnode(tag) {
 function isComponent(vnode) {
   return typeof vnode.tag === 'function';
 }
+function isPortal(vnode) {
+  return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PORTAL_TYPE;
+}
 function isConsumer(vnode) {
   return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === CONTEXT_TYPE;
 }
@@ -928,6 +931,8 @@ function parentNode$1(node) {
   return node._isFragmentNode ? node.parentNode : parentNode(node);
 }
 function appendChild$1(node, child) {
+  if (!node || !child) return;
+
   if (node._isFragmentNode) {
     node.appendChild(child);
   } else {
@@ -939,6 +944,8 @@ function appendChild$1(node, child) {
   }
 }
 function removeChild$1(node, child) {
+  if (!node || !child) return;
+
   if (node._isFragmentNode) {
     node.removeChild(child);
   } else {
@@ -950,6 +957,8 @@ function removeChild$1(node, child) {
   }
 }
 function insertBefore$1(parentNode, newNode, referenceNode) {
+  if (!parentNode || !newNode) return;
+
   if (parentNode._isFragmentNode) {
     parentNode.insertBefore(newNode, referenceNode);
   } else {
@@ -1160,7 +1169,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode);
   }
 
-  if (isMemo(vnode) || isConsumer(vnode) || isComponent(vnode) || isForwardRef(vnode)) ; else if (isUndef(vnode.text)) {
+  if (isMemo(vnode) || isPortal(vnode) || isConsumer(vnode) || isComponent(vnode) || isForwardRef(vnode)) ; else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
         updateChildren(elm, oldCh, ch, insertedVnodeQueue);
@@ -1448,6 +1457,62 @@ var memoVNodeHooks = commonHooksConfig({
   init: function init(vnode) {
     if (isMemo(vnode)) {
       vnode.component = new MemoComponent(vnode);
+      vnode.component.init();
+    }
+  }
+});
+
+function abtainPortalInfo(vnode) {
+  return [vnode.tag.containerInfo, vnode.children[0]];
+}
+
+var PortalComponent =
+/*#__PURE__*/
+function () {
+  function PortalComponent(vnode) {
+    _classCallCheck(this, PortalComponent);
+
+    this.vnode = vnode;
+    this.rootVnode = undefined;
+  }
+
+  _createClass(PortalComponent, [{
+    key: "render",
+    value: function render() {
+      var _abtainPortalInfo = abtainPortalInfo(this.vnode),
+          _abtainPortalInfo2 = _slicedToArray(_abtainPortalInfo, 2),
+          container = _abtainPortalInfo2[0],
+          updateVnode = _abtainPortalInfo2[1];
+
+      this.rootVnode = patch(this.rootVnode, updateVnode);
+
+      if (!container) {
+        throw new Error('Target container is not a DOM element.');
+      }
+
+      if (this.rootVnode.elm) {
+        appendChild$1(container, this.rootVnode.elm);
+      }
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      this.render();
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      this.render();
+    }
+  }]);
+
+  return PortalComponent;
+}();
+
+var portalVNodeHooks = commonHooksConfig({
+  init: function init(vnode) {
+    if (isPortal(vnode)) {
+      vnode.component = new PortalComponent(vnode);
       vnode.component.init();
     }
   }
@@ -2128,16 +2193,18 @@ function installHooks(tag, data) {
   };
   var hook = (data || (data = {})).hook || (data.hook = {});
 
-  if (isProvider(simulateVnode)) {
+  if (isComponent(simulateVnode)) {
+    vnodeHooks = componentVNodeHooks;
+  } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks;
   } else if (isConsumer(simulateVnode)) {
     vnodeHooks = consumerVNodeHooks;
-  } else if (isComponent(simulateVnode)) {
-    vnodeHooks = componentVNodeHooks;
   } else if (isMemo(simulateVnode)) {
     vnodeHooks = memoVNodeHooks;
   } else if (isForwardRef(simulateVnode)) {
     vnodeHooks = forwardRefHooks;
+  } else if (isPortal(simulateVnode)) {
+    vnodeHooks = portalVNodeHooks;
   }
 
   if (vnodeHooks) {
@@ -2443,12 +2510,12 @@ function render(vnode, app, callback) {
 
 function createPortal(children, containerInfo) {
   var key = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-  return {
+  var tag = {
     $$typeof: PORTAL_TYPE,
-    children: children,
     containerInfo: containerInfo,
     key: key == null ? null : '' + key
   };
+  return h(tag, {}, children);
 }
 
 function isValidElement(object) {

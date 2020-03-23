@@ -71,6 +71,12 @@ function isCommonVnode(tag) {
 function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
+function isPortal(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === PORTAL_TYPE
+  )
+}
 function isConsumer(vnode) {
   return (
     typeof vnode.tag === 'object' &&
@@ -706,6 +712,7 @@ function parentNode$1(node) {
     : parentNode(node)
 }
 function appendChild$1(node, child) {
+  if (!node || !child) return
   if (node._isFragmentNode) {
     node.appendChild(child);
   } else {
@@ -717,6 +724,7 @@ function appendChild$1(node, child) {
   }
 }
 function removeChild$1(node, child) {
+  if (!node || !child) return
   if (node._isFragmentNode) {
     node.removeChild(child);
   } else {
@@ -728,6 +736,7 @@ function removeChild$1(node, child) {
   }
 }
 function insertBefore$1(parentNode, newNode, referenceNode) {
+  if (!parentNode || !newNode) return
   if (parentNode._isFragmentNode) {
     parentNode.insertBefore(newNode, referenceNode);
   } else {
@@ -904,6 +913,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   }
   if (
     isMemo(vnode) ||
+    isPortal(vnode) ||
     isConsumer(vnode) ||
     isComponent(vnode) ||
     isForwardRef(vnode)
@@ -1133,6 +1143,40 @@ const memoVNodeHooks = commonHooksConfig({
       vnode.component.init();
     }
   }
+});
+
+function abtainPortalInfo(vnode) {
+  return [vnode.tag.containerInfo, vnode.children[0]]
+}
+class PortalComponent {
+  constructor(vnode) {
+    this.vnode = vnode;
+    this.rootVnode = undefined;
+  }
+  render() {
+    const [container, updateVnode] = abtainPortalInfo(this.vnode);
+    this.rootVnode = patch(this.rootVnode, updateVnode);
+    if (!container) {
+      throw new Error('Target container is not a DOM element.')
+    }
+    if (this.rootVnode.elm) {
+      appendChild$1(container, this.rootVnode.elm);
+    }
+  }
+  init() {
+    this.render();
+  }
+  update() {
+    this.render();
+  }
+}
+const portalVNodeHooks = commonHooksConfig({
+  init(vnode) {
+    if (isPortal(vnode)) {
+      vnode.component = new PortalComponent(vnode);
+      vnode.component.init();
+    }
+  },
 });
 
 function initRefObject(initialValue) {
@@ -1702,16 +1746,18 @@ function installHooks(tag, data) {
   let vnodeHooks;
   const simulateVnode = { tag };
   const hook = (data || (data = {})).hook || (data.hook = {});
-  if (isProvider(simulateVnode)) {
-    vnodeHooks = providerVNodeHooks;
-  } else if (isConsumer(simulateVnode))  {
-    vnodeHooks = consumerVNodeHooks;
-  } else if (isComponent(simulateVnode)) {
+  if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks;
+  } else if (isProvider(simulateVnode)) {
+    vnodeHooks = providerVNodeHooks;
+  } else if (isConsumer(simulateVnode)) {
+    vnodeHooks = consumerVNodeHooks;
   } else if (isMemo(simulateVnode)) {
     vnodeHooks = memoVNodeHooks;
   } else if (isForwardRef(simulateVnode)) {
     vnodeHooks = forwardRefHooks;
+  } else if (isPortal(simulateVnode)) {
+    vnodeHooks = portalVNodeHooks;
   }
   if (vnodeHooks) {
     for (const name in vnodeHooks) {
@@ -1997,12 +2043,12 @@ function render(vnode, app, callback) {
 }
 
 function createPortal(children, containerInfo, key = null) {
-  return {
+  const tag = {
     $$typeof: PORTAL_TYPE,
-    children,
     containerInfo,
     key: key == null ? null : '' + key,
-  }
+  };
+  return h(tag, {}, children)
 }
 
 function isValidElement(object) {

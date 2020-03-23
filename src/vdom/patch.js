@@ -6,6 +6,7 @@ import {
 } from '../shared.js'
 import {
   isMemo,
+  isPortal,
   isConsumer,
   isComponent,
   sameVnode,
@@ -150,8 +151,10 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode)
   }
 
+  // Provider 组件和 fragment 组件没有 render 的能力，这里不做阻拦
   if (
     isMemo(vnode) ||
+    isPortal(vnode) ||
     isConsumer(vnode) ||
     isComponent(vnode) ||
     isForwardRef(vnode)

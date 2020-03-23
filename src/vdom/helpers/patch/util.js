@@ -104,6 +104,7 @@ export function parentNode(node) {
 }
 
 export function appendChild(node, child) {
+  if (!node || !child) return
   if (node._isFragmentNode) {
     node.appendChild(child)
   } else {
@@ -116,6 +117,7 @@ export function appendChild(node, child) {
 }
 
 export function removeChild(node, child) {
+  if (!node || !child) return
   if (node._isFragmentNode) {
     node.removeChild(child)
   } else {
@@ -128,6 +130,7 @@ export function removeChild(node, child) {
 }
 
 export function insertBefore(parentNode, newNode, referenceNode) {
+  if (!parentNode || !newNode) return
   if (parentNode._isFragmentNode) {
     parentNode.insertBefore(newNode, referenceNode)
   } else {
