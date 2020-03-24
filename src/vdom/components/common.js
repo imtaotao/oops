@@ -12,7 +12,7 @@ import {
   equalDeps,
   mergeProps,
   updateEffect,
-  updateLayoutEffect,
+  cleanEffectDestroy,
   addToProviderUpdateDuplicate,
 } from '../helpers/component.js'
 
@@ -160,8 +160,8 @@ export class Component {
       this.cursor = 0
       this.numberOfReRenders = 0
       Target.component = undefined
-      updateEffect(this.effects)
-      updateLayoutEffect(this.layoutEffects)
+      updateEffect('effects', this.effects)
+      updateEffect('layoutEffects', this.layoutEffects)
     }
   }
 
@@ -181,11 +181,10 @@ export class Component {
   }
 
   destroy(vnode) {
+    // 在组件销毁时，清除 effect 的 destroy
+    cleanEffectDestroy('effects', this.effects)
+    cleanEffectDestroy('layoutEffects', this.layoutEffects)
     this.destroyed = true
-    for (const key in this.effects) {
-      const { destroy } = this.effects[key]
-      if (typeof destroy === 'function') destroy()
-    }
     removedInDeps(this)
   }
 }

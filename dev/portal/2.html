@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>portal2</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+    <!-- oops 不支持 class 组件，所以 ant 用不了 -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.0.4/antd.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.0.4/antd.css">
+    <style>
+      html {
+        overflow-x: hidden;
+        width: 100vw;
+      }
+
+      body {
+        position: relative;
+      }
+
+      #react-root {
+        padding-top: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="react-root"></div>
+    <div id="portal-root"></div>
+    <script type="module">
+      import oops from '../../src/index.js'
+      window.oops = oops
+    </script>
+    <script type="text/babel">
+      // const { Fragment, useState, memo, useEffect } = React
+      const { render, Fragment, useState, createPortal, memo, useEffect } = oops
+      ReactDOM.render = oops.render
+      ReactDOM.createPortal = createPortal
+      React.createElement = oops.h
+
+      const module = fn => fn()
+
+      const Image = module(() => {
+        const Image = () => (
+          <img
+            alt="should be cropped by container overflow:hidden style"
+            style={styles.image}
+            src="https://cdn.pixabay.com/photo/2019/11/29/14/18/gent-4661419_960_720.jpg"
+          />
+        )
+
+        const styles = {
+          image: {
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%,-50%)"
+          }
+        }
+        return Image
+      })
+
+      const Portal = module(() => {
+        const Portal = function({ children }) {
+          const mount = document.getElementById("portal-root")
+          const el = document.createElement("div")
+          useEffect(() => {
+            mount.appendChild(el)
+            return () => mount.removeChild(el)
+          }, [el, mount])
+
+          return ReactDOM.createPortal(children, el)
+        }
+        return Portal
+      })
+
+      const TooltipPopover = module(() => {
+        const TooltipPopover = ({ children, coords, updateTooltipCoords }) => {
+          const updateCoords = _.debounce(updateTooltipCoords, 100)
+
+          useEffect(() => {
+            window.addEventListener("resize", updateCoords)
+            return () => window.removeEventListener("resize", updateCoords)
+          }, [])
+
+          return (
+            <div
+              style={{ ...styles.popover, ...coords }}
+              className="ant-popover ant-popover-placement-top"
+            >
+              <div className="ant-popover-content">
+                <div className="ant-popover-arrow" />
+                <div className="ant-popover-inner" role="tooltip">
+                  <div>
+                    <div className="ant-popover-title">Title</div>
+                    <div className="ant-popover-inner-content">{children}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        const styles = {
+          popover: {
+            position: "absolute",
+            width: '200px',
+            transform: "translate(-100px, -100%)"
+          }
+        }
+        return TooltipPopover
+      })
+
+      const App = module(() => {
+        const btnRef = React.createRef()
+        const App = () => {
+          const [isOn, setOn] = useState(false) // toggles dropdown visibility
+          const [coords, setCoords] = useState({}) // takes current button coordinates
+
+          const updateTooltipCoords = button => {
+            const rect = button.getBoundingClientRect()
+            setCoords({
+              left: (rect.x + rect.width / 2) + 'px', // add half the width of the button for centering
+              top: (rect.y + window.scrollY) + 'px' // add scrollY offset, as soon as getBountingClientRect takes on screen coords
+            })
+          }
+
+          return (
+            <div style={{ ...styles.card, overflow: "hidden" }}>
+              <Image />
+              <button
+                ref={btnRef}
+                style={styles.button}
+                onClick={e => {
+                  updateTooltipCoords(e.target)
+                  setOn(!isOn)
+                }}
+              >
+                Click me { String(isOn) }
+              </button>
+              {isOn && (
+                <Portal>
+                  <TooltipPopover
+                    coords={coords}
+                    updateTooltipCoords={() => {
+                      updateTooltipCoords(btnRef.current)
+                    }}
+                  >
+                    <div>
+                      Awesome content that is never cut off by its parent container!
+                    </div>
+                  </TooltipPopover>
+                </Portal>
+              )}
+            </div>
+          )
+        }
+
+        const styles = {
+          card: { padding: '50px', maxWidth: '800px', margin: "0 auto 300px" },
+          button: { display: "flex", marginLeft: "auto", position: 'relative',  }
+        }
+        return App
+      })
+
+      ReactDOM.render(<App />, document.getElementById("react-root"))
+    </script>
+  </body>
+</html>

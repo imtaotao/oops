@@ -577,6 +577,9 @@ function createElementNS(namespaceURI, qualifiedName) {
 function createTextNode(text) {
   return document.createTextNode(text)
 }
+function createComment(text) {
+  return document.createComment(text)
+}
 function insertBefore(parentNode, newNode, referenceNode) {
   parentNode.insertBefore(newNode, referenceNode);
 }
@@ -825,7 +828,6 @@ function parentNode$1(node) {
     : parentNode(node)
 }
 function appendChild$1(node, child) {
-  if (!node || !child) return
   if (node._isFragmentNode) {
     node.appendChild(child);
   } else {
@@ -837,7 +839,6 @@ function appendChild$1(node, child) {
   }
 }
 function removeChild$1(node, child) {
-  if (!node || !child) return
   if (node._isFragmentNode) {
     node.removeChild(child);
   } else {
@@ -876,6 +877,7 @@ function createComponent(vnode) {
 function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode)) {
     if (isPortal(vnode)) {
+      vnode.elm = createComment('oops.portal');
       invokeCreateHooks(vnode, insertedVnodeQueue);
     }
     return vnode.elm
@@ -1127,7 +1129,7 @@ function equalDeps(a, b) {
   return false
 }
 function callEffectCallback([create, destroy, effect]) {
-  if (typeof destroy === 'function') destroy();
+  if (typeof destroy === 'function') destroy(false);
   const cleanup = create();
   if (isDef(cleanup) && typeof cleanup !== 'function') {
     throw new Error('An effect function must not return anything besides a function, which is used for clean-up.')
@@ -1150,11 +1152,21 @@ function obtainUpdateList(effects) {
     }
   }
 }
-function updateEffect(effects) {
-  nextFrame$1(obtainUpdateList(effects));
+function updateEffect(flag, effects) {
+  flag === 'effects'
+    ? nextFrame$1(obtainUpdateList(effects))
+    : obtainUpdateList(effects)();
 }
-function updateLayoutEffect(effects) {
-  obtainUpdateList(effects)();
+function cleanEffectDestroy(flag, effects) {
+  const actuator = () => {
+    for (const key in effects) {
+      const { destroy } = effects[key];
+      if (typeof destroy === 'function') destroy(true);
+    }
+  };
+  flag === 'effects'
+    ? nextFrame$1(actuator)
+    : actuator();
 }
 function addToProviderUpdateDuplicate(consumer) {
   const deps = consumer.providerDependencies;
@@ -1597,8 +1609,8 @@ class Component {
       this.cursor = 0;
       this.numberOfReRenders = 0;
       Target.component = undefined;
-      updateEffect(this.effects);
-      updateLayoutEffect(this.layoutEffects);
+      updateEffect('effects', this.effects);
+      updateEffect('layoutEffects', this.layoutEffects);
     }
   }
   init() {
@@ -1612,11 +1624,9 @@ class Component {
     remove();
   }
   destroy(vnode) {
+    cleanEffectDestroy('effects', this.effects);
+    cleanEffectDestroy('layoutEffects', this.layoutEffects);
     this.destroyed = true;
-    for (const key in this.effects) {
-      const { destroy } = this.effects[key];
-      if (typeof destroy === 'function') destroy();
-    }
     removedInDeps(this);
   }
 }

@@ -749,6 +749,9 @@ function createElementNS(namespaceURI, qualifiedName) {
 function createTextNode(text) {
   return document.createTextNode(text);
 }
+function createComment(text) {
+  return document.createComment(text);
+}
 function insertBefore(parentNode, newNode, referenceNode) {
   parentNode.insertBefore(newNode, referenceNode);
 }
@@ -1048,8 +1051,6 @@ function parentNode$1(node) {
   return node._isFragmentNode ? node.parentNode : parentNode(node);
 }
 function appendChild$1(node, child) {
-  if (!node || !child) return;
-
   if (node._isFragmentNode) {
     node.appendChild(child);
   } else {
@@ -1061,8 +1062,6 @@ function appendChild$1(node, child) {
   }
 }
 function removeChild$1(node, child) {
-  if (!node || !child) return;
-
   if (node._isFragmentNode) {
     node.removeChild(child);
   } else {
@@ -1106,6 +1105,7 @@ function createComponent(vnode) {
 function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode)) {
     if (isPortal(vnode)) {
+      vnode.elm = createComment('oops.portal');
       invokeCreateHooks(vnode, insertedVnodeQueue);
     }
 
@@ -1408,7 +1408,7 @@ function callEffectCallback(_ref2) {
       destroy = _ref3[1],
       effect = _ref3[2];
 
-  if (typeof destroy === 'function') destroy();
+  if (typeof destroy === 'function') destroy(false);
   var cleanup = create();
 
   if (isDef(cleanup) && typeof cleanup !== 'function') {
@@ -1440,11 +1440,18 @@ function obtainUpdateList(effects) {
     }
   };
 }
-function updateEffect(effects) {
-  nextFrame$1(obtainUpdateList(effects));
+function updateEffect(flag, effects) {
+  flag === 'effects' ? nextFrame$1(obtainUpdateList(effects)) : obtainUpdateList(effects)();
 }
-function updateLayoutEffect(effects) {
-  obtainUpdateList(effects)();
+function cleanEffectDestroy(flag, effects) {
+  var actuator = function actuator() {
+    for (var key in effects) {
+      var destroy = effects[key].destroy;
+      if (typeof destroy === 'function') destroy(true);
+    }
+  };
+
+  flag === 'effects' ? nextFrame$1(actuator) : actuator();
 }
 function addToProviderUpdateDuplicate(consumer) {
   var deps = consumer.providerDependencies;
@@ -1962,8 +1969,8 @@ function () {
         this.cursor = 0;
         this.numberOfReRenders = 0;
         Target.component = undefined;
-        updateEffect(this.effects);
-        updateLayoutEffect(this.layoutEffects);
+        updateEffect('effects', this.effects);
+        updateEffect('layoutEffects', this.layoutEffects);
       }
     }
   }, {
@@ -1985,13 +1992,9 @@ function () {
   }, {
     key: "destroy",
     value: function destroy(vnode) {
+      cleanEffectDestroy('effects', this.effects);
+      cleanEffectDestroy('layoutEffects', this.layoutEffects);
       this.destroyed = true;
-
-      for (var key in this.effects) {
-        var destroy = this.effects[key].destroy;
-        if (typeof destroy === 'function') destroy();
-      }
-
       removedInDeps(this);
     }
   }]);

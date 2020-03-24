@@ -86,7 +86,7 @@
       function Parent(props) {
         const [clicks, handleClick] = useState(0)
         return (
-          <div onDblClick={e => {
+          <div onClick={e => {
             console.log(e, e.target, e.currentTarget, e.nativeEvent);
             handleClick(clicks + 1)
           }}>

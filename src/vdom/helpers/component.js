@@ -57,7 +57,7 @@ export function equalDeps(a, b) {
 }
 
 export function callEffectCallback([create, destroy, effect]) {
-  if (typeof destroy === 'function') destroy()
+  if (typeof destroy === 'function') destroy(false)
   const cleanup = create()
   if (isDef(cleanup) && typeof cleanup !== 'function') {
     throw new Error('An effect function must not return anything besides a function, which is used for clean-up.')
@@ -84,13 +84,24 @@ export function obtainUpdateList(effects) {
 }
 
 // effect 需要在浏览器绘制时的下一帧触发
-export function updateEffect(effects) {
-  nextFrame(obtainUpdateList(effects))
+// layoutEffect 在 dom 更新后同步执行
+export function updateEffect(flag, effects) {
+  flag === 'effects'
+    ? nextFrame(obtainUpdateList(effects))
+    : obtainUpdateList(effects)()
+  
 }
 
-// layoutEffect 在 dom 更新后同步执行
-export function updateLayoutEffect(effects) {
-  obtainUpdateList(effects)()
+export function cleanEffectDestroy(flag, effects) {
+  const actuator = () => {
+    for (const key in effects) {
+      const { destroy } = effects[key]
+      if (typeof destroy === 'function') destroy(true)
+    }
+  }
+  flag === 'effects'
+    ? nextFrame(actuator)
+    : actuator()
 }
 
 // 加入父级 provider 更新副本

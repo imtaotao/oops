@@ -105,7 +105,6 @@ export function parentNode(node) {
 }
 
 export function appendChild(node, child) {
-  if (!node || !child) return
   if (node._isFragmentNode) {
     node.appendChild(child)
   } else {
@@ -118,7 +117,6 @@ export function appendChild(node, child) {
 }
 
 export function removeChild(node, child) {
-  if (!node || !child) return
   if (node._isFragmentNode) {
     node.removeChild(child)
   } else {
@@ -162,6 +160,7 @@ export function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode)) {
     // portal 组件需要在 create 钩子中对 container 做事件的代理和转发
     if (isPortal(vnode)) {
+      vnode.elm = api.createComment('oops.portal')
       invokeCreateHooks(vnode, insertedVnodeQueue)
     }
     return vnode.elm
