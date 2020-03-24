@@ -62,7 +62,19 @@ export function isForwardRef(vnode) {
 }
 
 export function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
+  if (a.key === b.key) {
+    const ta = typeof a.tag
+    const tb = typeof b.tag
+    // 普通节点，text 节点，普通组件节点,
+    return (
+      (ta === 'string' || ta === 'undefined' || ta === 'function') ||
+      (tb === 'string' || tb === 'undefined' || tb === 'function') 
+    )
+      ? a.tag === b.tag
+      // 内置组件节点
+      : a.tag.$$typeof === b.tag.$$typeof
+  }
+  return false
 }
 
 // https://zh-hans.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored

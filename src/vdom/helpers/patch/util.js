@@ -9,6 +9,7 @@ import {
 } from '../../../shared.js'
 import {
   emptyNode,
+  isPortal,
   isFragment,
   isProvider,
   isPrimitiveVnode,
@@ -159,6 +160,10 @@ export function createComponent(vnode) {
 export function createElm(vnode, insertedVnodeQueue) {
   // 如果是一个组件则没必要往下走（包含自定义的组件和内部标识组件）
   if (createComponent(vnode)) {
+    // portal 组件需要在 create 钩子中对 container 做事件的代理和转发
+    if (isPortal(vnode)) {
+      invokeCreateHooks(vnode, insertedVnodeQueue)
+    }
     return vnode.elm
   }
 

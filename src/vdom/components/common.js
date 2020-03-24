@@ -1,6 +1,6 @@
 import { patch } from '../patch.js'
 import { initRefObject } from '../../api/ref.js'
-import { isComponent, isPortal } from '../helpers/patch/is.js'
+import { isComponent } from '../helpers/patch/is.js'
 import { removedInDeps } from '../../api/context.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
@@ -152,6 +152,7 @@ export class Component {
 
       if (this.updateVnode !== null) {
         this.rootVnode = patch(this.rootVnode, this.updateVnode)
+        this.rootVnode.parent = this.vnode.parent
         this.vnode.elm = this.rootVnode.elm
         this.updateVnode = undefined
       }

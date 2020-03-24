@@ -180,4 +180,15 @@ export class FragmentNode {
       }
     }
   }
+
+  dispatchEvent(event, isBubbles) {
+    if (isBubbles) {
+      this.realParentNode().dispatchEvent(event)
+    } else {
+      const nodes = this.nodes
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].dispatchEvent(event)
+      }
+    }
+  }
 }

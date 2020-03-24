@@ -1,4 +1,5 @@
 import { patch } from '../patch.js'
+import { injectParentVnode } from '../h.js'
 import { isConsumer } from '../helpers/patch/is.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import {
@@ -37,6 +38,7 @@ class ConsumerComponent {
     const updateVnode = formatRootVnode(this.rewardRender()(value))
     if (updateVnode) {
       this.rootVnode = patch(this.rootVnode, updateVnode)
+      this.rootVnode.parent = this.vnode.parent
       this.vnode.elm = this.rootVnode.elm
     }
   }

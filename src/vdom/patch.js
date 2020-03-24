@@ -146,6 +146,7 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
 
   // 调用 update 钩子
   if (isDef(vnode.data)) {
+    // 保证优先调用模块的 update 钩子，顺序错乱将导致模块钩子获取到的组件内容的更新过后的
     for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
     i = vnode.data.hook
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode)

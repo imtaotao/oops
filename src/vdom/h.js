@@ -1,21 +1,39 @@
 import { isArray } from '../shared.js'
-import { isCommonVnode } from './helpers/patch/is.js'
+import {
+  isVnode,
+  isCommonVnode,
+} from './helpers/patch/is.js'
 import {
   formatVnode,
   installHooks,
   separateProps,
 } from './helpers/h.js'
 
+// 需要记录 parent 的原因是因为在 portal 组件中冒泡时需要
+export function injectParentVnode(vnode, children) {
+  if (isArray(children)) {
+    for (let i = 0; i < children.length; i++) {
+      // text 节点不需要 parent，因为暂时没有对 text 节点有额外的操作
+      if (children[i] && isVnode(children[i])) {
+        children[i].parent = vnode
+      }
+    }
+  }
+}
+
 export function createVnode(tag, data, children, text, elm) {
-  return {
+  const vnode = {
     tag,
     data,
     elm,
     text,
     children,
+    parent: undefined,
     component: undefined,
     key: data ? data.key : undefined,
   }
+  injectParentVnode(vnode, children)
+  return vnode
 }
 
 export function cloneVnode(vnode) {
@@ -29,6 +47,7 @@ export function cloneVnode(vnode) {
   cloned.key = vnode.key
   cloned.isClone = true
   cloned.component = vnode.component
+  injectParentVnode(cloned, cloned.children)
   return cloned
 }
 

@@ -1,26 +1,43 @@
 import { patch } from '../patch.js'
 import { isPortal } from '../helpers/patch/is.js'
-import { appendChild } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
+import {
+  removeChild,
+  insertBefore,
+} from '../helpers/patch/util.js'
 
 class PortalComponent {
   constructor(vnode) {
     this.vnode = vnode
+    this.container = null
+    this.proxyEventCb = null
     this.rootVnode = undefined
   }
 
   render() {
-    // children 在 h 函数被包装成一个数组，所以取第一个
+    const oldContainer = this.container
     const updateVnode = this.vnode.children[0]
-    const container = this.vnode.tag.containerInfo
+    const oldElm = this.rootVnode && this.rootVnode.elm
 
+    this.container = this.vnode.tag.container
     this.rootVnode = patch(this.rootVnode, updateVnode)
-    if (!container) {
+    this.rootVnode.parent = this.vnode.parent
+
+    if (!this.container) {
       throw new Error('Target container is not a DOM element.')
     }
-    // 此处不用给 this.vnode.elm 赋值
-    if (this.rootVnode.elm) {
-      appendChild(container, this.rootVnode.elm)
+
+    if (this.container !== oldContainer) {
+      
+    }
+    console.log(oldContainer === this.container)
+    if (this.rootVnode.elm !== oldElm) {
+      if (this.rootVnode.elm) {
+        insertBefore(this.container, this.rootVnode.elm, oldElm)
+      }
+      if (oldElm) {
+        removeChild(this.container, oldElm)
+      }
     }
   }
 

@@ -44,6 +44,7 @@ class MemoComponent {
       : installHooks(tag, updateVnode.data)
 
     this.rootVnode = patch(this.rootVnode, updateVnode)
+    this.rootVnode.parent = this.vnode.parent
     this.vnode.elm = this.rootVnode.elm
   }
 

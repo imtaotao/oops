@@ -105,7 +105,17 @@ function isForwardRef(vnode) {
   )
 }
 function sameVnode(a, b) {
-  return a.key === b.key && a.tag === b.tag
+  if (a.key === b.key) {
+    const ta = typeof a.tag;
+    const tb = typeof b.tag;
+    return (
+      (ta === 'string' || ta === 'undefined' || ta === 'function') ||
+      (tb === 'string' || tb === 'undefined' || tb === 'function')
+    )
+      ? a.tag === b.tag
+      : a.tag.$$typeof === b.tag.$$typeof
+  }
+  return false
 }
 function isFilterVnode(vnode) {
   return (
@@ -448,6 +458,81 @@ const eventListenersModule = {
   destroy: updateEventListeners,
 };
 
+const eventMap = 'click'.split(',');
+const proxyAttrs = 'target,nativeEvent,isCustomized'.split(',');
+function buildProxyProperties(event, backup) {
+  const properties = {};
+  for (let i = 0; i < proxyAttrs.length; i++) {
+    const key = proxyAttrs[i];
+    properties[key] = {
+      get() {
+        return backup.hasOwnProperty(key)
+          ? backup[key]
+          : event[key]
+      },
+      set() {
+        throw new Error(`The '${key}' attributes are read-only.`)
+      },
+    };
+  }
+  return properties
+}
+function dispatchEvent(elm, event) {
+  const proxyEvent = new Event(event.type);
+  Object.defineProperties(
+    proxyEvent,
+    buildProxyProperties(event, {
+      nativeEvent: event,
+      isCustomized: true,
+    }),
+  );
+  elm._isFragmentNode
+    ? elm.dispatchEvent(proxyEvent, true)
+    : elm.dispatchEvent(proxyEvent);
+}
+function removeProxyEventListener(container, proxyEventCb) {
+  if (container && proxyEventCb) {
+    for(let i = 0; i < eventMap.length; i++) {
+      container.removeEventListener(eventMap[i], proxyEventCb);
+    }
+  }
+}
+function addProxyEventListener(container, vnode) {
+  if (!container) return null
+  function proxyEventCb(event) {
+    const parentElm = vnode.parent && vnode.parent.elm;
+    parentElm && dispatchEvent(parentElm, event);
+  }
+  for(let i = 0; i < eventMap.length; i++) {
+    container.addEventListener(eventMap[i], proxyEventCb);
+  }
+  return proxyEventCb
+}
+function updateEventListener(oldVnode, vnode) {
+  if (isPortal(oldVnode) || isPortal(vnode)) {
+    const component = vnode.component || oldVnode.component;
+    const oldContainer = oldVnode.tag.container;
+    const newContainer = vnode.tag.container;
+    if (oldContainer !== newContainer) {
+      component && removeProxyEventListener(oldContainer, component.proxyEventCb);
+      component.proxyEventCb = addProxyEventListener(newContainer, vnode);
+    }
+  }
+}
+function removeEventListener(vnode) {
+  if (isPortal(vnode)) {
+    if (vnode.component) {
+      const { container, proxyEventCb } = vnode.component;
+      removeProxyEventListener(container, proxyEventCb);
+    }
+  }
+}
+const bubblesProxyEventModule = {
+  create: updateEventListener,
+  update: updateEventListener,
+  destroy: removeEventListener,
+};
+
 const cbs = {};
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
 const modules = [
@@ -457,6 +542,7 @@ const modules = [
   datasetModule,
   attributesModule,
   eventListenersModule,
+  bubblesProxyEventModule,
 ];
 for (let i = 0; i < hooks.length; i++) {
   cbs[hooks[i]] = [];
@@ -639,6 +725,16 @@ class FragmentNode {
       }
     }
   }
+  dispatchEvent(event, isBubbles) {
+    if (isBubbles) {
+      this.realParentNode().dispatchEvent(event);
+    } else {
+      const nodes = this.nodes;
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].dispatchEvent(event);
+      }
+    }
+  }
 }
 
 function createKeyToOldIdx(children, beginIdx, endIdx) {
@@ -762,6 +858,9 @@ function createComponent(vnode) {
 }
 function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode)) {
+    if (isPortal(vnode)) {
+      invokeCreateHooks(vnode, insertedVnodeQueue);
+    }
     return vnode.elm
   }
   const { tag, data, children } = vnode;
@@ -1111,6 +1210,7 @@ class MemoComponent {
       ? separateProps(updateVnode.data)
       : installHooks(tag, updateVnode.data);
     this.rootVnode = patch(this.rootVnode, updateVnode);
+    this.rootVnode.parent = this.vnode.parent;
     this.vnode.elm = this.rootVnode.elm;
   }
   init() {
@@ -1148,17 +1248,26 @@ const memoVNodeHooks = commonHooksConfig({
 class PortalComponent {
   constructor(vnode) {
     this.vnode = vnode;
+    this.container = null;
+    this.proxyEventCb = null;
     this.rootVnode = undefined;
   }
   render() {
     const updateVnode = this.vnode.children[0];
-    const container = this.vnode.tag.containerInfo;
+    const oldElm = this.rootVnode && this.rootVnode.elm;
+    this.container = this.vnode.tag.container;
     this.rootVnode = patch(this.rootVnode, updateVnode);
-    if (!container) {
+    this.rootVnode.parent = this.vnode.parent;
+    if (!this.container) {
       throw new Error('Target container is not a DOM element.')
     }
-    if (this.rootVnode.elm) {
-      appendChild$1(container, this.rootVnode.elm);
+    if (this.rootVnode.elm !== oldElm) {
+      if (this.rootVnode.elm) {
+        insertBefore$1(this.container, this.rootVnode.elm, oldElm);
+      }
+      if (oldElm) {
+        removeChild$1(this.container, oldElm);
+      }
     }
   }
   init() {
@@ -1451,6 +1560,7 @@ class Component {
       }
       if (this.updateVnode !== null) {
         this.rootVnode = patch(this.rootVnode, this.updateVnode);
+        this.rootVnode.parent = this.vnode.parent;
         this.vnode.elm = this.rootVnode.elm;
         this.updateVnode = undefined;
       }
@@ -1580,6 +1690,7 @@ class ConsumerComponent {
     const updateVnode = formatRootVnode(this.rewardRender()(value));
     if (updateVnode) {
       this.rootVnode = patch(this.rootVnode, updateVnode);
+      this.rootVnode.parent = this.vnode.parent;
       this.vnode.elm = this.rootVnode.elm;
     }
   }
@@ -1801,16 +1912,28 @@ function formatVnode(tag, data, children, checkKey) {
   return createVnode(tag, data, children, undefined, undefined)
 }
 
+function injectParentVnode(vnode, children) {
+  if (isArray(children)) {
+    for (let i = 0; i < children.length; i++) {
+      if (children[i] && isVnode(children[i])) {
+        children[i].parent = vnode;
+      }
+    }
+  }
+}
 function createVnode(tag, data, children, text, elm) {
-  return {
+  const vnode = {
     tag,
     data,
     elm,
     text,
     children,
+    parent: undefined,
     component: undefined,
     key: data ? data.key : undefined,
-  }
+  };
+  injectParentVnode(vnode, children);
+  return vnode
 }
 function cloneVnode(vnode) {
   const cloned = createVnode(
@@ -1823,6 +1946,7 @@ function cloneVnode(vnode) {
   cloned.key = vnode.key;
   cloned.isClone = true;
   cloned.component = vnode.component;
+  injectParentVnode(cloned, cloned.children);
   return cloned
 }
 function h(tag, props, ...children) {
@@ -2042,13 +2166,13 @@ function render(vnode, app, callback) {
   }
 }
 
-function createPortal(children, containerInfo, key = null) {
+function createPortal(children, container, key = null) {
   const tag = {
+    container,
     $$typeof: PORTAL_TYPE,
-    containerInfo,
-    key: key == null ? null : '' + key,
   };
-  return h(tag, {}, children)
+  key = key == null ? null : '' + key;
+  return h(tag, { key }, children)
 }
 
 function isValidElement(object) {

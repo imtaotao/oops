@@ -50,24 +50,43 @@
       const appRoot = document.getElementById('app-root');
       const modalRoot = document.getElementById('modal-root');
 
-      const el = document.createElement('div')
+      let i = 0
+      const one = document.createElement('div')
+      one.id = 'one'
+      one.onclick = e => {
+        console.log(e.target);
+      }
+
+      const two = document.createElement('div')
+      two.id = 'two'
+      two.onclick = e => {
+        console.log(e.target);
+      }
 
       function Modal(props) {
+        i++
+        const el = i % 2 === 0 ? one : two
+        // const el = one
         useEffect(() => {
           modalRoot.appendChild(el)
           return () => modalRoot.removeChild(el)
         })
 
-        return ReactDOM.createPortal(
-          props.children,
-          el,
+        return (
+          ReactDOM.createPortal(
+            props.children,
+            el,
+          )
         )
       }
 
       function Parent(props) {
         const [clicks, handleClick] = useState(0)
         return (
-          <div onClick={e => handleClick(clicks + 1)}>
+          <div onClick={e => {
+            console.log(e, e.target, e.currentTarget, e.nativeEvent);
+            handleClick(clicks + 1)
+          }}>
             <p>Number of clicks: {clicks}</p>
             <p>
               Open up the browser DevTools
@@ -92,7 +111,7 @@
         )
       }
 
-      ReactDOM.render(<Parent />, appRoot);
+      const vnode = ReactDOM.render(<Parent />, appRoot);
     </script>
   </body>
 </html>
