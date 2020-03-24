@@ -578,6 +578,9 @@ function parentNode(node) {
 function nextSibling(node) {
   return node.nextSibling
 }
+function contains(node, child) {
+  return node.contains(child)
+}
 function setTextContent(node, text) {
   node.textContent = text;
 }
@@ -1253,6 +1256,7 @@ class PortalComponent {
     this.rootVnode = undefined;
   }
   render() {
+    const oldContainer = this.container;
     const updateVnode = this.vnode.children[0];
     const oldElm = this.rootVnode && this.rootVnode.elm;
     this.container = this.vnode.tag.container;
@@ -1261,12 +1265,23 @@ class PortalComponent {
     if (!this.container) {
       throw new Error('Target container is not a DOM element.')
     }
-    if (this.rootVnode.elm !== oldElm) {
+    if (this.container !== oldContainer) {
       if (this.rootVnode.elm) {
-        insertBefore$1(this.container, this.rootVnode.elm, oldElm);
+        insertBefore$1(this.container, this.rootVnode.elm, null);
       }
-      if (oldElm) {
-        removeChild$1(this.container, oldElm);
+      if (oldElm && oldContainer) {
+        if (contains(oldContainer, oldElm)) {
+          removeChild$1(oldContainer, oldElm);
+        }
+      }
+    } else {
+      if (this.rootVnode.elm !== oldElm) {
+        if (this.rootVnode.elm) {
+          insertBefore$1(this.container, this.rootVnode.elm, oldElm);
+        }
+        if (oldElm) {
+          removeChild$1(this.container, oldElm);
+        }
       }
     }
   }

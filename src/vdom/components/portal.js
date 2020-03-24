@@ -1,5 +1,6 @@
 import { patch } from '../patch.js'
 import { isPortal } from '../helpers/patch/is.js'
+import * as api from '../helpers/patch/domApi.js'
 import { commonHooksConfig } from '../helpers/component.js'
 import {
   removeChild,
@@ -28,15 +29,22 @@ class PortalComponent {
     }
 
     if (this.container !== oldContainer) {
-      
-    }
-    console.log(oldContainer === this.container)
-    if (this.rootVnode.elm !== oldElm) {
       if (this.rootVnode.elm) {
-        insertBefore(this.container, this.rootVnode.elm, oldElm)
+        insertBefore(this.container, this.rootVnode.elm, null)
       }
-      if (oldElm) {
-        removeChild(this.container, oldElm)
+      if (oldElm && oldContainer) {
+        if (api.contains(oldContainer, oldElm)) {
+          removeChild(oldContainer, oldElm)
+        }
+      }
+    } else {
+      if (this.rootVnode.elm !== oldElm) {
+        if (this.rootVnode.elm) {
+          insertBefore(this.container, this.rootVnode.elm, oldElm)
+        }
+        if (oldElm) {
+          removeChild(this.container, oldElm)
+        }
       }
     }
   }

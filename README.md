@@ -34,7 +34,7 @@
 + [x] `createRef`
 + [x] `forwardRef`
 + [x] `isValidElement`
-+ [ ] `createPortal`
++ [x] `createPortal`
 + [ ] `lazy`
 + `Children`
   + [x] `map`
@@ -52,4 +52,4 @@
 ## Notice
   1. The `observedBits` function of `context` is not implemented yet.
   
-  2. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event bubbling to parent node in vitualDOM tree. But `oops` uses native event system. our event bubbling behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`.
+  2. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event bubbling to parent node in vitualDOM tree. But `oops` uses native event system. our event bubbling behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`, But our bubbling behavior can still be performed according to the structure of the virtual dom tree.

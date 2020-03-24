@@ -36,6 +36,10 @@ export function nextSibling(node) {
   return node.nextSibling
 }
 
+export function contains(node, child) {
+  return node.contains(child)
+}
+
 export function tagName(elm) {
   return elm.tagName
 }
