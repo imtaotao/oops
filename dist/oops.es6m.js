@@ -458,8 +458,22 @@ const eventListenersModule = {
   destroy: updateEventListeners,
 };
 
-const eventMap = 'click'.split(',');
-const proxyAttrs = 'target,nativeEvent,isCustomized'.split(',');
+const proxyAttrs = (
+  'target,nativeEvent,isCustomized'
+).split(',');
+const eventMap = (
+  'blur,cancel,click,close,contextMenu,copy,cut,auxClick,dblClick,' +
+  'dragEnd,dragStart,drop,focus,input,invalid,keyDown,keyPress,keyUp,' +
+  'mouseDown,mouseUp,paste,pause,play,pointerCancel,pointerDown,pointerUp,' +
+  'rateChange,reset,seeked,submit,touchCancel,touchEnd,touchStart,volumeChange,' +
+  'drag,dragEnter,dragExit,dragLeave,dragOver,mouseMove,mouseOut,mouseOver,pointerMove,' +
+  'pointerOut,pointerOver,scroll,toggle,touchMove,wheel,abort,animationEnd,animationIteration,' +
+  'animationStart,canPlay,canPlayThrough,durationChange,emptied,encrypted,ended,error,gotPointerCapture,' +
+  'load,loadedData,loadedMetadata,loadStart,lostPointerCapture,playing,progress,seeking,stalled,suspend,' +
+  'timeUpdate,transitionEnd,waiting'
+)
+.split(',')
+.map(key => key.toLocaleLowerCase());
 function buildProxyProperties(event, backup) {
   const properties = {};
   for (let i = 0; i < proxyAttrs.length; i++) {
@@ -471,7 +485,7 @@ function buildProxyProperties(event, backup) {
           : event[key]
       },
       set() {
-        throw new Error(`The '${key}' attributes are read-only.`)
+        console.warn(`Waring: The '${key}' attributes are read-only.`);
       },
     };
   }

@@ -633,8 +633,10 @@
     destroy: updateEventListeners
   };
 
-  var eventMap = 'click'.split(',');
   var proxyAttrs = 'target,nativeEvent,isCustomized'.split(',');
+  var eventMap = ('blur,cancel,click,close,contextMenu,copy,cut,auxClick,dblClick,' + 'dragEnd,dragStart,drop,focus,input,invalid,keyDown,keyPress,keyUp,' + 'mouseDown,mouseUp,paste,pause,play,pointerCancel,pointerDown,pointerUp,' + 'rateChange,reset,seeked,submit,touchCancel,touchEnd,touchStart,volumeChange,' + 'drag,dragEnter,dragExit,dragLeave,dragOver,mouseMove,mouseOut,mouseOver,pointerMove,' + 'pointerOut,pointerOver,scroll,toggle,touchMove,wheel,abort,animationEnd,animationIteration,' + 'animationStart,canPlay,canPlayThrough,durationChange,emptied,encrypted,ended,error,gotPointerCapture,' + 'load,loadedData,loadedMetadata,loadStart,lostPointerCapture,playing,progress,seeking,stalled,suspend,' + 'timeUpdate,transitionEnd,waiting').split(',').map(function (key) {
+    return key.toLocaleLowerCase();
+  });
 
   function buildProxyProperties(event, backup) {
     var properties = {};
@@ -646,7 +648,7 @@
           return backup.hasOwnProperty(key) ? backup[key] : event[key];
         },
         set: function set() {
-          throw new Error("The '".concat(key, "' attributes are read-only."));
+          console.warn("Waring: The '".concat(key, "' attributes are read-only."));
         }
       };
     };

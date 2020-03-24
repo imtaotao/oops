@@ -41,11 +41,11 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, memo, useEffect } = React;
-      // const { render, Fragment, useState, createPortal, memo, useEffect } = oops
-      // ReactDOM.render = oops.render
-      // ReactDOM.createPortal = createPortal
-      // React.createElement = oops.h
+      // const { Fragment, useState, memo, useEffect } = React;
+      const { render, Fragment, useState, createPortal, memo, useEffect } = oops
+      ReactDOM.render = oops.render
+      ReactDOM.createPortal = createPortal
+      React.createElement = oops.h
 
       const appRoot = document.getElementById('app-root');
       const modalRoot = document.getElementById('modal-root');
@@ -86,7 +86,7 @@
       function Parent(props) {
         const [clicks, handleClick] = useState(0)
         return (
-          <div onClick={e => {
+          <div onDblClick={e => {
             console.log(e, e.target, e.currentTarget, e.nativeEvent);
             handleClick(clicks + 1)
           }}>

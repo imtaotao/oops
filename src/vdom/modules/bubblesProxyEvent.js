@@ -1,7 +1,24 @@
 import { isPortal } from '../helpers/patch/is.js'
 
-const eventMap = 'click'.split(',')
-const proxyAttrs = 'target,nativeEvent,isCustomized'.split(',')
+const proxyAttrs = (
+  'target,nativeEvent,isCustomized'
+).split(',')
+
+// packages/react-dom/src/events/DOMEventProperties.js
+// 这么多事件导致每次切换都带来大量的消耗，而且事件代理的过程中会创建大量的 event
+const eventMap = (
+  'blur,cancel,click,close,contextMenu,copy,cut,auxClick,dblClick,' + 
+  'dragEnd,dragStart,drop,focus,input,invalid,keyDown,keyPress,keyUp,' +
+  'mouseDown,mouseUp,paste,pause,play,pointerCancel,pointerDown,pointerUp,' +
+  'rateChange,reset,seeked,submit,touchCancel,touchEnd,touchStart,volumeChange,' +
+  'drag,dragEnter,dragExit,dragLeave,dragOver,mouseMove,mouseOut,mouseOver,pointerMove,' +
+  'pointerOut,pointerOver,scroll,toggle,touchMove,wheel,abort,animationEnd,animationIteration,' +
+  'animationStart,canPlay,canPlayThrough,durationChange,emptied,encrypted,ended,error,gotPointerCapture,' + 
+  'load,loadedData,loadedMetadata,loadStart,lostPointerCapture,playing,progress,seeking,stalled,suspend,' +
+  'timeUpdate,transitionEnd,waiting'
+)
+.split(',')
+.map(key => key.toLocaleLowerCase())
 
 function buildProxyProperties(event, backup) {
   const properties = {}
@@ -14,7 +31,7 @@ function buildProxyProperties(event, backup) {
           : event[key]
       },
       set() {
-        throw new Error(`The '${key}' attributes are read-only.`)
+        console.warn(`Waring: The '${key}' attributes are read-only.`)
       },
     }
   }
@@ -22,6 +39,8 @@ function buildProxyProperties(event, backup) {
 }
 
 function dispatchEvent(elm, event) {
+  // event 原生对象一旦被 dispatch 后就没法用了
+  // 所以没法使用事件池缓存，必须创建新的
   const proxyEvent = new Event(event.type)
   Object.defineProperties(
     proxyEvent,
