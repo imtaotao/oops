@@ -16,28 +16,16 @@
     </script>
     <script type="text/babel">
       const { Fragment, useState, memo, useEffect } = React;
+      console.log(React)
       // const { render, Fragment, useState, createPortal, memo, useEffect } = oops
       // ReactDOM.render = oops.render
       // React.createElement = oops.h
 
-      // class Component extends React.Component {
-      //   render() {
-      //     return React.createElement('span');
-      //   }
-      // }
-      function Component(props) {
-        console.log(props);
-        return React.createElement('span')
+      function App() {
+        return null
       }
-      Component.defaultProps = {fruit: 'persimmon'};
 
-      const container = document.createElement('div');
-      const instance = ReactDOM.render(
-        React.createElement(Component, {fruit: 'mango'}),
-        container,
-      );
-
-      ReactDOM.render(React.createElement(Component), container);
+      ReactDOM.render(<App/>, appRoot);
     </script>
   </body>
 </html>

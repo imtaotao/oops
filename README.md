@@ -2,6 +2,8 @@
   oops(hooks library)
 </h1>
 
+[![npm version](https://badge.fury.io/js/%40rustle%2Foops.svg)](https://badge.fury.io/js/%40rustle%2Foops)
+
 **oops** has built-in jsx parsing function, but you can also compile jsx with babel.
 
 <p align="center">
