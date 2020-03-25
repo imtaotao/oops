@@ -495,13 +495,11 @@ function buildProxyProperties(event, backup) {
 }
 function dispatchEvent(elm, event) {
   const proxyEvent = new Event(event.type);
-  Object.defineProperties(
-    proxyEvent,
-    buildProxyProperties(event, {
-      nativeEvent: event,
-      isCustomized: true,
-    }),
-  );
+  const proxyProps = buildProxyProperties(event, {
+    nativeEvent: event,
+    isCustomized: true,
+  });
+  Object.defineProperties(proxyEvent, proxyProps);
   elm._isFragmentNode
     ? elm.dispatchEvent(proxyEvent, true)
     : elm.dispatchEvent(proxyEvent);
@@ -517,7 +515,9 @@ function addProxyEventListener(container, vnode) {
   if (!container) return null
   function proxyEventCb(event) {
     const parentElm = vnode.parent && vnode.parent.elm;
-    parentElm && dispatchEvent(parentElm, event);
+    if (parentElm) {
+      dispatchEvent(parentElm, event);
+    }
   }
   for(let i = 0; i < eventMap.length; i++) {
     container.addEventListener(eventMap[i], proxyEventCb);

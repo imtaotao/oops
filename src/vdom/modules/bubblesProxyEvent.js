@@ -39,16 +39,13 @@ function buildProxyProperties(event, backup) {
 }
 
 function dispatchEvent(elm, event) {
-  // event 原生对象一旦被 dispatch 后就没法用了
-  // 所以没法使用事件池缓存，必须创建新的
+  // event 原生对象一旦被 dispatch 后就没法用了，没法使用事件池缓存，必须创建新的
   const proxyEvent = new Event(event.type)
-  Object.defineProperties(
-    proxyEvent,
-    buildProxyProperties(event, {
-      nativeEvent: event,
-      isCustomized: true,
-    }),
-  )
+  const proxyProps = buildProxyProperties(event, {
+    nativeEvent: event,
+    isCustomized: true,
+  })
+  Object.defineProperties(proxyEvent, proxyProps)
   elm._isFragmentNode
     ? elm.dispatchEvent(proxyEvent, true)
     : elm.dispatchEvent(proxyEvent)
@@ -62,8 +59,7 @@ function removeProxyEventListener(container, proxyEventCb) {
   }
 }
 
-// 将事件代理到 container 上的原因是因为需要一个根节点
-// 而 protal 节点的 children 可能是一个 fragment
+// 将事件代理到 container 上的原因是因为需要一个根节点，而 protal 节点的 children 可能是一个 fragment
 // 如果 container 是 vdom tree 中的一个节点时，还没想好怎么处理，不过这种场景应该不会发生
 function addProxyEventListener(container, vnode) {
   if (!container) return null
@@ -71,9 +67,10 @@ function addProxyEventListener(container, vnode) {
   function proxyEventCb(event) {
     // 不需要阻止原有原生的冒泡，react 中也没有阻止
     const parentElm = vnode.parent && vnode.parent.elm
-    parentElm && dispatchEvent(parentElm, event)
+    if (parentElm) {
+      dispatchEvent(parentElm, event)
+    }
   }
-
   for(let i = 0; i < eventMap.length; i++) {
     container.addEventListener(eventMap[i], proxyEventCb)
   }
