@@ -48,7 +48,7 @@
 + [x] `<Context.Provider/>`
 + [x] `<Context.Consumer/>`
 
-## Notice
+## Caveats
   1. The `observedBits` function of `context` is not implemented yet.
 
   2. The `functional components` also supports `defaultProps`.

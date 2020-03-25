@@ -105,7 +105,7 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
 }
 
 function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext) {
-  // 对于不符合的类型，不需要便利，只有一个 child
+  // 对于不符合的类型，不需要遍历，只有一个 child
   const type = typeof children
   if (type === 'undefined' || type === 'boolean') {
     children = null

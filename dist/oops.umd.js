@@ -1098,13 +1098,13 @@
         i(vnode);
       }
 
-      return isDef(vnode.component) && !isProvider(vnode);
+      return isDef(vnode.component);
     }
 
     return false;
   }
   function createElm(vnode, insertedVnodeQueue) {
-    if (createComponent(vnode)) {
+    if (createComponent(vnode) && !isProvider(vnode)) {
       if (isPortal(vnode)) {
         vnode.elm = createComment('oops.portal');
         invokeCreateHooks(vnode, insertedVnodeQueue);
