@@ -1,5 +1,6 @@
 import {
   MEMO_TYPE,
+  PORTAL_TYPE,
   CONTEXT_TYPE,
   PROVIDER_TYPE,
   FRAGMENTS_TYPE,
@@ -28,6 +29,7 @@ export function isValidElementType(type) {
     (typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PORTAL_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE))
@@ -40,6 +42,7 @@ export function isInsertComponent(type) {
     typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PORTAL_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE)

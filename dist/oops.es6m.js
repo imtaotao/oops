@@ -28,6 +28,7 @@ function isValidElementType(type) {
     (typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PORTAL_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE))
@@ -38,6 +39,7 @@ function isInsertComponent(type) {
     typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === PORTAL_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
         type.$$typeof === MEMO_TYPE)

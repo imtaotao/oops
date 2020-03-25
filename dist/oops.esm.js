@@ -176,10 +176,10 @@ function isVoid(v) {
   return v === undefined || v === null;
 }
 function isValidElementType(type) {
-  return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
+  return typeof type === 'string' || typeof type === 'function' || type === FRAGMENTS_TYPE || _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PORTAL_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 function isInsertComponent(type) {
-  return _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
+  return _typeof(type) === 'object' && type !== null && (type.$$typeof === CONTEXT_TYPE || type.$$typeof === PORTAL_TYPE || type.$$typeof === PROVIDER_TYPE || type.$$typeof === FORWARD_REF_TYPE || type.$$typeof === MEMO_TYPE);
 }
 var MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
 var FAUX_ITERATOR_SYMBOL = '@@iterator';

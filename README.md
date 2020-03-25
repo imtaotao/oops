@@ -53,3 +53,63 @@
   1. The `observedBits` function of `context` is not implemented yet.
   
   2. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event bubbling to parent node in vitualDOM tree. But `oops` uses native event system. our event bubbling behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`, But our bubbling behavior can still be performed according to the structure of the virtual dom tree.
+
+  ```jsx
+    import { render, useState, createPortal } from '@rustle/oops'
+
+    const el = document.createElement('div')
+    const appRoot = document.getElementById('app-root')
+    const modalRoot = document.getElementById('modal-root')
+
+    // Listening to the bubbling behavior of the native event system 
+    el.onclick = e => {
+      console.log(e.target)
+    }
+
+    function Modal(props) {
+      useEffect(() => {
+        modalRoot.appendChild(el)
+        return () => modalRoot.removeChild(el)
+      })
+
+      return (
+        ReactDOM.createPortal(
+          props.children,
+          el,
+        )
+      )
+    }
+
+    function Child() {
+      // The click event on this button will bubble up to parent,
+      // because there is no 'onClick' attribute defined
+      return (
+        <div className="modal">
+          <button>Click</button>
+        </div>
+      )
+    }
+
+    function Parent(props) {
+      const [clicks, handleClick] = useState(0)
+      return (
+        <div onClick={e => {
+          console.log(e, e.target, e.currentTarget, e.nativeEvent)
+          handleClick(clicks + 1)
+        }}>
+          <p>Number of clicks: {clicks}</p>
+          <p>
+            Open up the browser DevTools
+            to observe that the button
+            is not a child of the div
+            with the onClick handler.
+          </p>
+          <Modal>
+            <Child />
+          </Modal>
+        </div>
+      )
+    }
+
+    render(<Parent />, appRoot)
+  ```
