@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>lazy1</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/immutable@4.0.0-rc.12/dist/immutable.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="appRoot"></div>
+    <script type="module">
+      import oops from '../../src/index.js'
+      window.oops = oops
+    </script>
+    <script type="text/babel">
+      const { Fragment, useState, memo, useEffect } = React;
+      // const { render, Fragment, useState, createPortal, memo, useEffect } = oops
+      // ReactDOM.render = oops.render
+      // React.createElement = oops.h
+
+      // class Component extends React.Component {
+      //   render() {
+      //     return React.createElement('span');
+      //   }
+      // }
+      function Component(props) {
+        console.log(props);
+        return React.createElement('span')
+      }
+      Component.defaultProps = {fruit: 'persimmon'};
+
+      const container = document.createElement('div');
+      const instance = ReactDOM.render(
+        React.createElement(Component, {fruit: 'mango'}),
+        container,
+      );
+
+      ReactDOM.render(React.createElement(Component), container);
+    </script>
+  </body>
+</html>

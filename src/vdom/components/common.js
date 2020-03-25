@@ -24,16 +24,16 @@ export const Target = {
 }
 
 export class Component {
-  constructor(vnode, refObject) {
+  constructor(vnode, refOrContext) {
     this.cursor = 0
     this.vnode = vnode // 组件标签节点
     this.render = vnode.tag
     this.destroyed = false
-    this.refObject = refObject // 组件的 ref
     this.numberOfReRenders = 0 // 重复渲染计数
     this.rootVnode = undefined // 组件返回的根节点
     this.updateVnode = undefined // 新的 vnode
     this.providerDependencies = [] // 依赖的 context
+    this.refOrContext = refOrContext // 组件的 context 或 ref
     this.refs = Object.create(null)
     this.state = Object.create(null)
     this.memos = Object.create(null)
@@ -138,7 +138,7 @@ export class Component {
       this.updateVnode = formatRootVnode(
         this.render(
           mergeProps(this.vnode),
-          this.refObject,
+          this.refOrContext,
         )
       )
       
@@ -192,6 +192,7 @@ export class Component {
 export const componentVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isComponent(vnode)) {
+      // 我们使用 react 新版本的 context 行为，所以此次 context 赋值为 {} 就行
       vnode.component = new Component(vnode, {})
       vnode.component.init()
     }

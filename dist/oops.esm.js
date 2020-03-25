@@ -1836,18 +1836,18 @@ var Target = {
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(vnode, refObject) {
+  function Component(vnode, refOrContext) {
     _classCallCheck(this, Component);
 
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
     this.destroyed = false;
-    this.refObject = refObject;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
     this.providerDependencies = [];
+    this.refOrContext = refOrContext;
     this.refs = Object.create(null);
     this.state = Object.create(null);
     this.memos = Object.create(null);
@@ -1953,7 +1953,7 @@ function () {
 
       try {
         Target.component = this;
-        this.updateVnode = formatRootVnode(this.render(mergeProps(this.vnode), this.refObject));
+        this.updateVnode = formatRootVnode(this.render(mergeProps(this.vnode), this.refOrContext));
 
         if (isUndef(this.updateVnode)) {
           throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
@@ -2032,7 +2032,7 @@ function (_Component) {
   _createClass(ForwardRefComponent, [{
     key: "update",
     value: function update(oldVnode, vnode) {
-      this.refObject = abtainRefObject(vnode);
+      this.refOrContext = abtainRefObject(vnode);
       this.render = vnode.tag.render;
 
       _get(_getPrototypeOf(ForwardRefComponent.prototype), "update", this).call(this, oldVnode, vnode);

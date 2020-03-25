@@ -25,7 +25,7 @@
     });
   
     
-    const Child = function Child() {
+    const Child = function Child(props) {
       console.log('child');
       return (
         <Context.Consumer>
@@ -35,8 +35,8 @@
               <Fragment>
                 <Context.Consumer>
                   {
-                    ({index}) => {
-                      console.log('child 2');
+                    ({index}, context) => {
+                      console.log('child2');
                       return <div>{index}</div>
                     }
                   }

@@ -16,7 +16,7 @@ class ForwardRefComponent extends Component {
   }
 
   update(oldVnode, vnode) {
-    this.refObject = abtainRefObject(vnode)
+    this.refOrContext = abtainRefObject(vnode)
     this.render = vnode.tag.render
     super.update(oldVnode, vnode)
   }

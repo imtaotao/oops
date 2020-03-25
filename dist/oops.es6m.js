@@ -1489,16 +1489,16 @@ const Target = {
   component: undefined,
 };
 class Component {
-  constructor(vnode, refObject) {
+  constructor(vnode, refOrContext) {
     this.cursor = 0;
     this.vnode = vnode;
     this.render = vnode.tag;
     this.destroyed = false;
-    this.refObject = refObject;
     this.numberOfReRenders = 0;
     this.rootVnode = undefined;
     this.updateVnode = undefined;
     this.providerDependencies = [];
+    this.refOrContext = refOrContext;
     this.refs = Object.create(null);
     this.state = Object.create(null);
     this.memos = Object.create(null);
@@ -1591,7 +1591,7 @@ class Component {
       this.updateVnode = formatRootVnode(
         this.render(
           mergeProps(this.vnode),
-          this.refObject,
+          this.refOrContext,
         )
       );
       if (isUndef(this.updateVnode)) {
@@ -1652,7 +1652,7 @@ class ForwardRefComponent extends Component {
     this.render = vnode.tag.render;
   }
   update(oldVnode, vnode) {
-    this.refObject = abtainRefObject(vnode);
+    this.refOrContext = abtainRefObject(vnode);
     this.render = vnode.tag.render;
     super.update(oldVnode, vnode);
   }
