@@ -8,7 +8,6 @@
   <img src="./docs/img/demo.png" width="572" alt="oops demo" />
 </p>
 
-
 ## Hooks
 ### Basic Hooks
 + [x] `useState`
@@ -53,7 +52,6 @@
   1. The `observedBits` function of `context` is not implemented yet.
   
   2. Beacase the `React` event system is customized, so, the dom created by the `createPortal` methods allow event bubbling to parent node in vitualDOM tree. But `oops` uses native event system. our event bubbling behaviors exist in real dom tree that result we can't achieve the same behavior with the `React`, But our bubbling behavior can still be performed according to the structure of the virtual dom tree.
-
   ```jsx
     import { render, useState, createPortal } from '@rustle/oops'
 
@@ -71,20 +69,26 @@
         modalRoot.appendChild(el)
         return () => modalRoot.removeChild(el)
       })
+      return createPortal(props.children, el)
+    }
 
-      return (
-        ReactDOM.createPortal(
-          props.children,
-          el,
-        )
-      )
+    const modalStyles = {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
     }
 
     function Child() {
       // The click event on this button will bubble up to parent,
       // because there is no 'onClick' attribute defined
       return (
-        <div className="modal">
+        <div style={ modalStyles }>
           <button>Click</button>
         </div>
       )
@@ -94,10 +98,10 @@
       const [clicks, handleClick] = useState(0)
       return (
         <div onClick={e => {
-          console.log(e, e.target, e.currentTarget, e.nativeEvent)
+          console.log(e.target, e.currentTarget, e.nativeEvent)
           handleClick(clicks + 1)
         }}>
-          <p>Number of clicks: {clicks}</p>
+          <p>Number of clicks: { clicks }</p>
           <p>
             Open up the browser DevTools
             to observe that the button
