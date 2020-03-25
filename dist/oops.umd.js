@@ -2982,6 +2982,7 @@
     forEach: forEachChildren,
     toArray: toArray
   };
+  var createElement$1 = h;
   var oops = {
     h: h,
     jsx: jsx,
@@ -2992,6 +2993,7 @@
     forwardRef: forwardRef,
     createPortal: createPortal,
     createContext: createContext,
+    createElement: createElement$1,
     isValidElement: isValidElement,
     Fragment: FRAGMENTS_TYPE,
     useRef: useRef,
@@ -3008,6 +3010,7 @@
   exports.Children = Children;
   exports.Fragment = FRAGMENTS_TYPE;
   exports.createContext = createContext;
+  exports.createElement = createElement$1;
   exports.createPortal = createPortal;
   exports.createRef = createRef;
   exports.default = oops;

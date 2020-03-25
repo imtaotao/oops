@@ -1,5 +1,5 @@
 /*!
- * oops.js v0.0.1
+ * oops.js v0.0.4
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
@@ -2985,6 +2985,7 @@ var Children = {
   forEach: forEachChildren,
   toArray: toArray
 };
+var createElement$1 = h;
 var oops = {
   h: h,
   jsx: jsx,
@@ -2995,6 +2996,7 @@ var oops = {
   forwardRef: forwardRef,
   createPortal: createPortal,
   createContext: createContext,
+  createElement: createElement$1,
   isValidElement: isValidElement,
   Fragment: FRAGMENTS_TYPE,
   useRef: useRef,
@@ -3011,6 +3013,7 @@ var oops = {
 exports.Children = Children;
 exports.Fragment = FRAGMENTS_TYPE;
 exports.createContext = createContext;
+exports.createElement = createElement$1;
 exports.createPortal = createPortal;
 exports.createRef = createRef;
 exports.default = oops;

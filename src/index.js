@@ -37,6 +37,9 @@ const Children = {
   toArray,
 }
 
+// 兼容 react
+const createElement = h
+
 const oops = {
   h,
   jsx,
@@ -47,6 +50,7 @@ const oops = {
   forwardRef,
   createPortal,
   createContext,
+  createElement,
   isValidElement,
   Fragment,
   useRef,
@@ -70,6 +74,7 @@ export {
   forwardRef,
   createPortal,
   createContext,
+  createElement,
   isValidElement,
   Fragment,
   useRef,
