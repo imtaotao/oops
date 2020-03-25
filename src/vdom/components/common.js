@@ -13,6 +13,7 @@ import {
   mergeProps,
   updateEffect,
   cleanEffectDestroy,
+  resolveDefaultProps,
   addToProviderUpdateDuplicate,
 } from '../helpers/component.js'
 
@@ -135,13 +136,11 @@ export class Component {
     }
     try {
       Target.component = this
-      this.updateVnode = formatRootVnode(
-        this.render(
-          mergeProps(this.vnode),
-          this.refOrContext,
-        )
-      )
-      
+      const baseProps = mergeProps(this.vnode)
+      const resolvedProps = resolveDefaultProps(this.vnode, baseProps)
+      const currentVnode = this.render(resolvedProps, this.refOrContext)
+      this.updateVnode = formatRootVnode(currentVnode)
+
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +

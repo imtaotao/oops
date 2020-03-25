@@ -1102,6 +1102,20 @@ function defineSpecialPropsWarningGetter(props, key) {
     configurable: true,
   });
 }
+function resolveDefaultProps(vnode, baseProps) {
+  const tag = vnode.isMemoCloned ? vnode.originTag : vnode.tag;
+  if (tag && tag.defaultProps) {
+    const props = Object.assign({}, baseProps);
+    const defaultProps = tag.defaultProps;
+    for (let propName in defaultProps) {
+      if (props[propName] === undefined) {
+        props[propName] = defaultProps[propName];
+      }
+    }
+    return props
+  }
+  return baseProps
+}
 function mergeProps({data, children}) {
   const props =  {};
   if (children.length > 0) {
@@ -1110,11 +1124,11 @@ function mergeProps({data, children}) {
       props.children = props.children[0];
     }
   }
-  for (const key in data) {
-    if (key === 'key' || key === 'ref') {
-      defineSpecialPropsWarningGetter(props, key);
-    } else if (key !== 'hook') {
-      props[key] = data[key];
+  for (const propName in data) {
+    if (propName === 'key' || propName === 'ref') {
+      defineSpecialPropsWarningGetter(props, propName);
+    } else if (propName !== 'hook') {
+      props[propName] = data[propName];
     }
   }
   return props
@@ -1233,8 +1247,11 @@ class MemoComponent {
   }
   transferAndRender() {
     const { tag } = this.memoInfo;
+    const originTag = this.vnode.tag;
     const updateVnode = cloneVnode(this.vnode);
     updateVnode.tag = tag;
+    updateVnode.originTag = originTag;
+    updateVnode.isMemoCloned = true;
     updateVnode.component = undefined;
     updateVnode.data.hook = undefined;
     updateVnode.data = isCommonVnode(tag)
@@ -1588,12 +1605,10 @@ class Component {
     }
     try {
       Target.component = this;
-      this.updateVnode = formatRootVnode(
-        this.render(
-          mergeProps(this.vnode),
-          this.refOrContext,
-        )
-      );
+      const baseProps = mergeProps(this.vnode);
+      const resolvedProps = resolveDefaultProps(this.vnode, baseProps);
+      const currentVnode = this.render(resolvedProps, this.refOrContext);
+      this.updateVnode = formatRootVnode(currentVnode);
       if (isUndef(this.updateVnode)) {
         throw new Error(
           'Nothing was returned from render.' +

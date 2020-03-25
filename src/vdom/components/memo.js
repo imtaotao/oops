@@ -1,7 +1,5 @@
 import { patch } from '../patch.js'
 import { cloneVnode } from '../h.js'
-import { mergeProps } from '../helpers/component.js'
-import { commonHooksConfig } from '../helpers/component.js'
 import {
   isMemo,
   isCommonVnode,
@@ -10,6 +8,10 @@ import {
   installHooks,
   separateProps,
 } from '../helpers/h.js'
+import {
+  mergeProps,
+  commonHooksConfig,
+} from '../helpers/component.js'
 
 function defaultCompare(oldProps, newProps) {
   const oks = Object.keys(oldProps)
@@ -34,8 +36,12 @@ class MemoComponent {
 
   transferAndRender() {
     const { tag } = this.memoInfo
+    const originTag = this.vnode.tag
     const updateVnode = cloneVnode(this.vnode)
+
     updateVnode.tag = tag
+    updateVnode.originTag = originTag
+    updateVnode.isMemoCloned = true
     updateVnode.component = undefined
     updateVnode.data.hook = undefined
 

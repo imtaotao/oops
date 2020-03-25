@@ -18,6 +18,21 @@ function defineSpecialPropsWarningGetter(props, key) {
   })
 }
 
+export function resolveDefaultProps(vnode, baseProps) {
+  const tag = vnode.isMemoCloned ? vnode.originTag : vnode.tag
+  if (tag && tag.defaultProps) {
+    const props = Object.assign({}, baseProps)
+    const defaultProps = tag.defaultProps
+    for (let propName in defaultProps) {
+      if (props[propName] === undefined) {
+        props[propName] = defaultProps[propName]
+      }
+    }
+    return props
+  }
+  return baseProps
+}
+
 export function mergeProps({data, children}) {
   const props =  {}
   if (children.length > 0) {
@@ -27,11 +42,11 @@ export function mergeProps({data, children}) {
     }
   }
 
-  for (const key in data) {
-    if (key === 'key' || key === 'ref') {
-      defineSpecialPropsWarningGetter(props, key)
-    } else if (key !== 'hook') {
-      props[key] = data[key]
+  for (const propName in data) {
+    if (propName === 'key' || propName === 'ref') {
+      defineSpecialPropsWarningGetter(props, propName)
+    } else if (propName !== 'hook') {
+      props[propName] = data[propName]
     }
   }
   return props

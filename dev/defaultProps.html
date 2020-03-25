@@ -15,30 +15,33 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, memo, useEffect } = React;
-      // const { render, Fragment, useState, createPortal, memo, useEffect } = oops
-      // ReactDOM.render = oops.render
-      // React.createElement = oops.h
+      // const { Fragment, useState, memo, useEffect } = React;
+      const { render, Fragment, useState, createPortal, memo, useEffect } = oops
+      ReactDOM.render = oops.render
+      React.createElement = oops.h
 
-      // class Component extends React.Component {
-      //   render() {
-      //     return React.createElement('span');
-      //   }
-      // }
-      function Component(props) {
+      function App(props) {
         console.log(props);
-        return React.createElement('span')
+        return props.children || null
       }
 
-      Component.defaultProps = {fruit: 'persimmon'};
+      App.defaultProps = {
+        children: <div>111</div>
+      }
 
-      const container = document.createElement('div');
+      const App2 = memo(App)
+
+      App2.defaultProps = {
+        children: <div>222</div>
+      }
 
       ReactDOM.render(
-        React.createElement(Component, {fruit: 'mango'}),
-        container,
-      );
-      ReactDOM.render(React.createElement(Component), container);
+        [
+          <App/>,
+          <App2/>
+        ],
+        appRoot,
+      )
     </script>
   </body>
 </html>

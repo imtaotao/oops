@@ -1364,6 +1364,24 @@
     });
   }
 
+  function resolveDefaultProps(vnode, baseProps) {
+    var tag = vnode.isMemoCloned ? vnode.originTag : vnode.tag;
+
+    if (tag && tag.defaultProps) {
+      var props = Object.assign({}, baseProps);
+      var defaultProps = tag.defaultProps;
+
+      for (var propName in defaultProps) {
+        if (props[propName] === undefined) {
+          props[propName] = defaultProps[propName];
+        }
+      }
+
+      return props;
+    }
+
+    return baseProps;
+  }
   function mergeProps(_ref) {
     var data = _ref.data,
         children = _ref.children;
@@ -1377,11 +1395,11 @@
       }
     }
 
-    for (var key in data) {
-      if (key === 'key' || key === 'ref') {
-        defineSpecialPropsWarningGetter(props, key);
-      } else if (key !== 'hook') {
-        props[key] = data[key];
+    for (var propName in data) {
+      if (propName === 'key' || propName === 'ref') {
+        defineSpecialPropsWarningGetter(props, propName);
+      } else if (propName !== 'hook') {
+        props[propName] = data[propName];
       }
     }
 
@@ -1529,8 +1547,11 @@
       key: "transferAndRender",
       value: function transferAndRender() {
         var tag = this.memoInfo.tag;
+        var originTag = this.vnode.tag;
         var updateVnode = cloneVnode(this.vnode);
         updateVnode.tag = tag;
+        updateVnode.originTag = originTag;
+        updateVnode.isMemoCloned = true;
         updateVnode.component = undefined;
         updateVnode.data.hook = undefined;
         updateVnode.data = isCommonVnode(tag) ? separateProps(updateVnode.data) : installHooks(tag, updateVnode.data);
@@ -1954,7 +1975,10 @@
 
         try {
           Target.component = this;
-          this.updateVnode = formatRootVnode(this.render(mergeProps(this.vnode), this.refOrContext));
+          var baseProps = mergeProps(this.vnode);
+          var resolvedProps = resolveDefaultProps(this.vnode, baseProps);
+          var currentVnode = this.render(resolvedProps, this.refOrContext);
+          this.updateVnode = formatRootVnode(currentVnode);
 
           if (isUndef(this.updateVnode)) {
             throw new Error('Nothing was returned from render.' + 'This usually means a return statement is missing.' + 'Or, to render nothing, return null.');
