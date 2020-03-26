@@ -1,5 +1,5 @@
 /*!
- * oops.js v0.0.4
+ * oops.js v0.0.5
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
@@ -2444,7 +2444,10 @@ function onlyChild(children) {
 
 function resolveTargetComponent() {
   if (Target.component === undefined) {
-    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.')
+    throw new Error(
+      'Invalid hook call. ' +
+      'Hooks can only be called inside of the body of a function component.'
+    )
   }
   return Target.component
 }

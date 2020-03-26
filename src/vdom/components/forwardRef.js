@@ -1,4 +1,4 @@
-import { Component } from './common.js'
+import { Component } from './component.js'
 import { isForwardRef } from '../helpers/patch/is.js'
 import { commonHooksConfig } from '../helpers/component.js'
 

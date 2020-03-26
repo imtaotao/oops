@@ -4,7 +4,7 @@ import { styleModule } from './style.js'
 import { datasetModule } from './dataset.js'
 import { attributesModule } from './attributes.js'
 import { eventListenersModule } from './eventlisteners.js'
-import { bubblesProxyEventModule } from './bubblesProxyEvent.js'
+import { bubblesProxyEventModule } from './eventBubblesProxy.js'
 
 export const cbs = {}
 const hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post']

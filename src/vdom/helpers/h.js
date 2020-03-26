@@ -3,7 +3,7 @@ import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { memoVNodeHooks } from '../components/memo.js'
 import { portalVNodeHooks } from '../components/portal.js'
 import { forwardRefHooks } from '../components/forwardRef.js'
-import { componentVNodeHooks } from '../components/common.js'
+import { componentVNodeHooks } from '../components/component.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
 import {

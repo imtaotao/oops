@@ -1,9 +1,12 @@
 import { readContext } from './api/context.js'
-import { Target } from './vdom/components/common.js'
+import { Target } from './vdom/components/component.js'
 
 function resolveTargetComponent() {
   if (Target.component === undefined) {
-    throw new Error('Invalid hook call. Hooks can only be called inside of the body of a function component.')
+    throw new Error(
+      'Invalid hook call. ' + 
+      'Hooks can only be called inside of the body of a function component.'
+    )
   }
   return Target.component
 }
