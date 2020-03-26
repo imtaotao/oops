@@ -10,7 +10,7 @@ import {
   isDef,
   isUndef,
   hasIterator,
-  isInsertComponent,
+  isInternalComponent,
 } from '../../shared.js'
 import {
   isMemo,
@@ -204,7 +204,7 @@ export function createFragmentVnode(children) {
 
 export function formatVnode(tag, data, children, checkKey) {
   // The `Component` need abtain origin `children` data
-  if (!isComponent({ tag }) && !isInsertComponent(tag)) {
+  if (!isComponent({ tag }) && !isInternalComponent(tag)) {
     if (children.length > 0) {
       let didWarned = false
       children = children.slice()
@@ -227,7 +227,7 @@ export function formatVnode(tag, data, children, checkKey) {
         } else if (isCommonVnode(tag)) {
           if (isFilterVnode(children[i])) {
             // Filter out `null`, `undefined`, `true`, `false`.
-            // keep same with React
+            // Keep same with React
             children.splice(i, 1)
             i--
           }

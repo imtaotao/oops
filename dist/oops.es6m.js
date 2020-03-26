@@ -34,7 +34,7 @@ function isValidElementType(type) {
         type.$$typeof === MEMO_TYPE))
   )
 }
-function isInsertComponent(type) {
+function isInternalComponent(type) {
   return (
     typeof type === 'object' &&
       type !== null &&
@@ -341,7 +341,7 @@ function updateAttrs(oldVnode, vnode) {
               'Unexpected ref object provided for button. ' +
                 'Use either a ref-setter function or createRef().'
             )
-          } else {
+          } else if (ref.current !== elm) {
             ref.current = elm;
           }
         }
@@ -1949,7 +1949,7 @@ function createFragmentVnode(children) {
   return formatVnode(FRAGMENTS_TYPE, {}, children, true)
 }
 function formatVnode(tag, data, children, checkKey) {
-  if (!isComponent({ tag }) && !isInsertComponent(tag)) {
+  if (!isComponent({ tag }) && !isInternalComponent(tag)) {
     if (children.length > 0) {
       let didWarned = false;
       children = children.slice();

@@ -15,7 +15,7 @@ class PortalComponent {
     this.rootVnode = undefined
   }
 
-  // portal 组件不需要合并 defaultProps
+  // The `portal` components do not need to merge with `defaultProps`.
   render() {
     const oldContainer = this.container
     const updateVnode = this.vnode.children[0]

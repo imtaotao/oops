@@ -71,7 +71,7 @@ class MemoComponent {
       throw new TypeError('compare is not a function.')
     }
 
-    // 如果不等才需要更新
+    // Need to update if not equal
     const newProps = mergeProps(vnode)
     if (!compare(this.prevProps, newProps)) {
       this.memoInfo = { tag, compare }

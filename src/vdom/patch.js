@@ -36,7 +36,7 @@ function addVnodes(parentElm, before, vnodes, startIdx, endIdx, insertedVnodeQue
 function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   for (; startIdx <= endIdx; startIdx++) {
     let i, rm, listeners
-    let ch = vnodes[startIdx] // ch 有可能是组件
+    let ch = vnodes[startIdx] // The `ch` maybe a component
 
     if (ch != null) {
       if (isDef(ch.tag)) {
@@ -47,7 +47,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
           cbs.remove[i](ch, rm)
         }
 
-        // 调用 remove 钩子
+        // call `remove` hook
         if (isDef(i = ch.data) && isDef(i = i.hook) && isDef(i = i.remove)) {
           i(ch, rm)
         } else {
@@ -60,7 +60,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
   }
 }
 
-// diff children
+// Diff children
 export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
   let oldStartIdx = 0, newStartIdx = 0
   let oldEndIdx = oldCh.length - 1
@@ -135,7 +135,7 @@ export function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
 // diff -> patch
 function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let i, hook
-  // 调用 prepatch 钩子
+  // Call `prepatch` hook
   if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
     i(oldVnode, vnode)
   }
@@ -144,15 +144,16 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   let ch = vnode.children
   if (oldVnode === vnode) return
 
-  // 调用 update 钩子
+  // Call `update` hook
   if (isDef(vnode.data)) {
-    // 保证优先调用模块的 update 钩子，顺序错乱将导致模块钩子获取到的组件内容的更新过后的
+    // Ensure priority call `update` hook of module,
+    // out of order will result in updated component content obtained by the module hook.
     for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
     i = vnode.data.hook
     if (isDef(i) && isDef(i = i.update)) i(oldVnode, vnode)
   }
 
-  // Provider 组件和 fragment 组件没有 render 的能力，这里不做阻拦
+  // The `Provider` component and `fragment` component do not have the ability to render, so, no prevent.
   if (
     isMemo(vnode) ||
     isPortal(vnode) ||
@@ -160,7 +161,8 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
     isComponent(vnode) ||
     isForwardRef(vnode)
   ) {
-    // 如果是组件，则不需要对组件的 elm 进行diff，组件内部会调用 update 钩子 diff
+    // If it is a component, there is no need to diff the `elm` of the component,
+    // the `update` hook diff is called inside the component.
   } else if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
       if (oldCh !== ch) {
@@ -203,7 +205,8 @@ export function patch(oldVnode, vnode) {
 
       createElm(vnode, insertedVnodeQueue)
 
-      // 如果 parent 在，代表在视图中，就可以插入到视图中去，然后删除旧的元素
+      // If `parent` node is exist, prsent it in view,
+      // you can insert it into the view and delete the old elment.
       if (parent !== null) {
         insertBefore(parent, vnode.elm, nextSibling(elm))
         removeVnodes(parent, [oldVnode], 0, 0)

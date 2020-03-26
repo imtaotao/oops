@@ -91,7 +91,7 @@ export function formatRootVnode(vnode) {
   return vnode
 }
 
-// 如果是 fragment，返回 list 中最后一个的 nextSibling
+// If it is a fragment, return the last nextSibling in the list
 export function nextSibling(node) {
   return node._isFragmentNode
     ? node.nextSibling
@@ -156,9 +156,9 @@ export function createComponent(vnode) {
 }
 
 export function createElm(vnode, insertedVnodeQueue) {
-  // 如果是一个组件则没必要往下走（包含自定义的组件和内部标识组件）
+  // If it is a component, there is no need to go down (including custom components and internal identification components)
   if (createComponent(vnode) && !isProvider(vnode)) {
-    // portal 组件需要在 create 钩子中对 container 做事件的代理和转发
+    // The `portal` component needs to proxy and forward events to the `container` in the `create` hook
     if (isPortal(vnode)) {
       vnode.elm = api.createComment('oops.portal')
       invokeCreateHooks(vnode, insertedVnodeQueue)
@@ -192,7 +192,7 @@ export function createElm(vnode, insertedVnodeQueue) {
     vnode.elm = api.createTextNode(vnode.text)
   }
 
-  // 初始化之后
+  // After initialization
   if (isDef(data)) {
     let i = data.hook
     if (isDef(i) && isDef(i = i.initBefore)) {

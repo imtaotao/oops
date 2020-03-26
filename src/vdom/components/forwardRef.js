@@ -8,7 +8,9 @@ function abtainRefObject(vnode) {
     : null
 }
 
-// 其实原有的 component 就支持 ref，但是为了与 react 一致，添加了 forwardRef 组件
+// In fact, the original component supports ref,
+// but in order to be consistent with react,
+// a forwardRef component has been added.
 class ForwardRefComponent extends Component {
   constructor(vnode) {
     super(vnode, abtainRefObject(vnode))

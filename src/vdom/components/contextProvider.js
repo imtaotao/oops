@@ -5,7 +5,8 @@ class ProviderComponent {
   constructor(vnode) {
     this.vnode = vnode
     this.consumerQueue = []
-    this.updateDuplicate = null // 用于追踪 consumer 更新情况
+    // Used to track consumer updates
+    this.updateDuplicate = null
   }
   
   initBefore(vnode) {
@@ -15,18 +16,18 @@ class ProviderComponent {
   update(oldVnode, vnode) {
     const { tag, data } = vnode
     tag._context._contextStack.push(data.value, this)
-    // 需要对比新旧的 value，暂时未做...
+    // Need to compare the old and new values, not done yet ...
     this.updateDuplicate = []
   }
 
   postpatch(oldVnode, vnode) {
-    // 根据副本判断哪些 consumer 被阻断了，在此处强制更新
-    // 并且 consumer 有可能在更新的过程中卸载了，导致队列 index 混乱
+    // Determine which consumers are blocked based on the copy, and force updates here.
+    // And the consumer maybe uninstalled during the update process, causing queue index confusion.
     const consumerQueue = this.consumerQueue.slice()
 
     if (consumerQueue.length !== this.updateDuplicate.length) {
       for (let i = 0; i < consumerQueue.length; i++) {
-        const consumer = consumerQueue[i].consumer // 还有 observedBits
+        const consumer = consumerQueue[i].consumer // And `observedBits`
         if (this.updateDuplicate.indexOf(consumer) === -1) {
           if (!consumer.destroyed) {
             consumer.forceUpdate()

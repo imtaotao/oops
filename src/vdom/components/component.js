@@ -19,7 +19,8 @@ import {
 
 const RE_RENDER_LIMIT = 25
 
-// 由于组件总是在最后 return vnode，所以不需要一个队列保存父子组件的关系
+// Because the component always returns the vnode at the end,
+// there is no need for a queue to hold the relationship between the parent and child components.
 export const Target = {
   component: undefined,
 }
@@ -27,14 +28,14 @@ export const Target = {
 export class Component {
   constructor(vnode, refOrContext) {
     this.cursor = 0
-    this.vnode = vnode // 组件标签节点
+    this.vnode = vnode // Component tag node
     this.render = vnode.tag
     this.destroyed = false
-    this.numberOfReRenders = 0 // 重复渲染计数
-    this.rootVnode = undefined // 组件返回的根节点
-    this.updateVnode = undefined // 新的 vnode
-    this.providerDependencies = [] // 依赖的 context
-    this.refOrContext = refOrContext // 组件的 context 或 ref
+    this.numberOfReRenders = 0 // Repeat render count
+    this.rootVnode = undefined // The root node returned by the component
+    this.updateVnode = undefined // New nodes for each render
+    this.providerDependencies = [] // Dependent `context`
+    this.refOrContext = refOrContext // The `context` or `ref` of the component
     this.refs = Object.create(null)
     this.state = Object.create(null)
     this.memos = Object.create(null)
@@ -42,7 +43,7 @@ export class Component {
     this.layoutEffects = Object.create(null)
   }
 
-  // 添加不重复的 state
+  // adding unrepeat state
   setState(partialState) {
     const key = this.cursor++
     if (key in this.state) {
@@ -67,7 +68,8 @@ export class Component {
 
   useReducer(payload, key, reducer) {
     const newValue = reducer(this.state[key], payload)
-    // react 此处的处理为新旧俩值全等则不更新，后续此处如何处理，待定...
+    // Not be updated that if the oldValue no equal newValue in `React`,
+    // How to deal with it here, to be determined ...
     if (this.state[key] !== newValue) {
       this.state[key] = newValue
       this.forceUpdate()
@@ -93,7 +95,8 @@ export class Component {
   }
 
   useImperativeHandle(ref, create, deps) {
-    // 等 dom 渲染后给 current 赋值，使用 layoutEffects 是因为 react 中使用的是这个
+    // After the dom is rendered, assign a value to the current. 
+    // Use layoutEffects because this is used in react.
     this.pushEffect(
       'layoutEffects',
       () => {
@@ -164,12 +167,11 @@ export class Component {
     }
   }
 
-  // 生命周期方法
   init() {
     this.forceUpdate()
   }
 
-  // 更新当前组件节点，同步更新
+  // Update current components synchronously
   update(oldVnode, vnode) {
     addToProviderUpdateDuplicate(this)
     this.forceUpdate()
@@ -180,7 +182,7 @@ export class Component {
   }
 
   destroy(vnode) {
-    // 在组件销毁时，清除 effect 的 destroy
+    // When the component is destroyed, clear the `destroy` effect
     cleanEffectDestroy('effects', this.effects)
     cleanEffectDestroy('layoutEffects', this.layoutEffects)
     this.destroyed = true
@@ -191,7 +193,8 @@ export class Component {
 export const componentVNodeHooks = commonHooksConfig({
   init(vnode) {
     if (isComponent(vnode)) {
-      // 我们使用 react 新版本的 context 行为，所以此次 context 赋值为 {} 就行
+      // We use the new version of the context behavior of `react`,
+      // so this time the context is set to {}
       vnode.component = new Component(vnode, {})
       vnode.component.init()
     }

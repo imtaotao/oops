@@ -36,8 +36,8 @@ export function isValidElementType(type) {
   )
 }
 
-// `portal component` is not counted in
-export function isInsertComponent(type) {
+// The `portal component` is not counted in
+export function isInternalComponent(type) {
   return (
     typeof type === 'object' &&
       type !== null &&
@@ -50,7 +50,7 @@ export function isInsertComponent(type) {
 }
 
 const MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator
-// from `iterator interface` of simulate
+// From `iterator interface` of simulate
 const FAUX_ITERATOR_SYMBOL = '@@iterator'
 
 export function getIteratorFn(maybeIterable) {

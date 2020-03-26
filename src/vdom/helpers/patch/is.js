@@ -65,13 +65,13 @@ export function sameVnode(a, b) {
   if (a.key === b.key) {
     const ta = typeof a.tag
     const tb = typeof b.tag
-    // 普通节点，text 节点，普通组件节点,
+    // Ordinary nodes, text nodes, ordinary component nodes,
     return (
       (ta === 'string' || ta === 'undefined' || ta === 'function') ||
       (tb === 'string' || tb === 'undefined' || tb === 'function') 
     )
       ? a.tag === b.tag
-      // 内置组件节点
+      // Internal component
       : a.tag.$$typeof === b.tag.$$typeof
   }
   return false

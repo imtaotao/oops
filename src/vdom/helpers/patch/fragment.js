@@ -27,7 +27,7 @@ const installMethods = (obj, methods) => {
   methods.forEach(name => obj[name] = empty)
 }
 
-// 创建 FragmentNode 参与整个 diff patch 的过程
+// Create `FragmentNode` participate in the entire diff patch process
 export class FragmentNode {
   constructor() {
     this._children = []
@@ -62,7 +62,7 @@ export class FragmentNode {
       : null
   }
 
-  // 全部是真实 dom
+  // All real dom
   get nodes() {
     const ls = []
     for (let i = 0; i < this._children.length; i++) {
@@ -83,8 +83,8 @@ export class FragmentNode {
   }
 
   appendChild(child) {
-    // 不用添加到真实 dom 环境
-    // 整个 fragment 会作为一个整体添加
+    // No need to add to the real dom environment
+    // The entire fragment will be added as a whole
     if (child) {
       if (child._isFragmentNode) {
         child.parentNode = this
@@ -92,11 +92,11 @@ export class FragmentNode {
       this._children.push(child)
     }
 
-    // 而在 diff 过程中新增的元素，使用的是 insertBefore，
-    // 所以这里本来不用处理这种情况，但是为了保证逻辑的完整性，还是加上
+    // And the new element added in the diff process uses `insertBefore`,
+    // So we don't need to deal with this situation here, but to ensure the integrity of the logic, we still add
     if (this.parentNode) {
       if (child._isFragmentNode) {
-        // 如果 this.parentNode 是一个 fragment，会一直往上找到真实 dom 元素为止
+        // If `this.parentNode` is a fragment, it will keep going up to find the real dom element
         child.appendSelfInParent(this.parentNode)
       } else {
         api.appendChild(this.realParentNode(), child)
@@ -110,7 +110,7 @@ export class FragmentNode {
       this._children.splice(index, 1)
     }
 
-    // 删除的逻辑和添加的逻辑不一样，立即从真实 dom 环境中删除
+    // The deleted logic is not the same as the added logic, it is immediately removed from the real dom environment
     if (this.parentNode) {
       if (child._isFragmentNode) {
         child.removeSelfInParent(this.parentNode)
@@ -129,7 +129,7 @@ export class FragmentNode {
       this._children.push(newNode)
     }
 
-    // 插入到真实 dom 环境
+    // Insert into real dom environment
     if (this.parentNode) {
       if (newNode._isFragmentNode) {
         newNode.insertBeforeSelfInParent(this.parentNode, referenceNode)
@@ -142,9 +142,9 @@ export class FragmentNode {
     }
   }
 
-  // 把 fragment 当成子元素来操作
+  // Operate the `fragment` as a child element
   appendSelfInParent(parentNode) {
-    // 第一次 append 的时候，parentNode 肯定是真实 dom
+    // When the first append, the `parentNode` must be the real dom
     this.parentNode = parentNode
 
     if (parentNode._isFragmentNode) {

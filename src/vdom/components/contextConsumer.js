@@ -1,5 +1,4 @@
 import { patch } from '../patch.js'
-import { injectParentVnode } from '../h.js'
 import { isConsumer } from '../helpers/patch/is.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import {
