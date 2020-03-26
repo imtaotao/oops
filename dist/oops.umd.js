@@ -235,7 +235,7 @@
 
       var tb = _typeof(b.tag);
 
-      return ta === 'string' || ta === 'undefined' || ta === 'function' || tb === 'string' || tb === 'undefined' || tb === 'function' ? a.tag === b.tag : a.tag.$$typeof === b.tag.$$typeof;
+      return ta === 'string' || ta === 'undefined' || ta === 'function' || ta === 'symbol' || tb === 'string' || tb === 'undefined' || tb === 'function' || tb === 'symbol' ? a.tag === b.tag : a.tag.$$typeof === b.tag.$$typeof;
     }
 
     return false;

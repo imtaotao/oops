@@ -65,10 +65,13 @@ export function sameVnode(a, b) {
   if (a.key === b.key) {
     const ta = typeof a.tag
     const tb = typeof b.tag
-    // Ordinary nodes, text nodes, ordinary component nodes,
+    // 1) ordinary node
+    // 2) text node
+    // 3) ordinary component node
+    // 4) symbol component node
     return (
-      (ta === 'string' || ta === 'undefined' || ta === 'function') ||
-      (tb === 'string' || tb === 'undefined' || tb === 'function') 
+      (ta === 'string' || ta === 'undefined' || ta === 'function' || ta === 'symbol') ||
+      (tb === 'string' || tb === 'undefined' || tb === 'function' || tb === 'symbol') 
     )
       ? a.tag === b.tag
       // Internal component

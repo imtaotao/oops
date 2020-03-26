@@ -111,8 +111,8 @@ function sameVnode(a, b) {
     const ta = typeof a.tag;
     const tb = typeof b.tag;
     return (
-      (ta === 'string' || ta === 'undefined' || ta === 'function') ||
-      (tb === 'string' || tb === 'undefined' || tb === 'function')
+      (ta === 'string' || ta === 'undefined' || ta === 'function' || ta === 'symbol') ||
+      (tb === 'string' || tb === 'undefined' || tb === 'function' || tb === 'symbol')
     )
       ? a.tag === b.tag
       : a.tag.$$typeof === b.tag.$$typeof

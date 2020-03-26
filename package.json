@@ -1,6 +1,6 @@
 {
   "name": "@rustle/oops",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A tiny hooks library",
   "main": "dist/oops.common.js",
   "module": "dist/oops.oops.esm.js",
