@@ -6,6 +6,13 @@ export function createPortal(children, container, key = null) {
     container,
     $$typeof: PORTAL_TYPE,
   }
-  key = key == null ? null : '' + key
-  return h(tag, { key }, children)
+  return h(
+    tag,
+    {
+      key: key == null
+        ? null
+        : '' + key
+    },
+    children,
+  )
 }

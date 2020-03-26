@@ -57,7 +57,9 @@ export class FragmentNode {
 
   get nextSibling() {
     const last = this.last
-    return last ? api.nextSibling(last) : null
+    return last
+      ? api.nextSibling(last)
+      : null
   }
 
   // 全部是真实 dom

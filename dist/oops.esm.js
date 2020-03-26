@@ -1755,42 +1755,51 @@ var ContextStack = /*#__PURE__*/function () {
   function ContextStack(context, defaultValue) {
     _classCallCheck(this, ContextStack);
 
-    this.context = context;
-    this.stack = [{
+    var baseProvider = {
+      value: defaultValue,
       provider: {
         consumerQueue: []
-      },
-      value: defaultValue
-    }];
+      }
+    };
+    this.context = context;
+    this.stack = [baseProvider];
   }
 
   _createClass(ContextStack, [{
     key: "push",
     value: function push(value, provider) {
+      var stack = this.stack,
+          context = this.context;
       var item = {
         value: value,
         provider: provider
       };
-      this.stack.push(item);
-      this.context._currentValue = value;
+      stack.push(item);
+      context._currentValue = value;
     }
   }, {
     key: "pop",
     value: function pop() {
-      this.stack.pop();
-      var lastItme = this.stack[this.stack.length - 1];
-      this.context._currentValue = lastItme ? lastItme.value : null;
+      var stack = this.stack,
+          context = this.context;
+      stack.pop();
+      var lastItme = stack[stack.length - 1];
+      context._currentValue = lastItme ? lastItme.value : null;
     }
   }, {
     key: "reset",
     value: function reset() {
-      this.stack = this.stack[0];
-      this.context._currentValue = this.stack[0].value;
+      var stack = this.stack,
+          context = this.context;
+      this.stack = [stack[0]];
+      context._currentValue = stack[0].value;
     }
   }, {
     key: "getCurrentProvider",
     value: function getCurrentProvider() {
-      return this.stack[this.stack.length - 1].provider;
+      var stack = this.stack;
+      var lastItme = stack[stack.length - 1];
+      return lastItme.provider;
     }
   }]);
 
@@ -2728,9 +2737,8 @@ function createPortal(children, container) {
     container: container,
     $$typeof: PORTAL_TYPE
   };
-  key = key == null ? null : '' + key;
   return h(tag, {
-    key: key
+    key: key == null ? null : '' + key
   }, children);
 }
 
@@ -3013,7 +3021,6 @@ var Children = {
   forEach: forEachChildren,
   toArray: toArray
 };
-var createElement$1 = h;
 var oops = {
   h: h,
   jsx: jsx,
@@ -3024,7 +3031,7 @@ var oops = {
   forwardRef: forwardRef,
   createPortal: createPortal,
   createContext: createContext,
-  createElement: createElement$1,
+  createElement: h,
   isValidElement: isValidElement,
   Fragment: FRAGMENTS_TYPE,
   useRef: useRef,
@@ -3039,4 +3046,4 @@ var oops = {
 };
 
 export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, createElement$1 as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

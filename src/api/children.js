@@ -132,7 +132,9 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
     callback(
       traverseContext,
       children,
-      nameSoFar === '' ? SEPARATOR + getComponentKey(children, 0) : nameSoFar,
+      nameSoFar === ''
+        ? SEPARATOR + getComponentKey(children, 0)
+        : nameSoFar,
     )
     return 1
   }

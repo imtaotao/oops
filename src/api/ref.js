@@ -21,7 +21,11 @@ export function forwardRef(render) {
   } else if (typeof render !== 'function') {
     throw new Error(
       'forwardRef requires a render function but was given ' +
-        (render === null ? 'null' : typeof render)
+        (
+          render === null
+            ? 'null'
+            : typeof render
+          )
     )
   } else {
     // Do not warn for 0 arguments because it could be due to usage of the 'arguments' object

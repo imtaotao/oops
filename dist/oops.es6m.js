@@ -648,7 +648,9 @@ class FragmentNode {
   }
   get nextSibling() {
     const last = this.last;
-    return last ? nextSibling(last) : null
+    return last
+      ? nextSibling(last)
+      : null
   }
   get nodes() {
     const ls = [];
@@ -1103,7 +1105,9 @@ function defineSpecialPropsWarningGetter(props, key) {
   });
 }
 function resolveDefaultProps(vnode, baseProps) {
-  const tag = vnode.isMemoCloned ? vnode.originTag : vnode.tag;
+  const tag = vnode.isMemoCloned
+    ? vnode.originTag
+    : vnode.tag;
   if (tag && tag.defaultProps) {
     const props = Object.assign({}, baseProps);
     const defaultProps = tag.defaultProps;
@@ -1362,7 +1366,11 @@ function forwardRef(render) {
   } else if (typeof render !== 'function') {
     throw new Error(
       'forwardRef requires a render function but was given ' +
-        (render === null ? 'null' : typeof render)
+        (
+          render === null
+            ? 'null'
+            : typeof render
+          )
     )
   } else {
     if (render.length !== 0 && render.length !== 2) {
@@ -1384,32 +1392,38 @@ function forwardRef(render) {
 const MAX_SIGNED_31_BIT_INT = 1073741823;
 class ContextStack {
   constructor(context, defaultValue) {
-    this.context = context;
-    this.stack = [
-      {
-        provider: {
-          consumerQueue: [],
-        },
-        value: defaultValue,
+    const baseProvider = {
+      value: defaultValue,
+      provider: {
+        consumerQueue: []
       },
-    ];
+    };
+    this.context = context;
+    this.stack = [baseProvider];
   }
   push(value, provider) {
+    const { stack, context } = this;
     const item = { value, provider };
-    this.stack.push(item);
-    this.context._currentValue = value;
+    stack.push(item);
+    context._currentValue = value;
   }
   pop() {
-    this.stack.pop();
-    const lastItme = this.stack[this.stack.length - 1];
-    this.context._currentValue = lastItme ? lastItme.value : null;
+    const { stack, context } = this;
+    stack.pop();
+    const lastItme = stack[stack.length - 1];
+    context._currentValue = lastItme
+      ? lastItme.value
+      : null;
   }
   reset() {
-    this.stack = this.stack[0];
-    this.context._currentValue = this.stack[0].value;
+    const { stack, context } = this;
+    this.stack = [stack[0]];
+    context._currentValue = stack[0].value;
   }
   getCurrentProvider() {
-    return this.stack[this.stack.length - 1].provider
+    const stack = this.stack;
+    const lastItme = stack[stack.length - 1];
+    return lastItme.provider
   }
 }
 function readContext(consumer, context, observedBits) {
@@ -1986,7 +2000,9 @@ function createVnode(tag, data, children, text, elm) {
     children,
     parent: undefined,
     component: undefined,
-    key: data ? data.key : undefined,
+    key: data
+      ? data.key
+      : undefined,
   };
   injectParentVnode(vnode, children);
   return vnode
@@ -2183,7 +2199,9 @@ const getCache = statics => {
 };
 function createVNodeTree(h, statics, fields) {
   const result = evaluate(h, getCache(statics), fields, []);
-  return result.length > 1 ? result : result[0]
+  return result.length > 1
+    ? result
+    : result[0]
 }
 function jsx(statics, ...fields) {
   return createVNodeTree(h, statics, fields)
@@ -2193,13 +2211,19 @@ function memo(tag, compare) {
   if (!isValidElementType(tag)) {
     throw new Error(
       'memo: The first argument must be a component. Instead received: ' +
-        (tag === null ? 'null' : typeof tag)
+        (
+          tag === null
+            ? 'null'
+            : typeof tag
+        )
     )
   }
   return {
     tag,
     $$typeof: MEMO_TYPE,
-    compare: compare === undefined ? null : compare
+    compare: compare === undefined
+      ? null
+      : compare
   }
 }
 
@@ -2227,8 +2251,15 @@ function createPortal(children, container, key = null) {
     container,
     $$typeof: PORTAL_TYPE,
   };
-  key = key == null ? null : '' + key;
-  return h(tag, { key }, children)
+  return h(
+    tag,
+    {
+      key: key == null
+        ? null
+        : '' + key
+    },
+    children,
+  )
 }
 
 function isValidElement(object) {
@@ -2349,7 +2380,9 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
     callback(
       traverseContext,
       children,
-      nameSoFar === '' ? SEPARATOR + getComponentKey(children, 0) : nameSoFar,
+      nameSoFar === ''
+        ? SEPARATOR + getComponentKey(children, 0)
+        : nameSoFar,
     );
     return 1
   }
@@ -2510,7 +2543,6 @@ const Children = {
   forEach: forEachChildren,
   toArray,
 };
-const createElement$1 = h;
 const oops = {
   h,
   jsx,
@@ -2521,7 +2553,7 @@ const oops = {
   forwardRef,
   createPortal,
   createContext,
-  createElement: createElement$1,
+  createElement: h,
   isValidElement,
   Fragment: FRAGMENTS_TYPE,
   useRef,
@@ -2536,4 +2568,4 @@ const oops = {
 };
 
 export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, createElement$1 as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

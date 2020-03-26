@@ -30,7 +30,9 @@ export function createVnode(tag, data, children, text, elm) {
     children,
     parent: undefined,
     component: undefined,
-    key: data ? data.key : undefined,
+    key: data
+      ? data.key
+      : undefined,
   }
   injectParentVnode(vnode, children)
   return vnode

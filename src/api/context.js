@@ -7,36 +7,42 @@ export const MAX_SIGNED_31_BIT_INT = 1073741823
 
 class ContextStack {
   constructor(context, defaultValue) {
-    this.context = context
-    this.stack = [
-      {
-        provider: {
-          consumerQueue: [],
-        },
-        value: defaultValue,
+    const baseProvider = {
+      value: defaultValue,
+      provider: {
+        consumerQueue: []
       },
-    ]
+    }
+    this.context = context
+    this.stack = [baseProvider]
   }
 
   push(value, provider) {
+    const { stack, context } = this
     const item = { value, provider }
-    this.stack.push(item)
-    this.context._currentValue = value
+    stack.push(item)
+    context._currentValue = value
   }
 
   pop() {
-    this.stack.pop()
-    const lastItme = this.stack[this.stack.length - 1]
-    this.context._currentValue = lastItme ? lastItme.value : null
+    const { stack, context } = this
+    stack.pop()
+    const lastItme = stack[stack.length - 1]
+    context._currentValue = lastItme
+      ? lastItme.value
+      : null
   }
 
   reset() {
-    this.stack = this.stack[0]
-    this.context._currentValue = this.stack[0].value
+    const { stack, context } = this
+    this.stack = [stack[0]]
+    context._currentValue = stack[0].value
   }
 
   getCurrentProvider() {
-    return this.stack[this.stack.length - 1].provider
+    const stack = this.stack
+    const lastItme = stack[stack.length - 1]
+    return lastItme.provider
   }
 }
 

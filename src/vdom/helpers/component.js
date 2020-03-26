@@ -19,7 +19,10 @@ function defineSpecialPropsWarningGetter(props, key) {
 }
 
 export function resolveDefaultProps(vnode, baseProps) {
-  const tag = vnode.isMemoCloned ? vnode.originTag : vnode.tag
+  const tag = vnode.isMemoCloned
+    ? vnode.originTag
+    : vnode.tag
+
   if (tag && tag.defaultProps) {
     const props = Object.assign({}, baseProps)
     const defaultProps = tag.defaultProps
