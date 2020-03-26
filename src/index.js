@@ -47,7 +47,7 @@ const oops = {
   forwardRef,
   createPortal,
   createContext,
-  createElement: h,
+  createElement: h, // Compatible with react
   isValidElement,
   Fragment,
   useRef,

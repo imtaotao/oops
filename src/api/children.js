@@ -7,8 +7,8 @@ import {
 
 const SEPARATOR = '.'
 const SUBSEPARATOR = ':'
-const POOL_SIZE = 10 // 最多缓存 10 个 context
-const traverseContextPool = [] // 缓存 context，避免重复初始化
+const POOL_SIZE = 10 // caches no more than 10
+const traverseContextPool = [] // cache `context`, avoid repeat initialzation initial
 
 function escape(key) {
   const escapeRegex = /[=:]/g
@@ -92,7 +92,7 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
     if (isValidElement(mappedChild)) {
       mappedChild = cloneAndReplaceKey(
         mappedChild,
-        // 保留新旧 vnode 的 key
+        // keep key of `newVNode` and `oldVNode`
         keyPrefix +
           (mappedChild.key && (!child || child.key !== mappedChild.key)
             ? escapeUserProvidedKey(mappedChild.key) + '/'
@@ -105,7 +105,7 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
 }
 
 function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext) {
-  // 对于不符合的类型，不需要遍历，只有一个 child
+  // if the type is no meet the requirements, no traverse, becase has one child
   const type = typeof children
   if (type === 'undefined' || type === 'boolean') {
     children = null
@@ -141,7 +141,7 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
 
   let child
   let nextName
-  let subtreeCount = 0 // 所有 child 计数
+  let subtreeCount = 0 // count of all childs
   const nextNamePrefix = nameSoFar === ''
     ? SEPARATOR
     : nameSoFar + SUBSEPARATOR
@@ -160,7 +160,7 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
   } else {
     const iteratorFn = getIteratorFn(children)
     if (typeof iteratorFn === 'function') {
-      // 如果 children 有 iterate 接口，也可以遍历
+      // if `children` has `iterate` interface, also can traverse
       const iterator = iteratorFn.call(children)
 
       let step
@@ -188,7 +188,7 @@ function traverseAllChildren(children, callback, traverseContext) {
   return traverseAllChildrenImpl(children, '', callback, traverseContext)
 }
 
-// map 和 toArray 需要对 key 做处理
+// `map` and `toArray` need handle `key`
 function mapIntoWithKeyPrefixInternal(children, array, prefix, fn, context) {
   let escapedPrefix = ''
   if (prefix != null) {

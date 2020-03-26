@@ -9,11 +9,12 @@ import {
   separateProps,
 } from './helpers/h.js'
 
-// 需要记录 parent 的原因是因为在 portal 组件中冒泡时需要
+// The reason for the need to record parent is because it is needed when bubbling in the portal component
 export function injectParentVnode(vnode, children) {
   if (isArray(children)) {
     for (let i = 0; i < children.length; i++) {
-      // text 节点不需要 parent，因为暂时没有对 text 节点有额外的操作
+      // The text node does not need a parent,
+      // because there is no additional operation on the text node for the time being
       if (children[i] && isVnode(children[i])) {
         children[i].parent = vnode
       }
@@ -54,7 +55,7 @@ export function cloneVnode(vnode) {
 }
 
 export function h(tag, props, ...children) {
-  // 组件不支持 ref
+  // Component does not support ref
   if (typeof tag === 'function' && props && props.hasOwnProperty('ref')) {
     throw new Error(
       'Function components cannot be given refs. ' +

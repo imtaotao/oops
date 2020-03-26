@@ -3,15 +3,13 @@ const colonChar = 58
 const xlinkNS = 'http://www.w3.org/1999/xlink'
 const xmlNS = 'http://www.w3.org/XML/1998/namespace'
 
-// Unexpected ref object provided for button. Use either a ref-setter function or React.createRef().
-
 function updateAttrs(oldVnode, vnode) {
   const elm = vnode.elm
   if (elm) {
     let attrs = vnode.data.attrs
     let oldAttrs = oldVnode.data.attrs
     
-    // 处理 ref，每次都赋值新的 elm 就好
+    // Handle ref, assign new elm every time
     if (attrs && attrs.hasOwnProperty('ref')) {
       const ref = attrs.ref
       if (typeof ref === 'function') {
@@ -23,7 +21,7 @@ function updateAttrs(oldVnode, vnode) {
               'Unexpected ref object provided for button. ' +
                 'Use either a ref-setter function or createRef().'
             )
-          } else {
+          } else if (ref.current !== elm) {
             ref.current = elm
           }
         }
@@ -36,7 +34,7 @@ function updateAttrs(oldVnode, vnode) {
     oldAttrs = oldAttrs || {}
     attrs = attrs || {}
 
-    // 更新有修改的 attributes，和增加新的 attributes
+    // Update modified attributes, and add new attributes
     for (const key in attrs) {
       if (key === 'ref' || key === 'key') continue
       const cur = attrs[key]
@@ -62,7 +60,7 @@ function updateAttrs(oldVnode, vnode) {
       }
     }
 
-    // 移除需要移除的属性
+    // Remove attributes that need to be removed
     for (const key in oldAttrs) {
       if (key === 'ref' || key === 'key') continue
       if (!(key in attrs)) {

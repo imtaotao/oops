@@ -149,7 +149,7 @@ export function separateProps(props) {
         key === 'style' ||
         key === 'dataset'
       ) {
-        // 不用改
+        // Not modify
       } else if (key === 'className') {
         key = 'class'
       } else if (isProps(key)) {
@@ -203,7 +203,7 @@ export function createFragmentVnode(children) {
 }
 
 export function formatVnode(tag, data, children, checkKey) {
-  // 组件需要得到最原始的 children 数据
+  // The `Component` need abtain origin `children` data
   if (!isComponent({ tag }) && !isInsertComponent(tag)) {
     if (children.length > 0) {
       let didWarned = false
@@ -226,7 +226,8 @@ export function formatVnode(tag, data, children, checkKey) {
           children[i] = createVnode(undefined, undefined, undefined, children[i], undefined)
         } else if (isCommonVnode(tag)) {
           if (isFilterVnode(children[i])) {
-            // 过滤掉 null, undefined, true, false 这几种值，保持与 react 一致
+            // Filter out `null`, `undefined`, `true`, `false`.
+            // keep same with React
             children.splice(i, 1)
             i--
           }

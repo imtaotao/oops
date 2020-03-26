@@ -66,7 +66,7 @@ export function calculateChangedBits(context, newValue, oldValue) {
   }
 }
 
-// 读取 context，这个方法给 Consumer 和 useContext 使用
+// Read `context`, this method used for `Consumer` and `useContext`
 export function readContext(consumer, context, observedBits) {
   const currentProvider = context._contextStack.getCurrentProvider()
   const queue = currentProvider.consumerQueue

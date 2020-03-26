@@ -36,7 +36,7 @@ export function isValidElementType(type) {
   )
 }
 
-// portal 组件不算在里面
+// `portal component` is not counted in
 export function isInsertComponent(type) {
   return (
     typeof type === 'object' &&
@@ -50,7 +50,8 @@ export function isInsertComponent(type) {
 }
 
 const MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator
-const FAUX_ITERATOR_SYMBOL = '@@iterator' // 模拟的 iterator 接口
+// from `iterator interface` of simulate
+const FAUX_ITERATOR_SYMBOL = '@@iterator'
 
 export function getIteratorFn(maybeIterable) {
   if (maybeIterable === null || typeof maybeIterable !== 'object') {

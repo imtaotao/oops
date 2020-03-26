@@ -4,8 +4,9 @@ const proxyAttrs = (
   'target,nativeEvent,isCustomized'
 ).split(',')
 
-// packages/react-dom/src/events/DOMEventProperties.js
-// 这么多事件导致每次切换都带来大量的消耗，而且事件代理的过程中会创建大量的 event
+// `packages/react-dom/src/events/DOMEventProperties.js`
+// So many events cause a lot of consumption for each switch,
+// and a large number of events are created during the event brokering process.
 const eventMap = (
   'blur,cancel,click,close,contextMenu,copy,cut,auxClick,dblClick,' + 
   'dragEnd,dragStart,drop,focus,input,invalid,keyDown,keyPress,keyUp,' +
@@ -39,7 +40,9 @@ function buildProxyProperties(event, backup) {
 }
 
 function dispatchEvent(elm, event) {
-  // event 原生对象一旦被 dispatch 后就没法用了，没法使用事件池缓存，必须创建新的
+  // The `event` native object dispathed that it useless
+  // therefore, can't use event pool cache,
+  // we need create new `event`.
   const proxyEvent = new Event(event.type)
   const proxyProps = buildProxyProperties(event, {
     nativeEvent: event,
@@ -59,13 +62,15 @@ function removeProxyEventListener(container, proxyEventCb) {
   }
 }
 
-// 将事件代理到 container 上的原因是因为需要一个根节点，而 protal 节点的 children 可能是一个 fragment
-// 如果 container 是 vdom tree 中的一个节点时，还没想好怎么处理，不过这种场景应该不会发生
+// The reason to proxy events to a container is because a root node is needed,
+// but the `children` of `protal` node maybe is a `fragment` node.
+// When `container` is node in `vdomTree`, I don't now how to process it,
+// but this scenes is should not happen.
 function addProxyEventListener(container, vnode) {
   if (!container) return null
 
   function proxyEventCb(event) {
-    // 不需要阻止原有原生的冒泡，react 中也没有阻止
+    // No need prevent origin bubbing behavior，the `React` also not prevent it.
     const parentElm = vnode.parent && vnode.parent.elm
     if (parentElm) {
       dispatchEvent(parentElm, event)
@@ -83,8 +88,8 @@ function updateEventListener(oldVnode, vnode) {
     const oldContainer = oldVnode.tag.container
     const newContainer = vnode.tag.container
 
-    // 如果不是同一个 container 则需要把原有的事件代理卸载
-    // 并在新的 container 上添加事件代理
+    // If not a same `container`, need uninstall origin event proxy,
+    // and the add event proxy on new `container`
     if (oldContainer !== newContainer) {
       component && removeProxyEventListener(oldContainer, component.proxyEventCb)
       component.proxyEventCb = addProxyEventListener(newContainer, vnode)

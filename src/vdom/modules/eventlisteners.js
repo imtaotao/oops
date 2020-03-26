@@ -1,4 +1,4 @@
-// 调用事件回调
+// Call event callback
 function invokeHandler(handler, vnode, event) {
   if (typeof handler === 'function') {
     handler.call(vnode, event, vnode)
@@ -30,7 +30,7 @@ function handleEvent(event, vnode) {
 }
 
 function createListener() {
-  // 统一包装
+  // Wraper function
   return function handler(event) {
     handleEvent(event, handler.vnode)
   }
@@ -45,9 +45,9 @@ function updateEventListeners(oldVnode, vnode) {
 
   if (oldOn === on) return
 
-  // 先删除不再使用的事件
+  // Delete events that are no longer used
   if (oldElm && oldOn && oldListener) {
-    // 如果新的元素中没有了，则删除所有的事件
+    // If there are no new elements, delete all events
     if (!on) {
       for (const name in oldOn) {
         oldElm.removeEventListener(name, oldListener, false)
@@ -61,13 +61,13 @@ function updateEventListeners(oldVnode, vnode) {
     }
   }
 
-  // 添加新的事件
+  // Add new event
   if (on) {
     const listener = vnode.listener = oldVnode.listener || createListener()
     listener.vnode = vnode
 
     if (elm && !oldOn) {
-      // 所有的事件都添加
+      // All events are added
       for (const name in on) {
         elm.addEventListener(name, listener, false)
       }

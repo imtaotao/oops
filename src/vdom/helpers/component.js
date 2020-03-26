@@ -3,7 +3,7 @@ import {
   isArray,
 } from '../../shared.js'
 
-// key 和 ref 被内部占用，如果使用需要给出错误警告
+// `key` and `ref` are used internally and give an error warning if used.
 function defineSpecialPropsWarningGetter(props, key) {
   Object.defineProperty(props, key, {
     get() {
@@ -87,7 +87,7 @@ export function obtainUpdateList(effects) {
   const effectQueue = []
   for (const key in effects) {
     const { deps, prevDeps, create, destroy } = effects[key]
-    // 依赖对比要以同步的方式进行
+    // Dependency comparisons should be done in a synchronized manner
     if (!equalDeps(deps, prevDeps)) {
       effectQueue.push([create, destroy, effects[key]])
     }
@@ -101,8 +101,8 @@ export function obtainUpdateList(effects) {
   }
 }
 
-// effect 需要在浏览器绘制时的下一帧触发
-// layoutEffect 在 dom 更新后同步执行
+// `effect` needs to be triggered at the next frame when the browser draws
+// `layoutEffect` execute synchronously after dom update
 export function updateEffect(flag, effects) {
   flag === 'effects'
     ? nextFrame(obtainUpdateList(effects))
@@ -122,12 +122,13 @@ export function cleanEffectDestroy(flag, effects) {
     : actuator()
 }
 
-// 加入父级 provider 更新副本
+// Join the parent `provider` to update the copy
 export function addToProviderUpdateDuplicate(consumer) {
   const deps = consumer.providerDependencies
   if (deps && deps.length > 0) {
     for (let i = 0; i < deps.length; i++) {
-      // 只有在更新中的 provider.updateDuplicate 才是数组，未更新时为 null
+      // Only `provider.updateDuplicate` in the update is an array,
+      // if not updated, it is `null` 
       if (isArray(deps[i].updateDuplicate)) {
         deps[i].updateDuplicate.push(consumer)
       }
@@ -144,7 +145,7 @@ function callLifetimeMethod(vnode, method) {
   }
 }
 
-// 通用的 component vnode hooks
+// Commom component vnode hooks
 export function commonHooksConfig(config) {
   const basicHooks = {
     initBefore(vnode) {
@@ -152,7 +153,7 @@ export function commonHooksConfig(config) {
     },
 
     update(oldVnode, vnode) {
-      // 更新 vnode 和 component 的状态
+      // Update `vnode` and `component` status
       vnode.component = oldVnode.component
       vnode.component.vnode = vnode
       callLifetimeMethod(vnode, 'update')(oldVnode, vnode)
