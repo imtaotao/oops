@@ -47,7 +47,7 @@ function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
           cbs.remove[i](ch, rm)
         }
 
-        // call `remove` hook
+        // Call `remove` hook
         if (isDef(i = ch.data) && isDef(i = i.hook) && isDef(i = i.remove)) {
           i(ch, rm)
         } else {

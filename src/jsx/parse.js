@@ -24,18 +24,18 @@ export function build(statics) {
   let mode = MODE_TEXT
   scope.parent = null
 
-  // field 判断是否是通过模板插入的值
+  // The `field` to determine whether the value is inserted through the template.
   const commit = field => {
-    // 生成一个字符节点
+    // Generate a character node
     if (mode === MODE_TEXT) {
       if (field || (buffer = buffer.replace(/^\s*\n\s*|\s*\n\s*$/g, ''))) {
         scope.push([CHILD_APPEND, field || buffer])
       }
     } else if (mode === MODE_TAGNAME) {
-      // 过滤 <>
+      // Filter out <>
       if (field || buffer) {
         scope.push([TAG_SET, field || buffer])
-        // 处理 <a/>
+        // Deal with <a/>
         mode = MODE_WHITESPACE
       }
     } else if (mode === MODE_WHITESPACE) {
@@ -43,7 +43,7 @@ export function build(statics) {
         // <a ...${{a: 1}}/>
         scope.push([PROPS_ASSIGN, field])
       } else if (buffer && !field) {
-        // <a p${x}=1 /> 过滤掉这种
+        // <a p${x}=1 /> Filter out this
         scope.push([PROP_SET, buffer, true])
       }
     } else if (isProps(mode)) {
@@ -64,8 +64,8 @@ export function build(statics) {
   for (let i = 0; i < statics.length; i++) {
     if (i > 0) {
       if (mode === MODE_TEXT) {
-        // <a>d${1}</a>，需要当遇见 ${} 时
-        // 前面的 text 需要单独作为一个 child 存储起来，而不是丢掉
+        // <a>d${1}</a>，when meeting ${}
+        // The previous `text` needs to be stored separately as a child, not lost.
         commit()
       }
       commit(i)
@@ -75,7 +75,7 @@ export function build(statics) {
       const char = statics[i][j]
 
       if (mode === MODE_TEXT) {
-        // 进入到子节点
+        // Into child nodes
         if (char === '<') {
           commit()
           const current = []
@@ -86,7 +86,7 @@ export function build(statics) {
           buffer += char
         }
       } else if (mode === MODE_COMMENT) {
-        // 过滤注释
+        // Filter out comments
         if (buffer === '--' && char === '>') {
           mode = MODE_TEXT
           buffer = ''
@@ -94,7 +94,7 @@ export function build(statics) {
           buffer = char + buffer[0]
         }
       } else if (quote) {
-        // 过滤引号
+        // Filter out quotes
         // ""a"" --> "a"
         // "'a'" --> "'a'"
         if (char === quote) {
@@ -105,35 +105,37 @@ export function build(statics) {
       } else if (char === '"' || char === "'") {
         quote = char
       } else if (char === '>') {
-        // 标签的结束
+        // End of tag
         commit()
         mode = MODE_TEXT
       } else if (mode === MODE_SLASH) {
-        // 如果为 MODE_SLASH，不需要做其他事情，过滤掉就好
-        // 而且要在 `char === '='` 之前判断，因为需要处理 `<ab/ba prop=value>`
+        // If it is `MODE_SLASH`, there is no need to do anything else,just filter it out,
+        // and have to judge before `char === '='`,
+        // because need to deal with `<ab / ba prop = value>`.
       } else if (char === '=') {
         // 处理属性
         mode = MODE_PROP_SET
         propName = buffer
         buffer = ''
       }  else if (char === '/' && (!isProps(mode) || statics[i][j + 1] === '>')) {
-        // `/` 算作标签的结束字符而不算 propValue 里面
+        // `/` is counted as the end character of the tag and not in propValue
         // prop=va/l --> prop: 'va/l'
         // prop=va/l/> --> prop: 'va/l'
         // prop=val/> --> prop: 'val'
         commit()
         if (mode === MODE_TAGNAME) {
-          // 只有 `</` 会进入到这里，<a/ 在 commit 中把 mode 设置为 whitespace 了
-          // 在这里还要返回上一级是因为，双标签有两个 `<` 字符，代表在结束标签时，又创建了一个无用的 scope
-          // `[Array]`，这个是多余的，里面的 Array 才是当前这个标签的 scope
-          // `< /a>` 这种情况不考虑了
+          // 1) Only `</` will enter here, `<a/` set mode to whitespace in the `commit` phase
+          // 2) Here we want to return to the previous level because the double tag has two `<` characters,
+          // which means that at the end of the tag, a useless `scope` is created.
+          // 3) `[Array]` is redundant, the Array inside is the scope of the current tag.
+          // 4) `< /a>` This situation is not considered.
           scope = scope.parent
         }
         
-        // </ 和 <a/ 都会进入到这里，也就是结束标签
-        // 遇见结束标签需要返回上一级
-        // 一个标签内的所有内容都是同级，不同的内容根据不同的 type 标识
-        // 如果是 recures 则就是子标签
+        // 1) Both `</` and `<a/` will into here, which is the end tag.
+        // 2) Meet the end tag and return to the previous level.
+        // 3) All content in a tag is the same level, different content is identified according to different `type`.
+        // 4) If it is `recures` then it is a subtag.
         mode = scope
         scope = scope.parent
         scope.push([CHILD_RECURSE, mode])
@@ -146,7 +148,7 @@ export function build(statics) {
         buffer += char
       }
 
-      // 处理注释内容
+      // Deal with comment content
       if (mode === MODE_TAGNAME && buffer === '!--') {
         mode = MODE_COMMENT
         scope = scope.parent
@@ -171,19 +173,19 @@ export function evaluate(h, built, fields, args) {
     }	else if (type === PROP_SET) {
       (args[1] = args[1] || {})[name] = value
     } else if (type === PROP_APPEND) {
-      // 转为字符串拼接，`<a id=1${2}`
+      // Into string concatenation, `<a id=1${2}`
       args[1][name] += (value + '')
     }	else if (type === CHILD_RECURSE) {
       args.push(
         h.apply(
           null,
-          // tag 默认为 FRAGMENTS_TYPE, props 默认为 null
+          // Tag defaults to `fragment`, props defaults to `null`
           evaluate(h, value, fields, [FRAGMENTS_TYPE, null]),
         ),
       )
     } else if (type === CHILD_APPEND) {
-      // value 此时也有可能是 vnode
-      // children 不能使用 `<${children[0]}/>` 这种方式，应该使用 `${children[0]}`
+      // Value may also be vnode at this time.
+      // Children cannot use `<$ {children [0]} />` this way, they should use `$ {children [0]}`
       args.push(value)
     }
   }
