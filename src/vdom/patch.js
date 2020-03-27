@@ -6,6 +6,7 @@ import {
 } from '../shared.js'
 import {
   isMemo,
+  isLazy,
   isPortal,
   isConsumer,
   isComponent,

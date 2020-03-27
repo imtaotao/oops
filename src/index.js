@@ -1,6 +1,7 @@
 import { h } from './vdom/h.js'
-import { jsx } from './jsx/index.js'
 import { memo} from './api/memo.js'
+import { lazy } from './api/lazy.js'
+import { jsx } from './jsx/index.js'
 import { render } from './api/render.js'
 import { createContext } from './api/context.js'
 import { createPortal } from './api/createPortal.js'
@@ -37,10 +38,11 @@ const Children = {
   toArray,
 }
 
-const oops = {
+const Oops = {
   h,
   jsx,
   memo,
+  lazy,
   render,
   Children,
   createRef,
@@ -65,6 +67,7 @@ export {
   h,
   jsx,
   memo,
+  lazy,
   render,
   Children,
   createRef,
@@ -83,5 +86,5 @@ export {
   useCallback,
   useLayoutEffect,
   useImperativeHandle,
-  oops as default,
+  Oops as default,
 }

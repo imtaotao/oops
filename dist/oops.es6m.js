@@ -1,14 +1,15 @@
 /*!
- * oops.js v0.0.5
+ * oops.js v0.0.6
  * (c) 2019-2020 Imtaotao
  * Released under the MIT License.
  */
-const MEMO_TYPE = Symbol.for('oops.memo');
-const PORTAL_TYPE = Symbol.for('oops.portal');
-const CONTEXT_TYPE = Symbol.for('oops.context');
-const PROVIDER_TYPE = Symbol.for('oops.provider');
-const FRAGMENTS_TYPE = Symbol.for('oops.fragments');
-const FORWARD_REF_TYPE = Symbol.for('oops.forwardRef');
+const MEMO_TYPE = Symbol.for('Oops.memo');
+const LAZY_TYPE = Symbol.for('Oops.lazy');
+const PORTAL_TYPE = Symbol.for('Oops.portal');
+const CONTEXT_TYPE = Symbol.for('Oops.context');
+const PROVIDER_TYPE = Symbol.for('Oops.provider');
+const FRAGMENTS_TYPE = Symbol.for('Oops.fragments');
+const FORWARD_REF_TYPE = Symbol.for('Oops.forwardRef');
 
 const isArray = Array.isArray;
 function isDef(v) {
@@ -73,6 +74,18 @@ function isCommonVnode(tag) {
 function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
+function isMemo(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === MEMO_TYPE
+  )
+}
+function isLazy(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === LAZY_TYPE
+  )
+}
 function isPortal(vnode) {
   return (
     typeof vnode.tag === 'object' &&
@@ -89,12 +102,6 @@ function isProvider(vnode) {
   return (
     typeof vnode.tag === 'object' &&
     vnode.tag.$$typeof === PROVIDER_TYPE
-  )
-}
-function isMemo(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === MEMO_TYPE
   )
 }
 function isFragment(vnode) {
@@ -881,7 +888,7 @@ function createComponent(vnode) {
 function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode) && !isProvider(vnode)) {
     if (isPortal(vnode)) {
-      vnode.elm = createComment('oops.portal');
+      vnode.elm = createComment('Oops.portal');
       invokeCreateHooks(vnode, insertedVnodeQueue);
     }
     return vnode.elm
@@ -1297,6 +1304,24 @@ const memoVNodeHooks = commonHooksConfig({
   }
 });
 
+class LazyComponent {
+  constructor(vnode) {
+    this.vnode = vnode;
+  }
+  init() {
+  }
+  update(oldVnode, vnode) {
+  }
+}
+const lazyVNodeHooks = commonHooksConfig({
+  init(vnode) {
+    if (isLazy(vnode)) {
+      vnode.component = new LazyComponent(vnode);
+      vnode.component.init();
+    }
+  }
+});
+
 class PortalComponent {
   constructor(vnode) {
     this.vnode = vnode;
@@ -1614,7 +1639,7 @@ class Component {
     if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
       throw new Error(
         'Too many re-renders. ' +
-          'oops limits the number of renders to prevent an infinite loop.'
+          'Oops limits the number of renders to prevent an infinite loop.'
       )
     }
     try {
@@ -1927,13 +1952,15 @@ function installHooks(tag, data) {
   const hook = (data || (data = {})).hook || (data.hook = {});
   if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks;
+  } else if (isMemo(simulateVnode)) {
+    vnodeHooks = memoVNodeHooks;
+  } else if (isLazy(simulateVnode)) {
+    vnodeHooks = lazyVNodeHooks;
   } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks;
   } else if (isConsumer(simulateVnode)) {
     vnodeHooks = consumerVNodeHooks;
-  } else if (isMemo(simulateVnode)) {
-    vnodeHooks = memoVNodeHooks;
-  } else if (isForwardRef(simulateVnode)) {
+  }else if (isForwardRef(simulateVnode)) {
     vnodeHooks = forwardRefHooks;
   } else if (isPortal(simulateVnode)) {
     vnodeHooks = portalVNodeHooks;
@@ -2046,6 +2073,42 @@ function h(tag, props, ...children) {
     children,
     false,
   )
+}
+
+function memo(tag, compare) {
+  if (!isValidElementType(tag)) {
+    throw new Error(
+      'memo: The first argument must be a component. Instead received: ' +
+        (
+          tag === null
+            ? 'null'
+            : typeof tag
+        )
+    )
+  }
+  return {
+    tag,
+    $$typeof: MEMO_TYPE,
+    compare: compare === undefined
+      ? null
+      : compare
+  }
+}
+
+function lazy(ctor) {
+  return {
+    $$typeof: LAZY_TYPE,
+    _ctor: ctor,
+    _status: -1,
+    _result: null,
+    set defaultProps(v) {
+      console.warn(
+        'Oops.lazy(...): It is not supported to assign `defaultProps` to ' +
+          'a lazy component import. Either specify them where the component ' +
+          'is defined, or create a wrapping component around it.',
+      );
+    },
+  }
 }
 
 const MODE_SLASH = 0;
@@ -2205,26 +2268,6 @@ function createVNodeTree(h, statics, fields) {
 }
 function jsx(statics, ...fields) {
   return createVNodeTree(h, statics, fields)
-}
-
-function memo(tag, compare) {
-  if (!isValidElementType(tag)) {
-    throw new Error(
-      'memo: The first argument must be a component. Instead received: ' +
-        (
-          tag === null
-            ? 'null'
-            : typeof tag
-        )
-    )
-  }
-  return {
-    tag,
-    $$typeof: MEMO_TYPE,
-    compare: compare === undefined
-      ? null
-      : compare
-  }
 }
 
 function render(vnode, app, callback) {
@@ -2543,10 +2586,11 @@ const Children = {
   forEach: forEachChildren,
   toArray,
 };
-const oops = {
+const Oops = {
   h,
   jsx,
   memo,
+  lazy,
   render,
   Children,
   createRef,
@@ -2567,5 +2611,5 @@ const oops = {
   useImperativeHandle,
 };
 
-export default oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export default Oops;
+export { Children, FRAGMENTS_TYPE as Fragment, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, lazy, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

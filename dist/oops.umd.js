@@ -5,6 +5,8 @@
 }(this, (function (exports) { 'use strict';
 
   function _typeof(obj) {
+    "@babel/helpers - typeof";
+
     if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
       _typeof = function (obj) {
         return typeof obj;
@@ -71,6 +73,19 @@
     return _setPrototypeOf(o, p);
   }
 
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -85,6 +100,23 @@
     }
 
     return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    return function () {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (_isNativeReflectConstruct()) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   function _superPropBase(object, property) {
@@ -118,7 +150,7 @@
   }
 
   function _slicedToArray(arr, i) {
-    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
+    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
   }
 
   function _arrayWithHoles(arr) {
@@ -126,10 +158,7 @@
   }
 
   function _iterableToArrayLimit(arr, i) {
-    if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-      return;
-    }
-
+    if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
     var _arr = [];
     var _n = true;
     var _d = false;
@@ -155,16 +184,34 @@
     return _arr;
   }
 
-  function _nonIterableRest() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  function _unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(n);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
   }
 
-  var MEMO_TYPE = Symbol["for"]('oops.memo');
-  var PORTAL_TYPE = Symbol["for"]('oops.portal');
-  var CONTEXT_TYPE = Symbol["for"]('oops.context');
-  var PROVIDER_TYPE = Symbol["for"]('oops.provider');
-  var FRAGMENTS_TYPE = Symbol["for"]('oops.fragments');
-  var FORWARD_REF_TYPE = Symbol["for"]('oops.forwardRef');
+  function _arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+    return arr2;
+  }
+
+  function _nonIterableRest() {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+
+  var MEMO_TYPE = Symbol["for"]('Oops.memo');
+  var LAZY_TYPE = Symbol["for"]('Oops.lazy');
+  var PORTAL_TYPE = Symbol["for"]('Oops.portal');
+  var CONTEXT_TYPE = Symbol["for"]('Oops.context');
+  var PROVIDER_TYPE = Symbol["for"]('Oops.provider');
+  var FRAGMENTS_TYPE = Symbol["for"]('Oops.fragments');
+  var FORWARD_REF_TYPE = Symbol["for"]('Oops.forwardRef');
 
   var isArray = Array.isArray;
   function isDef(v) {
@@ -211,6 +258,12 @@
   function isComponent(vnode) {
     return typeof vnode.tag === 'function';
   }
+  function isMemo(vnode) {
+    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
+  }
+  function isLazy(vnode) {
+    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === LAZY_TYPE;
+  }
   function isPortal(vnode) {
     return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PORTAL_TYPE;
   }
@@ -219,9 +272,6 @@
   }
   function isProvider(vnode) {
     return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PROVIDER_TYPE;
-  }
-  function isMemo(vnode) {
-    return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === MEMO_TYPE;
   }
   function isFragment(vnode) {
     return vnode.tag === FRAGMENTS_TYPE;
@@ -339,7 +389,7 @@
     if (oldStyle === style) return;
     oldStyle = oldStyle || {};
     style = style || {};
-    var oldHasDel = 'delayed' in oldStyle;
+    var oldHasDel = ('delayed' in oldStyle);
 
     for (name in oldStyle) {
       if (!style[name]) {
@@ -789,9 +839,7 @@
     });
   };
 
-  var FragmentNode =
-  /*#__PURE__*/
-  function () {
+  var FragmentNode = /*#__PURE__*/function () {
     function FragmentNode() {
       _classCallCheck(this, FragmentNode);
 
@@ -1106,7 +1154,7 @@
   function createElm(vnode, insertedVnodeQueue) {
     if (createComponent(vnode) && !isProvider(vnode)) {
       if (isPortal(vnode)) {
-        vnode.elm = createComment('oops.portal');
+        vnode.elm = createComment('Oops.portal');
         invokeCreateHooks(vnode, insertedVnodeQueue);
       }
 
@@ -1531,9 +1579,7 @@
     return true;
   }
 
-  var MemoComponent =
-  /*#__PURE__*/
-  function () {
+  var MemoComponent = /*#__PURE__*/function () {
     function MemoComponent(vnode) {
       _classCallCheck(this, MemoComponent);
 
@@ -1613,9 +1659,34 @@
     }
   });
 
-  var PortalComponent =
-  /*#__PURE__*/
-  function () {
+  var LazyComponent = /*#__PURE__*/function () {
+    function LazyComponent(vnode) {
+      _classCallCheck(this, LazyComponent);
+
+      this.vnode = vnode;
+    }
+
+    _createClass(LazyComponent, [{
+      key: "init",
+      value: function init() {}
+    }, {
+      key: "update",
+      value: function update(oldVnode, vnode) {}
+    }]);
+
+    return LazyComponent;
+  }();
+
+  var lazyVNodeHooks = commonHooksConfig({
+    init: function init(vnode) {
+      if (isLazy(vnode)) {
+        vnode.component = new LazyComponent(vnode);
+        vnode.component.init();
+      }
+    }
+  });
+
+  var PortalComponent = /*#__PURE__*/function () {
     function PortalComponent(vnode) {
       _classCallCheck(this, PortalComponent);
 
@@ -1712,9 +1783,7 @@
 
   var MAX_SIGNED_31_BIT_INT = 1073741823;
 
-  var ContextStack =
-  /*#__PURE__*/
-  function () {
+  var ContextStack = /*#__PURE__*/function () {
     function ContextStack(context, defaultValue) {
       _classCallCheck(this, ContextStack);
 
@@ -1864,9 +1933,7 @@
   var Target = {
     component: undefined
   };
-  var Component =
-  /*#__PURE__*/
-  function () {
+  var Component = /*#__PURE__*/function () {
     function Component(vnode, refOrContext) {
       _classCallCheck(this, Component);
 
@@ -1979,7 +2046,7 @@
       key: "forceUpdate",
       value: function forceUpdate() {
         if (++this.numberOfReRenders > RE_RENDER_LIMIT) {
-          throw new Error('Too many re-renders. ' + 'oops limits the number of renders to prevent an infinite loop.');
+          throw new Error('Too many re-renders. ' + 'Oops limits the number of renders to prevent an infinite loop.');
         }
 
         try {
@@ -2048,17 +2115,17 @@
     return vnode.data.hasOwnProperty('ref') ? vnode.data.ref : null;
   }
 
-  var ForwardRefComponent =
-  /*#__PURE__*/
-  function (_Component) {
+  var ForwardRefComponent = /*#__PURE__*/function (_Component) {
     _inherits(ForwardRefComponent, _Component);
+
+    var _super = _createSuper(ForwardRefComponent);
 
     function ForwardRefComponent(vnode) {
       var _this;
 
       _classCallCheck(this, ForwardRefComponent);
 
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(ForwardRefComponent).call(this, vnode, abtainRefObject(vnode)));
+      _this = _super.call(this, vnode, abtainRefObject(vnode));
       _this.render = vnode.tag.render;
       return _this;
     }
@@ -2085,9 +2152,7 @@
     }
   });
 
-  var ProviderComponent =
-  /*#__PURE__*/
-  function () {
+  var ProviderComponent = /*#__PURE__*/function () {
     function ProviderComponent(vnode) {
       _classCallCheck(this, ProviderComponent);
 
@@ -2149,9 +2214,7 @@
     }
   });
 
-  var ConsumerComponent =
-  /*#__PURE__*/
-  function () {
+  var ConsumerComponent = /*#__PURE__*/function () {
     function ConsumerComponent(vnode) {
       _classCallCheck(this, ConsumerComponent);
 
@@ -2372,12 +2435,14 @@
 
     if (isComponent(simulateVnode)) {
       vnodeHooks = componentVNodeHooks;
+    } else if (isMemo(simulateVnode)) {
+      vnodeHooks = memoVNodeHooks;
+    } else if (isLazy(simulateVnode)) {
+      vnodeHooks = lazyVNodeHooks;
     } else if (isProvider(simulateVnode)) {
       vnodeHooks = providerVNodeHooks;
     } else if (isConsumer(simulateVnode)) {
       vnodeHooks = consumerVNodeHooks;
-    } else if (isMemo(simulateVnode)) {
-      vnodeHooks = memoVNodeHooks;
     } else if (isForwardRef(simulateVnode)) {
       vnodeHooks = forwardRefHooks;
     } else if (isPortal(simulateVnode)) {
@@ -2483,6 +2548,32 @@
     }
 
     return formatVnode(tag, isCommonVnode(tag) ? separateProps(props) : installHooks(tag, props), children, false);
+  }
+
+  function memo(tag, compare) {
+    if (!isValidElementType(tag)) {
+      throw new Error('memo: The first argument must be a component. Instead received: ' + (tag === null ? 'null' : _typeof(tag)));
+    }
+
+    return {
+      tag: tag,
+      $$typeof: MEMO_TYPE,
+      compare: compare === undefined ? null : compare
+    };
+  }
+
+  function lazy(ctor) {
+    return {
+      $$typeof: LAZY_TYPE,
+      _ctor: ctor,
+      _status: -1,
+      _result: null,
+
+      set defaultProps(v) {
+        console.warn('Oops.lazy(...): It is not supported to assign `defaultProps` to ' + 'a lazy component import. Either specify them where the component ' + 'is defined, or create a wrapping component around it.');
+      }
+
+    };
   }
 
   var MODE_SLASH = 0;
@@ -2664,18 +2755,6 @@
     }
 
     return createVNodeTree(h, statics, fields);
-  }
-
-  function memo(tag, compare) {
-    if (!isValidElementType(tag)) {
-      throw new Error('memo: The first argument must be a component. Instead received: ' + (tag === null ? 'null' : _typeof(tag)));
-    }
-
-    return {
-      tag: tag,
-      $$typeof: MEMO_TYPE,
-      compare: compare === undefined ? null : compare
-    };
   }
 
   function render(vnode, app, callback) {
@@ -2990,10 +3069,11 @@
     forEach: forEachChildren,
     toArray: toArray
   };
-  var oops = {
+  var Oops = {
     h: h,
     jsx: jsx,
     memo: memo,
+    lazy: lazy,
     render: render,
     Children: Children,
     createRef: createRef,
@@ -3020,11 +3100,12 @@
   exports.createElement = h;
   exports.createPortal = createPortal;
   exports.createRef = createRef;
-  exports.default = oops;
+  exports.default = Oops;
   exports.forwardRef = forwardRef;
   exports.h = h;
   exports.isValidElement = isValidElement;
   exports.jsx = jsx;
+  exports.lazy = lazy;
   exports.memo = memo;
   exports.render = render;
   exports.useCallback = useCallback;

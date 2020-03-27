@@ -1,6 +1,7 @@
 import { createVnode } from '../h.js'
 import { FRAGMENTS_TYPE } from '../../api/symbols.js'
 import { memoVNodeHooks } from '../components/memo.js'
+import { lazyVNodeHooks } from '../components/lazy.js'
 import { portalVNodeHooks } from '../components/portal.js'
 import { forwardRefHooks } from '../components/forwardRef.js'
 import { componentVNodeHooks } from '../components/component.js'
@@ -14,6 +15,7 @@ import {
 } from '../../shared.js'
 import {
   isMemo,
+  isLazy,
   isPortal,
   isConsumer,
   isProvider,
@@ -178,13 +180,15 @@ export function installHooks(tag, data) {
 
   if (isComponent(simulateVnode)) {
     vnodeHooks = componentVNodeHooks
+  } else if (isMemo(simulateVnode)) {
+    vnodeHooks = memoVNodeHooks
+  } else if (isLazy(simulateVnode)) {
+    vnodeHooks = lazyVNodeHooks
   } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks
   } else if (isConsumer(simulateVnode)) {
     vnodeHooks = consumerVNodeHooks
-  } else if (isMemo(simulateVnode)) {
-    vnodeHooks = memoVNodeHooks
-  } else if (isForwardRef(simulateVnode)) {
+  }else if (isForwardRef(simulateVnode)) {
     vnodeHooks = forwardRefHooks
   } else if (isPortal(simulateVnode)) {
     vnodeHooks = portalVNodeHooks

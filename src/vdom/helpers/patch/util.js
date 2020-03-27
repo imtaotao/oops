@@ -160,7 +160,7 @@ export function createElm(vnode, insertedVnodeQueue) {
   if (createComponent(vnode) && !isProvider(vnode)) {
     // The `portal` component needs to proxy and forward events to the `container` in the `create` hook
     if (isPortal(vnode)) {
-      vnode.elm = api.createComment('oops.portal')
+      vnode.elm = api.createComment('Oops.portal')
       invokeCreateHooks(vnode, insertedVnodeQueue)
     }
     return vnode.elm

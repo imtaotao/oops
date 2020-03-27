@@ -1,6 +1,7 @@
 import { createVnode } from '../../h.js'
 import { 
   MEMO_TYPE,
+  LAZY_TYPE,
   PORTAL_TYPE,
   CONTEXT_TYPE,
   PROVIDER_TYPE,
@@ -22,6 +23,20 @@ export function isComponent(vnode) {
   return typeof vnode.tag === 'function'
 }
 
+export function isMemo(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === MEMO_TYPE
+  )
+}
+
+export function isLazy(vnode) {
+  return (
+    typeof vnode.tag === 'object' &&
+    vnode.tag.$$typeof === LAZY_TYPE
+  )
+}
+
 export function isPortal(vnode) {
   return (
     typeof vnode.tag === 'object' &&
@@ -40,13 +55,6 @@ export function isProvider(vnode) {
   return (
     typeof vnode.tag === 'object' &&
     vnode.tag.$$typeof === PROVIDER_TYPE
-  )
-}
-
-export function isMemo(vnode) {
-  return (
-    typeof vnode.tag === 'object' &&
-    vnode.tag.$$typeof === MEMO_TYPE
   )
 }
 
