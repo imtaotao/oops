@@ -1,4 +1,4 @@
-import { LAZY_TYPE } from './symbols'
+import { LAZY_TYPE } from './symbols.js'
 
 // The `ctor` function should return a theable.
 export function lazy(ctor) {

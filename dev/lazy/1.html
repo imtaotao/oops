@@ -15,14 +15,46 @@
       window.oops = oops
     </script>
     <script type="text/babel">
-      const { Fragment, useState, memo, useEffect } = React;
-      console.log(React)
+      const { Fragment, useState, memo, useEffect, Suspense, lazy } = React;
       // const { render, Fragment, useState, createPortal, memo, useEffect } = oops
       // ReactDOM.render = oops.render
       // React.createElement = oops.h
 
+      // simulate async load component
+      function load(fn, timeout) {
+        return new Promise(resolve => {
+          setTimeout(() => resolve({
+            default: fn,
+          }), timeout)
+        })
+      }
+
+      function a() {
+        return 'OtherComponent\n'
+      }
+
+      function b() {
+        return 'AnotherComponent'
+      }
+
+      const OtherComponent = lazy(() => load(a, 2000))
+      const AnotherComponent  = lazy(() => load(b, 4000))
+
       function App() {
-        return null
+        return (
+          <div>
+            <OtherComponent />
+            <Suspense fallback={<div>Loading1...</div>}>
+              <section>
+                222
+                <OtherComponent />
+                <Suspense fallback={<div>Loading2...</div>}>
+                  <AnotherComponent />
+                </Suspense>
+              </section>
+            </Suspense>
+          </div>
+        )
       }
 
       ReactDOM.render(<App/>, appRoot);
