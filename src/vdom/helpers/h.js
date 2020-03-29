@@ -4,6 +4,7 @@ import { memoVNodeHooks } from '../components/memo.js'
 import { lazyVNodeHooks } from '../components/lazy.js'
 import { portalVNodeHooks } from '../components/portal.js'
 import { forwardRefHooks } from '../components/forwardRef.js'
+import { suspenseVNodeHooks } from '../components/suspense.js'
 import { componentVNodeHooks } from '../components/component.js'
 import { providerVNodeHooks } from '../components/contextProvider.js'
 import { consumerVNodeHooks } from '../components/contextConsumer.js'
@@ -18,6 +19,7 @@ import {
   isLazy,
   isPortal,
   isConsumer,
+  isSuspense,
   isProvider,
   isComponent,
   isForwardRef,
@@ -184,6 +186,8 @@ export function installHooks(tag, data) {
     vnodeHooks = memoVNodeHooks
   } else if (isLazy(simulateVnode)) {
     vnodeHooks = lazyVNodeHooks
+  } else if (isSuspense(simulateVnode)) {
+    vnodeHooks = suspenseVNodeHooks
   } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks
   } else if (isConsumer(simulateVnode)) {

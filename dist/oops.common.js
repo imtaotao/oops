@@ -8,8 +8,6 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 function _typeof(obj) {
-  "@babel/helpers - typeof";
-
   if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
     _typeof = function (obj) {
       return typeof obj;
@@ -76,19 +74,6 @@ function _setPrototypeOf(o, p) {
   return _setPrototypeOf(o, p);
 }
 
-function _isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -103,23 +88,6 @@ function _possibleConstructorReturn(self, call) {
   }
 
   return _assertThisInitialized(self);
-}
-
-function _createSuper(Derived) {
-  return function () {
-    var Super = _getPrototypeOf(Derived),
-        result;
-
-    if (_isNativeReflectConstruct()) {
-      var NewTarget = _getPrototypeOf(this).constructor;
-
-      result = Reflect.construct(Super, arguments, NewTarget);
-    } else {
-      result = Super.apply(this, arguments);
-    }
-
-    return _possibleConstructorReturn(this, result);
-  };
 }
 
 function _superPropBase(object, property) {
@@ -153,7 +121,7 @@ function _get(target, property, receiver) {
 }
 
 function _slicedToArray(arr, i) {
-  return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
+  return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
 }
 
 function _arrayWithHoles(arr) {
@@ -161,7 +129,10 @@ function _arrayWithHoles(arr) {
 }
 
 function _iterableToArrayLimit(arr, i) {
-  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
+  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+    return;
+  }
+
   var _arr = [];
   var _n = true;
   var _d = false;
@@ -187,25 +158,8 @@ function _iterableToArrayLimit(arr, i) {
   return _arr;
 }
 
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(n);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-
-  return arr2;
-}
-
 function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  throw new TypeError("Invalid attempt to destructure non-iterable instance");
 }
 
 var MEMO_TYPE = Symbol["for"]('Oops.memo');
@@ -213,6 +167,7 @@ var LAZY_TYPE = Symbol["for"]('Oops.lazy');
 var PORTAL_TYPE = Symbol["for"]('Oops.portal');
 var CONTEXT_TYPE = Symbol["for"]('Oops.context');
 var PROVIDER_TYPE = Symbol["for"]('Oops.provider');
+var SUSPENSES_TYPE = Symbol["for"]('Oops.suspense');
 var FRAGMENTS_TYPE = Symbol["for"]('Oops.fragments');
 var FORWARD_REF_TYPE = Symbol["for"]('Oops.forwardRef');
 
@@ -266,6 +221,9 @@ function isMemo(vnode) {
 }
 function isLazy(vnode) {
   return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === LAZY_TYPE;
+}
+function isSuspense(vnode) {
+  vnode.tag === SUSPENSES_TYPE;
 }
 function isPortal(vnode) {
   return _typeof(vnode.tag) === 'object' && vnode.tag.$$typeof === PORTAL_TYPE;
@@ -392,7 +350,7 @@ function updateStyle(oldVnode, vnode) {
   if (oldStyle === style) return;
   oldStyle = oldStyle || {};
   style = style || {};
-  var oldHasDel = ('delayed' in oldStyle);
+  var oldHasDel = 'delayed' in oldStyle;
 
   for (name in oldStyle) {
     if (!style[name]) {
@@ -837,12 +795,14 @@ var empty = function empty() {
 };
 
 var installMethods = function installMethods(obj, methods) {
-  methods.forEach(function (name) {
-    return obj[name] = empty;
-  });
+  for (var i = 0; i < methods.length; i++) {
+    obj[methods[i]] = empty;
+  }
 };
 
-var FragmentNode = /*#__PURE__*/function () {
+var FragmentNode =
+/*#__PURE__*/
+function () {
   function FragmentNode() {
     _classCallCheck(this, FragmentNode);
 
@@ -1582,7 +1542,9 @@ function defaultCompare(oldProps, newProps) {
   return true;
 }
 
-var MemoComponent = /*#__PURE__*/function () {
+var MemoComponent =
+/*#__PURE__*/
+function () {
   function MemoComponent(vnode) {
     _classCallCheck(this, MemoComponent);
 
@@ -1662,7 +1624,9 @@ var memoVNodeHooks = commonHooksConfig({
   }
 });
 
-var LazyComponent = /*#__PURE__*/function () {
+var LazyComponent =
+/*#__PURE__*/
+function () {
   function LazyComponent(vnode) {
     _classCallCheck(this, LazyComponent);
 
@@ -1689,7 +1653,9 @@ var lazyVNodeHooks = commonHooksConfig({
   }
 });
 
-var PortalComponent = /*#__PURE__*/function () {
+var PortalComponent =
+/*#__PURE__*/
+function () {
   function PortalComponent(vnode) {
     _classCallCheck(this, PortalComponent);
 
@@ -1786,7 +1752,9 @@ function forwardRef(render) {
 
 var MAX_SIGNED_31_BIT_INT = 1073741823;
 
-var ContextStack = /*#__PURE__*/function () {
+var ContextStack =
+/*#__PURE__*/
+function () {
   function ContextStack(context, defaultValue) {
     _classCallCheck(this, ContextStack);
 
@@ -1936,7 +1904,9 @@ var RE_RENDER_LIMIT = 25;
 var Target = {
   component: undefined
 };
-var Component = /*#__PURE__*/function () {
+var Component =
+/*#__PURE__*/
+function () {
   function Component(vnode, refOrContext) {
     _classCallCheck(this, Component);
 
@@ -2118,17 +2088,17 @@ function abtainRefObject(vnode) {
   return vnode.data.hasOwnProperty('ref') ? vnode.data.ref : null;
 }
 
-var ForwardRefComponent = /*#__PURE__*/function (_Component) {
+var ForwardRefComponent =
+/*#__PURE__*/
+function (_Component) {
   _inherits(ForwardRefComponent, _Component);
-
-  var _super = _createSuper(ForwardRefComponent);
 
   function ForwardRefComponent(vnode) {
     var _this;
 
     _classCallCheck(this, ForwardRefComponent);
 
-    _this = _super.call(this, vnode, abtainRefObject(vnode));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ForwardRefComponent).call(this, vnode, abtainRefObject(vnode)));
     _this.render = vnode.tag.render;
     return _this;
   }
@@ -2155,7 +2125,38 @@ var forwardRefHooks = commonHooksConfig({
   }
 });
 
-var ProviderComponent = /*#__PURE__*/function () {
+var SuspenseComponent =
+/*#__PURE__*/
+function () {
+  function SuspenseComponent(vnode) {
+    _classCallCheck(this, SuspenseComponent);
+
+    this.vnode = vnode;
+  }
+
+  _createClass(SuspenseComponent, [{
+    key: "init",
+    value: function init() {}
+  }, {
+    key: "update",
+    value: function update(oldVnode, vnode) {}
+  }]);
+
+  return SuspenseComponent;
+}();
+
+var suspenseVNodeHooks = commonHooksConfig({
+  init: function init(vnode) {
+    if (isSuspense(vnode)) {
+      vnode.component = new SuspenseComponent(vnode);
+      vnode.component.init();
+    }
+  }
+});
+
+var ProviderComponent =
+/*#__PURE__*/
+function () {
   function ProviderComponent(vnode) {
     _classCallCheck(this, ProviderComponent);
 
@@ -2217,7 +2218,9 @@ var providerVNodeHooks = commonHooksConfig({
   }
 });
 
-var ConsumerComponent = /*#__PURE__*/function () {
+var ConsumerComponent =
+/*#__PURE__*/
+function () {
   function ConsumerComponent(vnode) {
     _classCallCheck(this, ConsumerComponent);
 
@@ -2442,6 +2445,8 @@ function installHooks(tag, data) {
     vnodeHooks = memoVNodeHooks;
   } else if (isLazy(simulateVnode)) {
     vnodeHooks = lazyVNodeHooks;
+  } else if (isSuspense(simulateVnode)) {
+    vnodeHooks = suspenseVNodeHooks;
   } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks;
   } else if (isConsumer(simulateVnode)) {
@@ -3086,6 +3091,7 @@ var Oops = {
   createElement: h,
   isValidElement: isValidElement,
   Fragment: FRAGMENTS_TYPE,
+  Suspense: SUSPENSES_TYPE,
   useRef: useRef,
   useMemo: useMemo,
   useState: useState,
@@ -3099,6 +3105,7 @@ var Oops = {
 
 exports.Children = Children;
 exports.Fragment = FRAGMENTS_TYPE;
+exports.Suspense = SUSPENSES_TYPE;
 exports.createContext = createContext;
 exports.createElement = h;
 exports.createPortal = createPortal;

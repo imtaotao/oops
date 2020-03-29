@@ -22,11 +22,11 @@
 
       // simulate async load component
       function load(fn, timeout) {
-        return new Promise(resolve => {
-          setTimeout(() => resolve({
-            default: fn,
-          }), timeout)
-        })
+        return {
+          then(resolve) {
+            setTimeout(() => resolve({ default: fn }), timeout)
+          }
+        }
       }
 
       function a() {
@@ -43,7 +43,6 @@
       function App() {
         return (
           <div>
-            <OtherComponent />
             <Suspense fallback={<div>Loading1...</div>}>
               <section>
                 222

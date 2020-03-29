@@ -6,11 +6,14 @@ import { render } from './api/render.js'
 import { createContext } from './api/context.js'
 import { createPortal } from './api/createPortal.js'
 import { isValidElement } from './api/isValidElement.js'
-import { FRAGMENTS_TYPE as Fragment } from './api/symbols.js'
 import {
   createRef,
   forwardRef,
 } from './api/ref.js'
+import {
+  FRAGMENTS_TYPE as Fragment,
+  SUSPENSES_TYPE as Suspense,
+} from './api/symbols.js'
 import {
   map,
   only,
@@ -52,6 +55,7 @@ const Oops = {
   createElement: h, // Compatible with react
   isValidElement,
   Fragment,
+  Suspense,
   useRef,
   useMemo,
   useState,
@@ -77,6 +81,7 @@ export {
   h as createElement,
   isValidElement,
   Fragment,
+  Suspense,
   useRef,
   useMemo,
   useState,

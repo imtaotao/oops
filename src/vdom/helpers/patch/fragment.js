@@ -24,7 +24,9 @@ const empty = () => {
 }
 
 const installMethods = (obj, methods) => {
-  methods.forEach(name => obj[name] = empty)
+  for (let i = 0; i < methods.length; i++) {
+    obj[methods[i]] = empty
+  }
 }
 
 // Create `FragmentNode` participate in the entire diff patch process

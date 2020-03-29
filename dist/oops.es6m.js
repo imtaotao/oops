@@ -8,6 +8,7 @@ const LAZY_TYPE = Symbol.for('Oops.lazy');
 const PORTAL_TYPE = Symbol.for('Oops.portal');
 const CONTEXT_TYPE = Symbol.for('Oops.context');
 const PROVIDER_TYPE = Symbol.for('Oops.provider');
+const SUSPENSES_TYPE = Symbol.for('Oops.suspense');
 const FRAGMENTS_TYPE = Symbol.for('Oops.fragments');
 const FORWARD_REF_TYPE = Symbol.for('Oops.forwardRef');
 
@@ -85,6 +86,9 @@ function isLazy(vnode) {
     typeof vnode.tag === 'object' &&
     vnode.tag.$$typeof === LAZY_TYPE
   )
+}
+function isSuspense(vnode) {
+  vnode.tag === SUSPENSES_TYPE;
 }
 function isPortal(vnode) {
   return (
@@ -630,7 +634,9 @@ const empty = () => {
   console.warn('Waring: Cannot operate on fragment element.');
 };
 const installMethods = (obj, methods) => {
-  methods.forEach(name => obj[name] = empty);
+  for (let i = 0; i < methods.length; i++) {
+    obj[methods[i]] = empty;
+  }
 };
 class FragmentNode {
   constructor() {
@@ -1720,6 +1726,24 @@ const forwardRefHooks = commonHooksConfig({
   },
 });
 
+class SuspenseComponent {
+  constructor(vnode) {
+    this.vnode = vnode;
+  }
+  init() {
+  }
+  update(oldVnode, vnode) {
+  }
+}
+const suspenseVNodeHooks = commonHooksConfig({
+  init(vnode) {
+    if (isSuspense(vnode)) {
+      vnode.component = new SuspenseComponent(vnode);
+      vnode.component.init();
+    }
+  }
+});
+
 class ProviderComponent {
   constructor(vnode) {
     this.vnode = vnode;
@@ -1956,6 +1980,8 @@ function installHooks(tag, data) {
     vnodeHooks = memoVNodeHooks;
   } else if (isLazy(simulateVnode)) {
     vnodeHooks = lazyVNodeHooks;
+  } else if (isSuspense(simulateVnode)) {
+    vnodeHooks = suspenseVNodeHooks;
   } else if (isProvider(simulateVnode)) {
     vnodeHooks = providerVNodeHooks;
   } else if (isConsumer(simulateVnode)) {
@@ -2600,6 +2626,7 @@ const Oops = {
   createElement: h,
   isValidElement,
   Fragment: FRAGMENTS_TYPE,
+  Suspense: SUSPENSES_TYPE,
   useRef,
   useMemo,
   useState,
@@ -2612,4 +2639,4 @@ const Oops = {
 };
 
 export default Oops;
-export { Children, FRAGMENTS_TYPE as Fragment, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, lazy, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };
+export { Children, FRAGMENTS_TYPE as Fragment, SUSPENSES_TYPE as Suspense, createContext, h as createElement, createPortal, createRef, forwardRef, h, isValidElement, jsx, lazy, memo, render, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState };

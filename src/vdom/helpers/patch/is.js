@@ -6,6 +6,7 @@ import {
   CONTEXT_TYPE,
   PROVIDER_TYPE,
   FRAGMENTS_TYPE,
+  SUSPENSES_TYPE,
   FORWARD_REF_TYPE,
 } from '../../../api/symbols.js'
 
@@ -35,6 +36,10 @@ export function isLazy(vnode) {
     typeof vnode.tag === 'object' &&
     vnode.tag.$$typeof === LAZY_TYPE
   )
+}
+
+export function isSuspense(vnode) {
+  vnode.tag === SUSPENSES_TYPE
 }
 
 export function isPortal(vnode) {
