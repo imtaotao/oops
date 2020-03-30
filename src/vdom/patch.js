@@ -9,9 +9,10 @@ import {
   isLazy,
   isPortal,
   isConsumer,
+  isSuspense,
   isComponent,
-  sameVnode,
   isForwardRef,
+  sameVnode,
 } from './helpers/patch/is.js'
 import {
   createElm,
@@ -157,7 +158,9 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
   // The `Provider` component and `fragment` component do not have the ability to render, so, no prevent.
   if (
     isMemo(vnode) ||
+    isLazy(vnode) ||
     isPortal(vnode) ||
+    isSuspense(vnode) ||
     isConsumer(vnode) ||
     isComponent(vnode) ||
     isForwardRef(vnode)

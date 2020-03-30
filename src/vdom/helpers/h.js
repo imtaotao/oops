@@ -192,7 +192,7 @@ export function installHooks(tag, data) {
     vnodeHooks = providerVNodeHooks
   } else if (isConsumer(simulateVnode)) {
     vnodeHooks = consumerVNodeHooks
-  }else if (isForwardRef(simulateVnode)) {
+  } else if (isForwardRef(simulateVnode)) {
     vnodeHooks = forwardRefHooks
   } else if (isPortal(simulateVnode)) {
     vnodeHooks = portalVNodeHooks

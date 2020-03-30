@@ -39,7 +39,7 @@ export function isLazy(vnode) {
 }
 
 export function isSuspense(vnode) {
-  vnode.tag === SUSPENSES_TYPE
+  return vnode.tag === SUSPENSES_TYPE
 }
 
 export function isPortal(vnode) {

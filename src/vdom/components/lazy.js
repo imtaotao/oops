@@ -1,4 +1,5 @@
 import { isLazy } from '../helpers/patch/is.js'
+import { suspenseLinkedList } from './suspense.js'
 import { commonHooksConfig } from '../helpers/component.js'
 
 const Uninitialized = -1
@@ -50,10 +51,16 @@ function readLazyComponentType(lazyComponent) {
 class LazyComponent {
   constructor(vnode) {
     this.vnode = vnode
+    initializeLazyComponentType(vnode.tag)
   }
 
   init() {
-    
+    const isResolved = this.vnode.tag._status === Resolved
+    const currentSuspense = suspenseLinkedList.current
+    if (currentSuspense !== null) {
+      currentSuspense.component.lazyChildsStatus.push(isResolved)
+    }
+    console.log(currentSuspense)
   }
 
   update(oldVnode, vnode) {

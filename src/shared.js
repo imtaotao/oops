@@ -1,8 +1,10 @@
 import {
   MEMO_TYPE,
+  LAZY_TYPE,
   PORTAL_TYPE,
   CONTEXT_TYPE,
   PROVIDER_TYPE,
+  SUSPENSES_TYPE,
   FRAGMENTS_TYPE,
   FORWARD_REF_TYPE,
 } from './api/symbols.js'
@@ -26,9 +28,11 @@ export function isValidElementType(type) {
     typeof type === 'string' ||
     typeof type === 'function' ||
     type === FRAGMENTS_TYPE ||
+    type === SUSPENSES_TYPE ||
     (typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === CONTEXT_TYPE ||
+        type.$$typeof === LAZY_TYPE ||
         type.$$typeof === PORTAL_TYPE ||
         type.$$typeof === PROVIDER_TYPE ||
         type.$$typeof === FORWARD_REF_TYPE ||
@@ -39,13 +43,17 @@ export function isValidElementType(type) {
 // The `portal component` is not counted in
 export function isInternalComponent(type) {
   return (
-    typeof type === 'object' &&
-      type !== null &&
-      (type.$$typeof === CONTEXT_TYPE ||
-        type.$$typeof === PORTAL_TYPE ||
-        type.$$typeof === PROVIDER_TYPE ||
-        type.$$typeof === FORWARD_REF_TYPE ||
-        type.$$typeof === MEMO_TYPE)
+    type === SUSPENSES_TYPE ||
+    (
+      typeof type === 'object' &&
+        type !== null &&
+        (type.$$typeof === CONTEXT_TYPE ||
+          type.$$typeof === LAZY_TYPE ||
+          type.$$typeof === PORTAL_TYPE ||
+          type.$$typeof === PROVIDER_TYPE ||
+          type.$$typeof === FORWARD_REF_TYPE ||
+          type.$$typeof === MEMO_TYPE)
+    )
   )
 }
 
