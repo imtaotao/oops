@@ -16,6 +16,7 @@
     </script>
     <script type="text/babel">
       // const { Fragment, useState, memo, useEffect, Suspense, lazy } = React;
+      console.log(React)
       const { render, Fragment, useState, createPortal, memo, Suspense, lazy, useEffect } = oops
       ReactDOM.render = oops.render
       React.createElement = oops.h
@@ -41,7 +42,6 @@
       const AnotherComponent  = lazy(() => load(b, 4000))
 
       function Wraper() {
-        console.log(12)
         return <OtherComponent />
       }
 
@@ -53,9 +53,9 @@
                 222
                 <Wraper/>
                 {
-                  // <Suspense fallback={<div>Loading2...</div>}>
-                  //   <AnotherComponent />
-                  // </Suspense>
+                  <Suspense fallback={<div>Loading2...</div>}>
+                    <AnotherComponent />
+                  </Suspense>
                 }
               </section>
             </Suspense>

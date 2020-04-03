@@ -1,4 +1,5 @@
 import { patch } from '../patch.js'
+import { deepCloneVnode } from '../h.js'
 import { isSuspense } from '../helpers/patch/is.js'
 import { formatRootVnode } from '../helpers/patch/util.js'
 import { commonHooksConfig } from '../helpers/component.js'
@@ -32,14 +33,16 @@ class SuspenseComponent {
   }
 
   render() {
+    // children 需要深拷贝
     let { children } = this.vnode
     if (children.length === 1) {
       children = children[0]
     }
+    children = deepCloneVnode(children)
 
     const updateVnode = formatRootVnode(children)
-    console.log(updateVnode)
     this.rootVnode = patch(this.rootVnode, updateVnode)
+    console.log(this.lazyChildsStatus)
     this.rootVnode.parent = this.vnode.parent
     this.vnode.elm = this.rootVnode.elm
   }

@@ -11,7 +11,7 @@ import {
 
 // The reason for the need to record parent is because it is needed when bubbling in the portal component
 export function injectParentVnode(vnode, children) {
-  if (isArray(children)) {
+  if (isArray(children) && children.length > 0) {
     for (let i = 0; i < children.length; i++) {
       // The text node does not need a parent,
       // because there is no additional operation on the text node for the time being
@@ -40,12 +40,12 @@ export function createVnode(tag, data, children, text, elm) {
 }
 
 export function createCommentVnode(text, key) {
-  const textVnode = createVnode('', { key }, null, text, null)
+  const textVnode = createVnode('', { key }, [], text, null)
   textVnode.isComment = true
   return textVnode
 }
 
-export function cloneVnode(vnode) {
+export function cloneVnode(vnode, needInjectPrent = true) {
   const cloned = createVnode(
     vnode.tag,
     vnode.data,
@@ -58,7 +58,24 @@ export function cloneVnode(vnode) {
   cloned.originTag = vnode.originTag
   cloned.isComment = vnode.isComment
   cloned.component = vnode.component
-  injectParentVnode(cloned, cloned.children)
+
+  if (needInjectPrent) {
+    injectParentVnode(cloned, cloned.children)
+  }
+  return cloned
+}
+
+export function deepCloneVnode(vnode, parent) {
+  const cloned = cloneVnode(vnode, false)
+  if (cloned.children) {
+    cloned.children = vnode.children.map(child => {
+      const newChild = deepCloneVnode(child, cloned)
+      if (parent && isVnode(newChild)) {
+        newChild.parent = vnode
+      }
+      return newChild
+    })
+  }
   return cloned
 }
 

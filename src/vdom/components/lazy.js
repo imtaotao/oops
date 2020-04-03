@@ -1,8 +1,11 @@
 import { patch } from '../patch.js'
-import { createCommentVnode } from '../h.js'
 import { isLazy } from '../helpers/patch/is.js'
 import { suspenseLinkedList } from './suspense.js'
 import { commonHooksConfig } from '../helpers/component.js'
+import {
+  h,
+  createCommentVnode,
+} from '../h.js'
 
 const Uninitialized = -1
 const Pending = 0
@@ -65,10 +68,8 @@ class LazyComponent {
     if (isResolved) {
       this.rootVnode = patch(
         this.rootVnode,
-        lazyComponentCtor._result,
+        h(lazyComponentCtor._result, {}, []),
       )
-      this.parentSuspense = null
-      console.log(this.rootVnode)
     } else {
       const currentSuspense = suspenseLinkedList.current
       if (currentSuspense !== null) {
@@ -77,24 +78,21 @@ class LazyComponent {
         this.parentSuspense = currentSuspense
       }
 
-      // Else, used comment node instead it.
+      // else, used comment node instead it.
       this.rootVnode = patch(
         this.rootVnode,
         createCommentVnode('Oops.lazy', this.vnode.key)
       )
     }
-    console.log(this.rootVnode.elm)
     this.vnode.elm = this.rootVnode.elm
     this.rootVnode.parent = this.vnode.parent
   }
 
   init() {
-    console.log('init')
     this.render()
   }
 
   update(oldVnode, vnode) {
-    console.log('update')
     this.render()
   }
 }
