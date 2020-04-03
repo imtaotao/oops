@@ -1,3 +1,5 @@
+import { patch } from '../patch.js'
+import { createCommentVnode } from '../h.js'
 import { isLazy } from '../helpers/patch/is.js'
 import { suspenseLinkedList } from './suspense.js'
 import { commonHooksConfig } from '../helpers/component.js'
@@ -7,7 +9,7 @@ const Pending = 0
 const Resolved = 1
 const Rejected = 2
 
-function initializeLazyComponentType(lazyComponent) {
+function initializeLazyComponentType(lazyComponent, updateCallback) {
   if (lazyComponent._status === Uninitialized) {
     lazyComponent._status = Pending
     const ctor = lazyComponent._ctor
@@ -28,6 +30,7 @@ function initializeLazyComponentType(lazyComponent) {
           }
           lazyComponent._status = Resolved
           lazyComponent._result = defaultExport
+          updateCallback()
         }
       },
       error => {
@@ -40,31 +43,59 @@ function initializeLazyComponentType(lazyComponent) {
   }
 }
 
-function readLazyComponentType(lazyComponent) {
-  initializeLazyComponentType(lazyComponent)
-  if (lazyComponent._status !== Resolved) {
-    throw lazyComponent._result
-  }
-  return lazyComponent._result
-}
-
 class LazyComponent {
   constructor(vnode) {
     this.vnode = vnode
-    initializeLazyComponentType(vnode.tag)
+    this.parentSuspense = null
+    this.rootVnode = undefined
+
+    initializeLazyComponentType(vnode.tag, () => {
+      // Parent suspense forceUpdate
+      if (this.parentSuspense) {
+        this.parentSuspense.component.forceUpdate()
+      }
+    })
+  }
+
+  render() {
+    const lazyComponentCtor = this.vnode.tag
+    const isResolved = lazyComponentCtor._status === Resolved
+
+    // If the lazy component aleard resolved, we need render component content
+    if (isResolved) {
+      this.rootVnode = patch(
+        this.rootVnode,
+        lazyComponentCtor._result,
+      )
+      this.parentSuspense = null
+      console.log(this.rootVnode)
+    } else {
+      const currentSuspense = suspenseLinkedList.current
+      if (currentSuspense !== null) {
+        // 给当前 suspense 注入当前的 laze 组件的状态
+        currentSuspense.component.lazyChildsStatus.push(isResolved)
+        this.parentSuspense = currentSuspense
+      }
+
+      // Else, used comment node instead it.
+      this.rootVnode = patch(
+        this.rootVnode,
+        createCommentVnode('Oops.lazy', this.vnode.key)
+      )
+    }
+    console.log(this.rootVnode.elm)
+    this.vnode.elm = this.rootVnode.elm
+    this.rootVnode.parent = this.vnode.parent
   }
 
   init() {
-    const isResolved = this.vnode.tag._status === Resolved
-    const currentSuspense = suspenseLinkedList.current
-    if (currentSuspense !== null) {
-      currentSuspense.component.lazyChildsStatus.push(isResolved)
-    }
-    console.log(currentSuspense)
+    console.log('init')
+    this.render()
   }
 
   update(oldVnode, vnode) {
-  
+    console.log('update')
+    this.render()
   }
 }
 

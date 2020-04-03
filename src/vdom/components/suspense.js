@@ -38,26 +38,28 @@ class SuspenseComponent {
     }
 
     const updateVnode = formatRootVnode(children)
+    console.log(updateVnode)
     this.rootVnode = patch(this.rootVnode, updateVnode)
     this.rootVnode.parent = this.vnode.parent
     this.vnode.elm = this.rootVnode.elm
   }
 
-  init() {
-    suspenseLinkedList.push(this)
+  forceUpdate() {
     this.render()
   }
 
-  initBefore() {
+  init() {
+    suspenseLinkedList.push(this)
+    this.render()
     suspenseLinkedList.pop()
+    this.lazyChildsStatus = []
   }
 
   update(oldVnode, vnode) {
-    suspenseLinkedList.push(vnode)
-  }
-
-  postpatch(oldVnode, vnode) {
+    suspenseLinkedList.push(this)
+    this.render()
     suspenseLinkedList.pop()
+    this.lazyChildsStatus = []
   }
 }
 

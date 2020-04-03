@@ -39,6 +39,12 @@ export function createVnode(tag, data, children, text, elm) {
   return vnode
 }
 
+export function createCommentVnode(text, key) {
+  const textVnode = createVnode('', { key }, null, text, null)
+  textVnode.isComment = true
+  return textVnode
+}
+
 export function cloneVnode(vnode) {
   const cloned = createVnode(
     vnode.tag,
@@ -49,6 +55,8 @@ export function cloneVnode(vnode) {
   )
   cloned.key = vnode.key
   cloned.isClone = true
+  cloned.originTag = vnode.originTag
+  cloned.isComment = vnode.isComment
   cloned.component = vnode.component
   injectParentVnode(cloned, cloned.children)
   return cloned

@@ -168,7 +168,9 @@ export function createElm(vnode, insertedVnodeQueue) {
 
   const { tag, data, children } = vnode
 
-  if (isDef(tag)) {
+  if(vnode.isComment) {
+    vnode.elm = api.createComment(vnode.text)
+  } else if (isDef(tag)) {
     let elm
     if (isFragment(vnode) || isProvider(vnode)) {
       elm = vnode.elm = new FragmentNode()
